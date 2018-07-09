@@ -1,0 +1,1 @@
+<img class="label_icon" {% if L.label_icon %}src="{{ L.label_icon.url }}"{% else %}src="{{ MEDIA_URL }}transmit_blue.png"{% endif %} /><a href="{{ L.get_absolute_url }}">{{ L.name }}</a>

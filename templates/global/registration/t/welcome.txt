@@ -1,0 +1,3 @@
+{% load i18n %}{% blocktrans with site.name as site_name and site.domain as domain %}Hello, {{ username }}
+
+Thank-you for activating your account at {{ site_name }}. You may visit the site at http://{{ domain }} and proceed to log in. If you have any questions or comments, feel free to post in our forums, ask in the oneliner, or send a message to one of our admins. Thanks!!{% endblocktrans %}

@@ -1,0 +1,1256 @@
+/*
+ * Modified classic theme for cvgm.net/demovibes.
+ * Oct/Nov 2011, by Goatfather/cvgm.net
+ * version 1.0
+ * Dec 2012 - version 1.1
+ * Theme updated with last year changes in gray theme.
+ * 20121218 - 1.11
+ * Fixed header in song comment, borders' colors in forums and background in smileys popup
+ * 20121220 - 1.12
+ * Fixed colors in forum post previews on search results page
+ */
+
+* {
+	font-family: sans-serif;
+	font-size: 8pt;
+}
+
+.olh_wrapper 	{
+		width: 604px;
+		min-height: 800px;
+		margin: 15px;
+		}
+.olh_item	{ 
+		overflow:auto; 
+		} 
+.olh_user	{
+		width: 150px;
+		float: left;
+		margin: 0;
+		padding: 0;
+		min-height: 50px;
+		}
+
+.olh_message	{
+		width: 450px;
+		float: right;
+		margin: 0;
+		padding: 0;
+		min-height: 50px;
+		}
+
+.olh_pages	{
+		text-align: justify;
+		font-family: sans-serif;
+		}
+
+.bbquote	{
+		font-style: italic;
+		}
+
+.bbcode		{
+		font-family: monospace;
+		display: block;
+		border: 1px dotted #000;
+		padding: 10px;
+		margin-left: 25px;
+		margin-right: 25px;
+		line-height: 12px;
+		font-style: italic;
+		background: #e2e2e2;
+		}
+
+pre
+{
+	font-family: "rez ascii", "Lucida Console", monospace;
+}
+
+html
+{
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	border: none;
+	position: absolute;
+	left: 0;
+	top: 0;
+	background-color: #0A2608;
+	font-size: 9pt;
+}
+
+html#transparent
+{
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	border: none;
+	position: absolute;
+	left: 0;
+	top: 0;
+	background: transparent;
+}
+body {
+	font-size: 9pt;
+	color: #CCd0a2;
+}
+
+body#site
+{
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	border: none;
+	position: absolute;
+	left: 0;	
+	top: 0;
+	overflow: visible;
+	background-color: #051F05 !important;
+	background-image: url("trackerpatternAAA.png");
+	background-repeat: repeat-x;
+}
+
+h1, h2, h3
+{
+	border-width: 1px;
+	border-style: solid;
+	background-color: #010;
+	/* background-image: url("shine.png"); */
+	background-image: url("fireworx.gif");
+	background-position: center center;
+	background-repeat: repeat-x;
+	color: #efc;
+    border-top: #F54 solid 0px;
+    border-left: 0px;
+    border-bottom: #000 solid 0px;
+    border-right: 0px;
+	border-left-width: 0px;
+	border-right-width: 0px;
+}
+
+.headline
+{
+	vertical-align: middle;
+}
+
+.date
+{
+	position: absolute;
+	right: 8px;
+	bottom: .25ex;
+	font-size: 9pt;	
+	color: #fea;
+}
+
+h1
+{
+	font-size: 15pt;
+}
+
+h2
+{
+	font-size: 12pt;
+	position: relative;
+	vertical-align: middle;
+}
+
+#main h2 a
+{
+	background: #010;
+}
+
+div.pmview {
+	vertical-align: top;
+	border: 1px solid #131;
+	background-color:#010;
+	width: 85%;
+}
+
+p
+{
+	margin: 0;
+	margin-top: 1em;
+}
+
+a
+{
+	text-decoration: none;
+    font-weight: bold;
+}
+
+a:link
+{
+	color: #a00;
+}
+
+a:visited
+{
+	color: #900;
+}
+
+a:hover
+{
+	text-decoration: underline;
+}
+
+.header a:link {
+	color: #eee;
+}
+
+.header a:visited {
+	color: #ddd;
+}
+
+.header a:hover {
+	color: #ccf;
+}
+
+img
+{
+	border: 0;
+	vertical-align: bottom;
+}
+
+#rightside
+{
+	float: right;
+	display: inline;
+	position: relative;
+	width: 200px;
+	margin: 8px;
+	border-width: 1px;
+	border-top-width: 0px;
+	border-style: solid;
+	border-color: #451;
+	border-right-color: #000;
+	background-color: transparent;
+	background-image: url("bland_sidepanel.png");
+	text-align: center;
+	display: inline;
+	border-bottom-left-radius: 16px;
+	border-bottom-right-radius: 16px;
+}
+
+#sidebar
+{
+	float: left;
+	display: inline;
+	position: relative;
+	width: 200px;
+	margin: 8px;
+	padding-bottom: 10px;
+	border-width: 1px;
+	border-top-width: 0px;
+	border-style: solid;
+	border-color: #451;
+	border-right-color: #000;
+	background-color: transparent;
+	background-image: url("bland_sidepanel.png");
+	text-align: center;
+	display: inline;
+	border-bottom-left-radius: 16px;
+	border-bottom-right-radius: 16px;
+}
+
+#rightside h3, #sidebar h3
+{
+	border-top: 0px;
+	border-bottom: 0px;
+	padding-top: 2px;
+	padding-bottom: 2px;
+	background-position: top left;
+}
+
+#sidebar h3
+{
+	background-image: url("shine_sidepanel_h3.png");
+}
+
+#rightside h3
+{
+	background-image: url("shine_sidepanel_h3.png");
+}
+
+h3
+{
+	margin: -1px;
+	font-size: 9pt;
+	text-align: center;
+	margin-bottom: 1ex;
+}
+
+#rightside ul
+{
+	padding: 0;
+	margin-top: 1ex;
+	margin-bottom: 2ex;
+	display: inline-block;
+	list-style-type: none;
+	text-align: left;
+}
+
+#rightside ul li
+{
+	background-position: 0px 50%;
+	background-repeat: no-repeat;
+	min-height: 16px;
+	padding-left: 16px;
+	display: block;
+}
+
+#sidebar ul
+{
+	padding: 0;
+	margin-top: 1ex;
+	margin-bottom: 2ex;
+	display: inline-block;
+	list-style-type: none;
+	text-align: left;
+}
+
+#sidebar ul li
+{
+	background-position: 0px 50%;
+	background-repeat: no-repeat;
+	min-height: 16px;
+	padding-left: 16px;
+	display: block;
+}
+
+#home 		{background-image: url("http://www.cvgm.net/static/house.png");}
+#songs		{background-image: url("http://www.cvgm.net/static/music.png");}
+#song-source		{background-image: url("http://www.cvgm.net/static/sound.png");}
+#song-platform		{background-image: url("http://www.cvgm.net/static/sound.png");}
+#artists	{background-image: url("http://www.cvgm.net/static/user_green.png");}
+#compilations	{background-image: url("http://www.cvgm.net/static/recplay_ico.png");}
+#recent	        {background-image: url("http://www.cvgm.net/static/new.png");}
+#recentchanges  {background-image: url("http://www.cvgm.net/static/page_white_edit.png");}
+#menuqueue	{background-image: url("http://www.cvgm.net/static/script.png");}
+#search		{background-image: url("http://www.cvgm.net/static/find.png");}
+#forum		{background-image: url("http://www.cvgm.net/static/user_comment.png");}
+#faq		{background-image: url("http://www.cvgm.net/static/comment.png");}
+#profile	{background-image: url("http://www.cvgm.net/static/user.png");}
+#favorites	{background-image: url("http://www.cvgm.net/static/heart.png");}
+#register	{background-image: url("http://www.cvgm.net/static/page_white_edit.png");}
+#logout		{background-image: url("http://www.cvgm.net/static/door_out.png");}
+#login		{background-image: url("http://www.cvgm.net/static/door_in.png");}
+#admin		{background-image: url("http://www.cvgm.net/static/door.png");}
+#inbox		{background-image: url("http://www.cvgm.net/static/email.png");}
+#unap-artists		{background-image: url("http://www.cvgm.net/static/user_green.png");}
+#unap-groups		{background-image: url("http://www.cvgm.net/static/group.png");}
+#unap-compilations    {background-image: url("http://www.cvgm.net/static/recplay_ico.png");}
+#unap-labels            {background-image: url("http://www.cvgm.net/static/transmit_blue.png");}
+#unap-links     {background-image: url("http://www.cvgm.net/static/link.png");}
+#unap-nju     {background-image: url("http://www.cvgm.net/static/tick.png");}
+#groups		{background-image: url("http://www.cvgm.net/static/group.png");}
+#labels            {background-image: url("http://www.cvgm.net/static/transmit_blue.png");}
+#links		{background-image: url("http://www.cvgm.net/static/link.png");}
+#screenshots		{background-image: url("http://www.cvgm.net/static/icon_screenshot.png");}
+#unap-screenshots     {background-image: url("http://www.cvgm.net/static/icon_screenshot.png");}
+#licenses 		{background-image: url("http://www.cvgm.net/static/page_white_edit.png");}
+#chat		{background-image: url("http://www.cvgm.net/static/lips.png");}
+
+
+#forum, #favorites, #logout
+{
+	margin-bottom: 1em;
+}
+
+p.pmtitle {
+    font-weight: bold;
+}
+
+#sidebar li a
+{
+	margin-left: 1ex;
+	color: #dfa;
+}
+#rightside li a
+{
+	margin-left: 1ex;
+	color: #dfa;
+}
+
+#rightside a
+{
+	color: #CA0;
+}
+
+#rightside a:hover 
+{
+	color: #ff5;
+}
+
+#sidebar form
+{
+	display: block;
+	padding: 0;
+	padding-top: 1ex;
+	margin: 0;
+	border: none;
+	white-space: nowrap;
+}
+
+#sidebar a:hover 
+{
+	color: #ff5;
+}
+
+#blah
+{
+	display: inline-block;
+	width: 176px;
+	padding: 0;
+	margin: 0;
+	padding-right: 11px;
+	border: 1px #050 solid;
+	height: 16px;
+	background-color: #010;
+	color: #fff;
+	background-position: center;
+}
+
+#makeitso
+{
+	border: none;
+	width: 16px;
+	margin-left: -16px;
+	background-color: transparent;
+	background-image: url("http://www.cvgm.net/static/comment.png");
+	background-repeat: no-repeat;
+	background-position: center center;
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+#oneliner
+{
+	margin: 8px;
+	margin-top: 0;
+	margin-bottom: 2ex;
+	text-align: left;
+	overflow: hidden;
+}
+
+#oneliner a {
+	color: #CA0;
+}
+
+span.onelinerpre {
+	background-color: #082808;
+	width: auto;
+	display: block;
+	padding: 1px;
+	padding-top: 1px;
+	border-top: 1px solid #183818;
+	border-bottom: 1px solid #010;
+}
+
+.onelinerpre .username {
+	font-family: "Lucida Console", monospace;
+	background-color: #082808;
+	padding: 1px;
+	padding-right: 3px;
+	font-size: 11px;
+	vertical-align: middle;
+}
+
+.onelinerpre .onelinertime {
+	float: right;
+	padding-right: 2px;
+}
+
+#oneliner .onelinermsg {
+	float: none;
+	margin: 1px;
+	margin-bottom: 4px;
+	vertical-align: middle;
+}
+
+.onelinerpre .username .countryflag {
+	overflow: hidden;
+	margin: 2px;
+	padding: 0px;
+}
+
+.lastreqdate {
+	white-space:nowrap;
+}
+
+.onelinertext {
+	display: block;
+	vertical-align: middle;
+	padding-top: 1px;
+	padding-bottom: 8px;
+	line-height: 12px;
+}
+
+p.onelinermsg br {
+  display: none;
+}
+
+.onelinertext img {
+	vertical-align: middle;
+}
+
+#main
+{
+	position: relative;
+	margin: 7px;
+	margin-left: 215px;
+	margin-right: 215px;
+	padding: 0;
+	padding-bottom: 1ex;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #451;
+	border-right-color: #444;
+	border-bottom-color: #444;
+	border-bottom-style: double;
+	border-bottom-width: 3px;
+	border-top-width: 0px;
+	background-color: transparent;
+	background-image: url("bland.png");
+	background-position: center;
+	border-bottom-left-radius: 16px;
+	border-bottom-right-radius: 16px;
+}
+
+.newstext
+{
+	padding-left: 8px;
+	padding-right: 8px;
+}
+	
+#main h1, #main h2
+{
+	margin-left: 6px;
+	margin-right: 6px;
+	margin-bottom: 1ex;
+	padding-left: 8px;
+	padding-right: 0px;
+}
+
+#main h1
+{
+	margin-top: 0px;
+	margin-left: -1px;
+	margin-right: 0px;
+	padding: 0;
+	padding-left: 1ex;
+	padding-right: 1ex;
+	font-variant: small-caps;
+	text-align: center;
+}
+
+#main h2
+{
+	margin-top: 16px;
+	margin-left: 0px;
+	margin-right: 0px;
+}
+
+#main p
+{
+	margin-left: 8px;
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+#main ul
+{
+	margin: 0;
+	padding: 0;
+	margin-left: 3em;
+	list-style-type: disc;
+	list-style-position: outside;
+	display: block;
+}
+
+#main ul.imgbull li
+{
+	list-style-type: none;
+	background-position: 0px 50%;
+	background-repeat: no-repeat;
+	min-height: 16px;
+	margin-left: -3.5ex;
+	padding-left: 3.5ex;
+}
+
+#main #maincontent .theme
+{
+	height: 280px;
+}
+
+#main #maincontent .editdiv textarea.input
+{
+	width: 50em;
+	height: 20em;
+}
+
+#logo
+{
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+
+}
+
+div.screenshot:hover {
+    background-color: #010;
+    border: 1px solid #242;
+    padding: 2px;
+}
+
+.countryflag
+{
+    margin:-2px 2px 1px 1px;
+    vertical-align:middle; 
+}
+
+.platform_icon
+{
+    vertical-align: middle;
+    /*margin-left: 1px;*/
+	margin-right: 1px;
+	background-image: url("http://www.cvgm.net/static/themes/default/glow.png");
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+.label_icon
+{
+    vertical-align: middle;
+    /*margin-left: 1px;*/
+	margin-right: 1px;
+	background-image: url("http://www.cvgm.net/static/themes/default/glow.png");
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+.group_icon
+{
+    vertical-align: middle;
+    /*margin-left: 1px;*/
+	margin-right: 1px;
+	background-image: url("http://www.cvgm.net/static/themes/default/glow.png");
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+.comp_icon
+{
+    vertical-align: middle;
+    /*margin-left: 1px;*/
+	margin-right: 1px;
+	background-image: url("http://www.cvgm.net/static/themes/default/glow.png");
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+.text-link
+{
+    vertical-align: middle;
+    margin-left: 1px;
+    margin-right: 1px;
+}
+
+.song-resource
+{
+    vertical-align: middle;
+    margin-left: 1px;
+    margin-right: 1px;
+}
+
+.user-resource
+{
+    vertical-align: middle;
+    margin-left: 1px;
+    margin-right: 1px;
+}
+
+.lastreqdate {
+	white-space:nowrap;
+}
+
+.icon_header
+{
+	padding: 1ex;
+	padding-top: 4px;
+	padding-bottom: 4px;
+	vertical-align: middle;
+	margin: 0;
+	border: 0;
+	background-image: url("http://www.cvgm.net/static/themes/default/glow.png");
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+#copyleft, #copyright
+{
+	display: block;
+	font-size: 7pt;
+	position: relative;
+	bottom: -3ex;
+	margin: 0;
+}
+
+#copyleft
+{
+	float: left;
+}
+
+#copyright
+{
+	float: right;
+}
+
+#copyleft a, #copyright a
+{
+	color: #c00;
+}
+
+#validator
+{
+	position: absolute;
+	right: 1px;
+	top: 1px;
+}
+
+/* froumzz */
+
+#djangoForumBreadcrumbs, .pages
+{
+    margin-bottom: 1em;
+}
+
+.pagesBottom
+{
+    margin-top: 1em;
+	text-align: right;
+}
+
+#djangoForumList,
+#djangoForumThreadList
+{
+	width: 99%;
+	margin: auto;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #141;
+	border-top-color: #fda; /* stupid ie */
+	border-collapse: collapse;
+	background-color: #121;
+	background-position: center;
+	color: #bd8;
+}
+
+#djangoForumList th,
+#djangoForumThreadList th,
+#djangoForumThreadPosts th
+{
+	padding: 0;
+	padding-left: 8px;
+	padding-right: 8px;
+	border-width: 1px;
+	border-color: #141;
+	border-style: solid;
+	background-color: #010;
+	background-image: url("http://www.cvgm.net/static/shine.png");
+	background-position: center center;
+	background-repeat: repeat-x;
+    text-align: left;
+	color: #bd8;
+}
+
+#djangoForumList td,
+#djangoForumThreadList td
+{
+	padding: 0;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #131;
+	border-top-color: #131; /* stupid ie */
+}
+
+.djangoForumListDetails,
+.post
+{
+	background: #081808;
+}
+
+.djangoForumListDetails p
+{
+	margin: 0;
+}
+
+#djangoForumList .djangoForumListDetails .djangoForumStats
+{
+	position: relative !important;
+	position: static; /* ha! lost stupid ie6 again! */
+	z-index: 5;
+	float: right;
+	margin-top: -12pt;
+	padding-right: 8px;
+	font-size: 7pt;
+}
+
+.forumName
+{
+	display: block;
+	position: relative !important;
+	position: static; /* ha! */
+	z-index: 10;
+	padding-left: 8px;
+	padding-right: 8px;
+	padding-bottom: 12pt;
+	font-size: 12pt;
+}
+
+.djangoForumListDetails .forumDescription
+{
+	display: block;
+	position: relative !important;
+	position: static; /* ha! */
+	z-index: 5;
+	margin-top: -12pt;
+	padding: 0;
+	padding-left: 8px;
+	padding-right: 8px;
+	margin-right: 100px;
+}
+
+#djangoForumList .djangoForumListDetails
+{
+	width: 70%;
+	padding: 0;
+}
+
+#djangoForumList td,
+#djangoForumThreadList td
+{
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+.djangoForumListDetails
+{
+	padding: 0;
+}
+
+#djangoForumThreadList td
+{
+	width: 5%;
+	text-align: center;
+}
+
+#djangoForumThreadList .djangoForumThreadListName
+{
+	width: 60%;
+	text-align: left;
+	background: #001800;
+}
+
+#djangoForumList .djangoForumListLastPost,
+#djangoForumThreadList .djangoForumThreadLastPost
+{
+	width: 30%;
+	text-align: left;
+}
+
+#djangoForumThreadList .djangoForumThreadListName
+{
+	padding: 0;
+	background: #021;
+}
+
+.threadName
+{
+	display: block;
+	line-height: 2em;
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+#djangoForumThreadPosts
+{
+	width: 99%;
+	margin: auto;
+	border: 0;
+	border-collapse: collapse;
+	background-color: transparent;
+	background-image: url("http://www.cvgm.net/static/hilight.png");
+	background-position: center;
+}
+
+#djangoForumThreadPosts td
+{
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+
+#djangoForumThreadPosts .djangoForumThreadPostDetail
+{
+	vertical-align: top;
+	border-left: 1px solid #242;
+	padding-top: 1em;
+}
+
+#djangoForumThreadPosts
+{
+}
+
+#djangoForumThreadPosts .postfooter
+{
+	border-left: 1px solid #242;
+	border-right: 1px solid #131;
+	border-bottom: 1px solid #131;
+	text-align: right;
+}
+
+#djangoForumThreadPosts .postfooter td:first-child
+{
+	text-align: left;
+	font-size: 7pt;
+}
+
+
+#djangoForumThreadPosts .post
+{
+	vertical-align: top;
+	padding-top: 1em;
+	border: 0;
+	border-left: 1px solid #131;
+	border-right: 1px solid #131;
+	border-bottom: 1px solid #131;
+	width: 85%;
+}
+
+.post p
+{
+	margin: 0;
+	margin-bottom: 1em;
+}
+
+#newThread
+{
+	width: 99%;
+	margin: auto;
+}
+
+#newThread .label
+{
+	text-align: right;
+	vertical-align: top;
+}
+
+#newThread #postThread
+{
+	text-align: center;
+}
+
+
+#newThread #postThread
+{
+	text-align: center;
+}
+
+table.songlist {
+	border-collapse: collapse;
+	border-spacing: 0px;
+}
+
+table.songlist td {
+	padding: 0px;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+table.songlist th {
+	padding: 3px;
+}
+
+table.songlist tr.row1 td {
+	background-color: #0A1C08;
+}
+
+table.songlist tr.row2 td {
+	background-color: #0A2008;
+
+}
+
+table.songlist tr.row1 a {
+/*	background-color: #FCfcfc;*/
+	color: #f81;
+}
+
+table.songlist tr.row2 a {
+/*	background-color: #FCfcfc;*/
+	color: #D22;
+}
+
+a.fdTableSortTrigger {
+	color: #DC4;
+}
+
+#whosonline {
+	line-height: 135%;
+}
+
+#whosonline span {
+	white-space: nowrap;
+}
+
+.bubbleInfo {
+	position: relative;
+}
+
+#newestuser {
+	line-height: 135%;
+}
+
+#newestuser span {
+	white-space: nowrap;
+}
+
+.bubbleInfo {
+	position: relative;
+}
+
+table.recentchanges {
+	vertical-align:text-top;
+	/*border-collapse: collapse;*/
+	border-spacing: 2px;
+	width: 90%;
+}
+
+table.recentchanges td {
+	vertical-align:text-top;
+	padding: 2px;
+	padding-left: 18px;
+	padding-right: 18px;
+}
+
+.recent_icon_header
+{
+	padding: 1ex;
+	padding-top: 4px;
+	padding-bottom: 4px;
+	vertical-align: middle;
+	margin: 0;
+	border: 0;
+	background-image: url("http://www.cvgm.net/static/themes/default/glow.png");
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+.messagetitle {
+	background-color: #000;
+	color: #f00;
+	padding-left: 8em;
+	font-size: 12px;
+	color: #f00; /* Text Colour */
+	font-family: Consolas, Andale Mono, monospace;
+	font-weight: bold;
+	text-align: center;
+}
+.messageholder {
+    background-color: #000;
+	opacity: 1.0;
+	padding-left:  8em;
+	padding-right: 8em;
+}
+.messagefade {
+        background-color: #000;
+}
+
+.messagefadeborder {
+	display: none;
+}
+
+.messagebox {
+	border: 5px solid #f00;
+	border-top-width: 0px;
+	border-bottom-width: 0px;
+	right: 0px;
+	left: 0px;
+	width: auto;
+}
+
+.messagetitle {
+	border-top: 5px solid #f00;
+}
+
+.messagelist .messageholder:last-child  {
+    border-bottom: 5px solid #f00;
+}
+
+.messagesetting-save, .messagesetting-cancel {
+	border-top-color: #451;
+	border-left-color: #451;
+	border-right-color: #000;
+	border-bottom-color: #000;
+}
+
+.messagesetting-save:hover, .messagesetting-cancel:hover {
+	background-color: #131;
+}
+
+.messagesettingsbox {
+	color: #AD8;
+	background-color: #020;
+	font-weight: bold;
+	padding: 5px;
+	border: 1px solid #010;
+	border-top-color: #451;
+	border-left-color: #451;
+	border-radius: 4px;
+	-moz-border-radius: 4px;
+	-webkit-border-top-left-radius: 4px;
+	box-shadow: 5px 5px 5px #010;
+}
+	
+.messagesettingsbox h2 {
+	text-align: center;
+}
+
+.messagetitle-flash {
+	font-size: 12px;
+	background-color: #400;
+}
+.messagetime,.messagecat,.messagetext {
+	padding-right: 4em;
+	font-size: 12px;
+	color: #f00;
+	font-family: Consolas, Andale Mono, monospace;
+	font-weight: bold;
+}
+
+.messagetext  a {
+	color: #f00 !important;
+	text-decoration: underline;
+}
+
+.message-remove {
+	font-size: 12px;
+	font-family: Consolas, Andale Mono, monospace;
+	font-weight: bold;
+}
+	
+.message-display-settings {
+	font-weight: bold;
+}
+
+select, input, textarea
+{
+	background-color: #010;
+	border: solid 1px #131;
+	border-bottom: solid 1px #242;
+	border-right: solid 1px #242;
+	color: #ffc;
+}
+
+#main #id_file {
+	width: 70em;
+}
+
+#main #id_title {
+	width: 50em;
+}
+
+#main #id_info {
+	width: 50em;
+	height: 15em;
+}
+
+#linksform #id_LL_2_comment, #linksform #id_LL_3_comment, #linksform #id_LL_4_comment, #linksform #id_LL_5_comment, #linksform #id_LL_5_comment, 
+#linksform #id_LL_6_comment, #linksform #id_LL_7_comment, #linksform #id_LL_8_comment, #linksform #id_LL_9_comment, #linksform #id_LL_10_comment, 
+#linksform #id_LL_11_comment, #linksform #id_LL_12_comment, #linksform #id_LL_13_comment, #linksform #id_LL_17_comment, #linksform #id_LL_18_comment, 
+#linksform #id_LL_19_comment, #linksform #id_LL_21_comment
+{
+	width: 30em;
+}
+	
+#formvote  input , .queuesongimage {
+	border: none;
+	background-color: transparent;
+}
+
+.starbutton {
+	min-height: 24px;
+	height: 24px;
+    display: table-cell;
+    vertical-align: top;
+	color: transparent;
+}
+
+.queuesongbutton {
+	cursor: pointer;
+	width: 25ex;
+}
+
+input[type=submit]
+{
+	color: #000;
+	background-color: #eee;
+	border: solid 1px #888;
+	border-top: solid 1px #fff;
+	border-left: solid 1px #fff;
+}
+
+#sortsonglist {
+	background-color: #242;
+}
+
+#screenshot-data
+{
+	float: left;
+}
+
+td.compilation_summary
+{
+	vertical-align: top;
+}
+
+div.taglist
+{
+	background-color: #121;
+	border: 1px solid #020;
+	border-left-color: #242;
+	border-top-color: #242;
+	margin-right: 20px;
+	border-radius: 4px;
+	-moz-border-radius: 4px;
+	-webkit-border-top-left-radius: 4px;
+	box-shadow: 5px 5px 5px #010;
+}
+
+#id_groups, #id_labels, #id_artists
+{
+	height: 240px;
+	width: 240px;
+}
+
+#nowplaying #screenshotview img
+{
+	border-top: 1px solid #242;
+	border-left: 1px solid #242;
+	border-right: 1px solid #484;
+	border-bottom: 1px solid #484;
+}
+
+.smileybox
+{
+	border: 1px solid #242;
+	background-color: #121;
+	box-shadow: 5px 5px 5px #010;
+}
+
+#maincontent .searchpostpreview
+{
+	background-color: #122812;
+	color: #CCd0a2;
+	border: 1px solid #242;
+}
+

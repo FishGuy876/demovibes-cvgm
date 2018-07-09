@@ -1,0 +1,23 @@
+{% extends "base/base.html" %}
+
+{% block title %}{{ gettext("Comments for") }} {{ song.title|e }}{% endblock %}
+
+{% block main %}
+<h2>{{ song.title|e }} - {{ gettext("User Comments") }}</h2>
+<table id='djangoForumThreadPosts'>
+<tr>
+    <th>{{ gettext("User") }}</th>
+    <th>{{ gettext("Comment") }}</th>
+</tr>
+
+{% set objs, paging = dv.paginate(commentlist) %}
+
+{% for comment in objs %}
+ {% include "webview/t/song_comment.html" %}
+{% endfor %}
+
+</table>
+
+{{ paging }}
+{% endblock %}
+

@@ -1,0 +1,29 @@
+WSGIDaemonProcess demovibes threads=25
+WSGIProcessGroup demovibes
+
+<VirtualHost *:80>
+
+  # ServerName www.domain.tld
+  #PLACEHOLDER#
+
+  Alias /media/ __MEDIA_PATH__/
+  Alias /static/ __PATH__/static/
+
+  <Directory __MEDIA_PATH__>
+    Order deny,allow
+    Allow from all
+  </Directory>
+
+  WSGIScriptAlias / __PATH__/apache/demovibes.wsgi
+
+  <Directory __PATH__/apache>
+   Order deny,allow
+   Allow from all
+  </Directory>
+
+  <Directory __PATH__/static>
+   Order deny,allow
+   Allow from all
+  </Directory>
+
+</VirtualHost>

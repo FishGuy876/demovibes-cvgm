@@ -1,0 +1,12 @@
+{% extends "base/base.html" %}
+
+{% block title %}Frequently Asked Questions (FAQ){% endblock %}
+
+{% block main %}
+<a name="top"></a><h2><img class="icon_header" src="{{ MEDIA_URL }}comment.png" alt="" />Frequently Asked Questions (FAQ)</h2>
+
+{% load dv_extend %}{% load cache %}
+{% cache 86400 "faq_a" object.id object.last_updated %}<a name="{{ object.id }}"></a><strong>Q. {{ object.question }}</strong>{% if user.is_staff %} - [<a href="/admin/webview/faq/{{ object.id }}"><img src="{{ MEDIA_URL }}link_edit.png" title="Edit FAQ Question/Answer" /></a>]{% endif %}<br />
+{{ object.answer|force_escape|linebreaks|smileys|bbcode|dv_urlize|safe }}<br />
+Added by {% with object.added_by as U%}{% include "webview/t/user.html" %}{% endwith %} (Last Updated: {{ object.last_updated|timesince }}){% endcache %} [<a href="{% url dv-faq %}">Full FAQ List</a>]<br />
+{% endblock %}

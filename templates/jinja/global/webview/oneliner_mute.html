@@ -1,0 +1,64 @@
+{% extends "base/base.html" %}
+
+{% import "macro/display.html" as display %}
+
+{% block title %}Muteliners{% endblock %}
+
+{% block main %}
+<h2>Active bans</h2>
+<table>
+    <tr>
+        <th>User</th>
+        <th>Reason</th>
+        <th>Until</th>
+        <th>By</th>
+        <th>Time added</th>
+        <th>IP Ban</th>
+        <th>Hits</th>
+    </tr>
+    {% for ban in active %}
+    <tr>
+        <td>{{ display.user(ban.user) }}</td>
+        <td>{{ ban.reason }}</td>
+        <td>{{ display.time(ban.muted_to) }}</td>
+        <td>{{ display.user(ban.added_by) }}</td>
+        <td>{{ display.time(ban.added) }}</td>
+        <td>{% if ban.ip_ban %}Yes{% else %}No{% endif %}</td>
+        <td>{{ ban.hits }}</td>
+    </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Latest ban history</h2>
+    <table>
+        <tr>
+            <th>User</th>
+            <th>Reason</th>
+            <th>Until</th>
+            <th>By</th>
+            <th>Time added</th>
+            <th>IP Ban</th>
+            <th>Hits</th>
+        </tr>
+        {% for ban in history %}
+        <tr>
+            <td>{{ display.user(ban.user) }}</td>
+            <td>{{ ban.reason }}</td>
+            <td>{{ display.time(ban.muted_to) }}</td>
+            <td>{{ display.user(ban.added_by) }}</td>
+            <td>{{ display.time(ban.added) }}</td>
+            <td>{% if ban.ip_ban %}Yes{% else %}No{% endif %}</td>
+            <td>{{ ban.hits }}</td>
+            <td>{{ display.date(ban.added) }}</td>
+        </tr>
+    {% endfor %}
+</table>
+
+<h2>Add New Ban</h2>
+<form method="post">
+<table>
+    {{ banform.as_table() }}
+    <tr><td><input type="submit" /></td></tr>
+</table>
+</form>
+{% endblock %}

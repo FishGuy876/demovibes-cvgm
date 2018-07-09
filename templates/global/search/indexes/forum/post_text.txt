@@ -1,0 +1,3 @@
+{{ object.body }}
+{{ object.author.username }}
+{{ object.thread.title }}

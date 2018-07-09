@@ -1,0 +1,16 @@
+{% extends "forum_base.html" %}
+{% block title %}{{ thread.title|escape }} ({{ forum.title|e }}){% endblock %}
+
+{% block pagetitle %}{{ forum.title|e }} &raquo; {{ thread.title|escape }}{% endblock %}
+
+
+{% block breadcrumbs %}{% for title, url in thread.forum.get_url_name() %} &raquo; <a href='{{ url }}'>{{ title|e }}</a>{% endfor %} &raquo; <a href='{{ thread.get_absolute_url() }}'>{{ thread.title|escape }}</a> ({{ thread.posts }} post{{ thread.posts|pluralize }}){% endblock %}
+
+{% block forumcontent %}
+<h2>Edit post</h2>
+<form method="post" action=".">
+{{ edit_form.body }}
+{{ edit_form.body.errors }}<br />
+<input type='submit' value='Update' />
+</form>
+{% endblock %}

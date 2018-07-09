@@ -1,0 +1,43 @@
+
+Packages needed:
+ lame libboost-dev libsamplerate-dev libicu-dev = demosauce
+
+ pil (python imaging library) - check that libjpeg and libzlib is installed, otherwise you will miss jpeg / png support
+
+Create python virtual environment:
+ Install pip (python package install program)
+ Install virtualenv (can use "pip install virtualenv" if you want)
+ To ceate virtual env : pip install -E demovibesenv -U -r demovibes/contrib/requirements.txt
+ To activate virt env : source demovibesenv/bin/activate
+
+Look over / change settings
+ -Check settings.py
+ -please add local settings / overrides in "settings_local.py"
+  -Override secret key
+  -check mail settings
+  -Complete django setting reference : http://docs.djangoproject.com/en/1.3/ref/settings/
+
+Initialize database:
+ -change directory to demovibes/demovibes
+ -run "python manage.py syncdb --all" - Install all tables,
+ -run "python manage.py migrate --fake" - Tell south to mark all migrations as "done"
+
+web config:
+ -directory /static/ -> to demovibes/static folder
+ -directory /media/ -> to django/contrib/admin/media folder (depends on where django was installed)
+ -(easiest) "python manage.py runfcgi host=127.0.0.1 port=9999" and point / to fastcgi server in webserver.
+  -Increase timeout for fastcgi to 500s at least.. (for event system)
+
+streaming:
+ -install icecast2
+ -change demosauce.conf
+ -add "djrandom" user
+ -start sockulf.py
+ -start demosauce
+
+Other stuff:
+ -for mysql support you need to have mysql dev packages installed, and run "pip install MySQL-python"
+ -Similar for postgresql, the pip package is called "psycopg2"
+ -Installing memcached and set it up as a cache for django is highly recommended
+ 
+uWSGI : Latest version should work. V0.9.5.4 preferred.

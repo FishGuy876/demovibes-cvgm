@@ -1,0 +1,19 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block title %}{{ gettext("Read Private Message") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}newspaper.png" alt="" />{{ gettext("Read Private Message") }}</h2>
+
+    <div class="pm_content">
+    <span>{{ gettext("Message From") }}: {{ display.user(pm.sender) }}<br/></span>
+    <span>{{ gettext("Sent On") }}: {{ display.datetime(pm.sent) }}</span>
+    <p class="pmtitle">{{ pm.subject|e }}</p>
+    <div class="pmview">
+    {{ pm.message|mksafe|linebreaks|bbcode|smileys }}
+    </div>
+</div>
+
+<a href="{{ url("dv-inbox") }}">{{ gettext("Back To Inbox") }}</a> | <a href="{{ url("dv-send_pm") }}?to={{ pm.sender|e }}&amp;title=RE: {{ pm.subject|e }}">{{ gettext("Send Reply") }}</a>
+{% endblock %}
+

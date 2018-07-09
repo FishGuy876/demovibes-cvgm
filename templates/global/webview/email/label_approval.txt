@@ -1,0 +1,5 @@
+{% load dv_extend %}This is an automated message from the {{ site.name }} Approval System.
+
+This message is to inform you that your recent Label request ( {{ label.name }}) has been {{ stat }} on the site.
+
+If you have any additional questions, please contact an administrator/moderator. Thank-you.

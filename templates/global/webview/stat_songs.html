@@ -1,0 +1,13 @@
+{% extends "base/base.html" %}
+
+{% block main %}
+<h2>Top {{ numsongs }} {{ title }} songs</h2>
+
+{% include "webview/t/songheader.html" %}
+{% for song in songs %}
+<tr class="{% cycle 'row1' 'row2' %}">
+{% include "webview/t/songlist.html" %}
+ </tr>
+{% endfor %}
+</table>
+{% endblock %}

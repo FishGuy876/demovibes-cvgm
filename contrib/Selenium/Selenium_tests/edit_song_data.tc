@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" href="http://demovibes:9877/" />
+<title>EditSongData</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">EditSongData</td></tr>
+</thead><tbody>
+<tr>
+	<td>open</td>
+	<td>/demovibes/song/2/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=[Edit Information]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>addSelection</td>
+	<td>id_artists</td>
+	<td>label=Beethoven</td>
+</tr>
+<tr>
+	<td>removeSelection</td>
+	<td>id_artists</td>
+	<td>label=Hurr</td>
+</tr>
+<tr>
+	<td>addSelection</td>
+	<td>id_groups</td>
+	<td>label=TestMyGroupThingy!</td>
+</tr>
+<tr>
+	<td>addSelection</td>
+	<td>id_labels</td>
+	<td>label=TheNewNewLabel</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=id_remix_of_id</td>
+	<td>6</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id_info</td>
+	<td>MOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO! &lt;grin&gt; &amp; lulz</td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>//input[@value='Submit data']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>Song Information</td>
+	<td></td>
+</tr>
+</tbody></table>
+</body>
+</html>

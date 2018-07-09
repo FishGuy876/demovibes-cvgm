@@ -1,0 +1,27 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block title %}{{ gettext("All Licenses") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}transmit_blue.png" alt="" />{{ gettext("Licenses") }}</h2>
+
+{% set objs, paging = dv.paginate(licenses) %}
+<table>
+<tr>
+    <th>License</th>
+    <th>Songs</th>
+    <th>Downloadable</th>
+</tr>
+{% for lic in objs %}
+    <tr>
+        <td>{{ display.license(lic) }}</td>
+        <td>{{ lic.song_set.count() }}</td>
+        <td>{{ display.yesno(lic.downloadable) }}</td>
+    </tr>
+{% endfor %}
+</table>
+<p>
+{{ paging }}
+</p>
+
+{% endblock %}

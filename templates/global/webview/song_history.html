@@ -1,0 +1,27 @@
+{% extends "base/base.html" %}
+
+{% block title %}History For {{ song.title }}{% endblock %}
+{% load dv_extend %}
+{% block main %}
+<h2>{{ song.title }} - History</h2>
+<table>
+<tr>
+ <th>
+  Requester
+ </th>
+ <th>
+  Date
+ </th>
+</tr>
+{% for request in requests %}
+<tr>
+<td>{% with request.requested_by as U%}{% include "webview/t/user.html" %}{% endwith %}</td>
+<td>{{ request.requested|date:"j.N Y G:i"}}</td>
+</tr>
+{% endfor %}
+</table>
+Pages : 
+{% for p in page_range %}
+{% ifequal page p %}<b>{{ p }}</b>{% else %}<a href="{% url dv-song_history song.id %}?page={{ p }}">{{ p }}</a> {% endifequal %}
+{% endfor %}
+{% endblock %}

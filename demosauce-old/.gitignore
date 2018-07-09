@@ -1,0 +1,9 @@
+*.o
+*.log
+*.swp
+*.wav
+scan
+demosauce
+demosauce.conf
+config.mk
+test

@@ -1,0 +1,22 @@
+{% extends "base/base.html" %}
+
+{% block title %}Comments for {{ song.title }}{% endblock %}
+{% load dv_extend %}
+{% block main %}
+<h2>{{ song.title }} - User Comments</h2>
+<table id='djangoForumThreadPosts'>
+<tr>
+	<th>User</th>
+	<th>Comment</th>
+</tr>
+{% for comment in commentlist %}
+ {% include "webview/t/song_comment.html" %}
+{% endfor %}
+
+</table>
+
+Pages : 
+{% for p in page_range %}
+{% ifequal page p %}<b>{{ p }}</b>{% else %}<a href="{% url dv-song_comment song.id %}?page={{ p }}">{{ p }}</a> {% endifequal %}
+{% endfor %}
+{% endblock %}

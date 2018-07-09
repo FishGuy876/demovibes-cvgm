@@ -1,0 +1,24 @@
+{% extends "base/base.html" %}
+
+{% block title %}Users online{% endblock %}
+
+{% block main %}
+<h2>Users seen the last 5 minutes</h2>
+There {{ userlist.count|pluralize:"is,are" }} a total of {{ userlist.count }} user{{ userlist.count|pluralize }} online now.
+<table>
+    <tr>
+        <th>User</th>
+        <th>Last seen</th>
+    </tr>
+{% for profile in userlist %}
+<tr>
+    <td>
+        {% with profile.user as U%}{% include "webview/t/user.html" %}{% endwith %}
+    </td>
+    <td>
+        {{ profile.last_activity|timesince }} ago
+    </td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

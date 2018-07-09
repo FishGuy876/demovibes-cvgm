@@ -1,0 +1,33 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block main %}
+<h2>{{ gettext("Song Search") }}</h2>
+ <div id="searchform"><form method="get" action=".">
+ <table>
+ {{ form }}
+ </table>
+ <input type="submit" value="{{ gettext("Search") }}" />
+ </form></div>
+{% if query %}
+ {% if sugg %}Did you mean <a href=".?q={{sugg}}">{{sugg}}</a>?{% endif %}
+ <h2>{{ gettext("Results") }}</h2>
+ {% if sqs %}
+  {% set objs, paging = dv.paginate(sqs) %}
+    {% include "webview/t/songheader.html" %}
+    {% for song in objs %}
+     {% set song = song.object %}
+     {% if song %}
+     <tr class="{{ loop.cycle('row1', 'row2') }}">
+     {% include "webview/t/songlist.html" %}
+     </tr>
+     {% endif %}
+    {% endfor %}
+</table>
+
+  {{ paging }}
+
+ {% else %}
+ {{ gettext("No results found") }}
+ {% endif %}
+{% endif %}
+{% endblock %}

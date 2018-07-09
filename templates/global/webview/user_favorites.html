@@ -1,0 +1,22 @@
+{% extends "base/base.html" %}
+
+{% block title %}{{ favuser.username }}'s Favourite Songs{% endblock %}
+
+{% load cache %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />{{ favuser.username }}'s Favourite Songs</h2>
+{% with favuser as U%}{% include "webview/t/user.html" %}{% endwith %} Has The Following Favourite Songs:
+
+{% include "webview/t/songheader.html" %}
+
+{% for favorite in favorites %}
+ <tr class="{% cycle 'row1' 'row2' %}">
+  {% with favorite.song as song %}
+   {% include "webview/t/songlist.html" %}
+  {% endwith %}
+ </tr>
+{% endfor %}
+</table>
+
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display %}
+{% block title %}{{ gettext("Songinfo for ") }}{{ song }}{% endblock %}
+
+{% block main %}
+<h2>{{ gettext("Song info for ") }}{{ song }}</h2>
+<p>{{ gettext("List of submitted info for ") }}{{ display.song(song) }}</p>
+<table>
+<tr>
+    <th>{{ gettext("User") }}</th>
+    <th>{{ gettext("Added") }}</th>
+    <th>{{ gettext("Active") }}</th>
+    <th>{{ gettext("Checked") }}</th>
+</tr>
+{% for info in metalist %}
+    <tr>
+        <td>{{ display.user(info.user) }}</td>
+        <td>{{ info.added|timesince }} {{ gettext("ago") }}</td>
+        <td>{{ display.yesno(info.active) }}</td>
+        <td>{{ display.yesno(info.checked) }}</td>
+        <td><a href="{{ url("dv-songinfo-view", info.id) }}">{{ gettext("View") }}</a></td>
+    </tr>
+    {% if info.active %}
+    <tr><td>&nbsp;</td></tr>
+    {% endif %}
+{% endfor %}
+</table>
+
+{% endblock %}

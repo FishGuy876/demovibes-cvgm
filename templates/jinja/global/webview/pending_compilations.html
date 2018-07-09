@@ -1,0 +1,74 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block title %}{{ gettext("Pending Compilation Approvals") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}recplay_ico.png" alt="" />{{ gettext("Pending Compilation Approvals") }}</h2>
+<p>{{ gettext("The following compilations have their status as 'Uploaded'. Moderators should verify the information for each entry to make sure it's ok.") }}</p>
+<br />
+{% for compilation in compilations.all() %}
+    {% set ss = compilation.get_master_screenshot()|random %}
+    <h2><img class="icon_header" src="{{ STATIC_URL }}recplay_ico.png" alt="" />{{ gettext("Compilation Details For '") }}{{ compilation.name|e }}'</h2>
+    <table>
+    <tr>
+    <td class="compilation_summary">
+    <table>
+    <tr><td>
+    {% if ss %}
+        {{ display.screenshot(ss.image) }}
+    {% else %}
+        (No Image!)
+    {% endif %}
+    </td></tr>
+    <tr><td>
+    <b><i>{{ gettext("Compilation Summary") }}:</i></b><br />
+    Name: {{ compilation.name|e }}<br />
+    {% if compilation.label %}{{ gettext("Label") }}: {{ compilation.label|e }}<br />{% endif %}
+    {% if compilation.rel_date %}{{ gettext("Release Date") }}: {{ compilation.rel_date|date("F j, Y") }}<br />{% endif %}
+    {% if compilation.running_time %}{{ gettext("Running Time") }}: {{ compilation.length() }}<br />{% endif %}
+    {% if compilation.num_discs %}{{ gettext("Num. Disks") }}: {{ compilation.num_discs }}<br />{% endif %}
+    {% if compilation.youtube_link %}{{ gettext("Video Clip") }}: <a href="{{ compilation.youtube_link|e }}" target="_blank">{{ gettext("Video Link") }}</a><br />{% endif %}
+    {% if compilation.media_format %}{{ gettext("Media Type") }}: {{ compilation.media_format }}<br />{% endif %}
+    {% if compilation.details_page %}{{ gettext("Additional Info") }}: <a href="{{ compilation.details_page|e }}" target="_blank">{{ gettext("Details Page") }}</a><br />{% endif %}
+    {% if compilation.purchase_page %}{{ gettext("Purchase Info") }}: <a href="{{ compilation.purchase_page|e }}" target="_blank">{{ gettext("Purchase Info") }}</a><br />{% endif %}
+    {% if compilation.download_link %}{{ gettext("Download Link") }}: <a href="{{ compilation.download_link|e }}" target="_blank">{{ gettext("Download Info") }}</a><br />{% endif %}
+    {% if compilation.bar_code %}{{ gettext("UPC") }}: {{ compilation.bar_code|e }}<br />{% endif %}
+    {% if compilation.pouet %}{{ gettext("Pouet Info") }}: <a href="http://www.pouet.net/prod.php?which={{ compilation.pouet }}" target="_blank">{{ gettext("Pouet Link") }}</a><br />{% endif %}
+    {% if compilation.date_added %}<br />{{ gettext("Added On") }}: {{ compilation.date_added|date("F j, Y") }} <br />{{ gettext("By") }}: {% if compilation.created_by %} {{ display.user(compilation.created_by) }}{% endif %}<br />{% endif %}
+    </td></tr>
+    </table>
+    <td class="compilation_description">
+    <b><i>{{ gettext("Compilation Details For") }} {{ compilation.name|e }}:</i></b><br />
+    {% if compilation.info %}<p><i>{{ compilation.info|urlize|bbcode|linebreaks|smileys }}</i></p><br />{% endif %}
+    {% if compilation.prod_artists.count != 0 %}
+     <b><i>{{ gettext("Compilation Artists") }}: </i></b>
+     {% for artist in compilation.prod_artists.all() %}
+      {{ display.artist(artist) }}
+     {% endfor %}
+     <br /><br />
+    {% endif %}
+
+    {% if compilation.prod_groups.count() != 0 %}
+     <b><i>{{ gettext("Compilation Groups") }}: </i></b>
+     {% for group in compilation.prod_groups.all() %}
+      {{ display.group(group) }}
+     {% endfor %}
+     <br /><br />
+    {% endif %}
+
+    {% if compilation.songs.count != 0 %}
+     <b><i>{{ gettext("Songs In This Production (%(num)d Total)", num=compilation.songs.count()) }} :</i></b><br /><br />
+     {% for song in compilation.get_songs() %}
+      {{ display.song(song) }} {{ gettext("by") }} {{ display.artists(song) }} {{ display.queue_song(song, user) }}<br />
+     {% endfor %}
+    {% endif %}<br />
+    {% if compilation.prod_notes %}<i><b>{{ gettext("Production Notes") }}: </b>{{ compilation.prod_notes|urlize|bbcode|linebreaks|smileys }}</i><br />{% endif %}
+    <a href="{{ url("dv-newcompilation") }}?compilation={{ compilation.id }}&amp;status=A"><img src="{{ STATIC_URL }}thumb_up.png" title="Approve" alt="Approve" /> {{ gettext("Approve") }}</a> {{ gettext("or") }} <a href="{{ url("dv-newcompilation") }}?compilation={{ compilation.id }}&amp;status=R"><img src="{{ STATIC_URL }}thumb_down.png" title="Reject" alt="Reject" /> {{ gettext("Reject") }}</a>
+    </td>
+    </tr>
+    </table>
+    <br />
+{% endfor %}
+<br />
+{% endblock %}
+

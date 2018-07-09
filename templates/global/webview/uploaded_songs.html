@@ -1,0 +1,49 @@
+{% extends "base/base.html" %}
+
+{% block title %}Uploaded Songs{% endblock %}
+
+{% load cache %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}script.png" alt="" />Uploaded Songs</h2>
+<p>The following songs are currently pending review and approval:</p>
+<br />
+
+<table>
+<tr>
+ <th>Song Title</th>
+ <th>Length</th>
+ <th>Artist</th>
+ <th>Uploader</th>
+ <th>Uploaded</th>
+</tr>
+{% for song in songs %}{% cache 1800 ulsongs song.id %}
+<tr>
+ <td>
+  {% include "webview/t/songname.html" %}
+ </td>
+ <td>
+  {{ song.length }}
+ </td>
+ <td>
+  {% for artist in song.artists.all %}{% with artist as A %}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}
+ </td>
+ <td>
+  {% with song.uploader as U%}{% include "webview/t/user.html" %}{% endwith %}
+ </td>
+ <td>
+  {{ song.added|timesince }}
+ </td>
+ <td>
+  <a href="{% url dv-uploads%}?song={{song.id}}&amp;status=A"><img src="{{ MEDIA_URL }}thumb_up.png" title="Approve" alt="Approve" /></a>
+ </td>
+ <td>
+  {% include "webview/t/flash_playsong.html" %}
+ </td>
+ <td>
+  <a href="{% url dv-uploads%}?song={{song.id}}&amp;status=R"><img src="{{ MEDIA_URL }}thumb_down.png" title="Reject" alt="Reject" /></a>
+ </td>
+</tr>{% endcache %} 
+{% endfor %}
+</table>
+{% endblock %}

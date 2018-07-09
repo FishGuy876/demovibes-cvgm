@@ -1,0 +1,22 @@
+<tr class="{% cycle 'row1' 'row2' %}">{% load cache%}{% cache 3600 hilist req.id %}
+ <td>
+  {% with req.song as song %}{% include "webview/t/songname.html" %}{% endwith %}
+ </td>
+ <td>
+  {% for artist in req.song.artists.all %}
+   {% with artist as A%}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}
+  {% endfor %}
+ </td>
+ <td>
+  {{ req.song.length }}
+ </td>
+ <td>
+  {{ req.requested|time:"H:i" }}
+ </td>
+ <td>
+  {{ req.time_played|time:"H:i" }}
+ </td>
+ <td>
+  {% with req.requested_by as U%}{% include "webview/t/user.html" %}{% endwith %}
+ </td>{% endcache %}
+</tr>

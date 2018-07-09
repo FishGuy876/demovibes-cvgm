@@ -1,0 +1,1 @@
+{% load i18n %}{% blocktrans with site.name as site_name and site.domain as domain %}You have received this message as a new user {{ username }} has activated their account at {{ site_name }}.  Log in using this URL to view user details: http://{{ domain }}/demovibes/user/{{ username }}{% endblocktrans %}

@@ -1,0 +1,31 @@
+{% extends "base/base.html" %}
+
+{% block title %}Pending Group Approvals{% endblock %}
+
+{% block main %}
+{% load dv_extend %}<h2><img class="icon_header" src="{{ MEDIA_URL }}group.png" alt="" />Pending Group Approvals</h2>
+<p>The following groups have their status as 'Uploaded'. Moderators should verify the information for each entry to make sure it's ok.</p>
+<br />
+{% for group in groups.all %}
+    <table>
+    <tr>
+    <td>
+    {% if group.group_logo %}<img class="group_logo" src="{{ group.group_logo.url }}" title="{{ group.name }}" alt="{{ group.name }}" />{% else %}<img class="group_logo" src="{{ MEDIA_URL }}no_picture.png" height="100" title="No Picture" alt="No Picture" />{% endif %}
+    </td>
+    <td>
+    Group: {% with group as G %}{% include "webview/t/group.html" %}{% endwith %}<br />
+    {% if group.webpage %}Website: <a href="{{ group.webpage }}">{{ group.webpage }}</a><br />{% endif %}
+    {% if group.pouetid %}Pouet Link: <a href="http://www.pouet.net/groups.php?which={{ group.pouetid }}" target="_blank"">Pouet Link</a><br />{% endif %}
+    {% if group.found_date %}Founding Date: {{ group.found_date|date:"F j, Y" }}<br />{% endif %}
+    {% if group.created_by %}Created By: {% with group.created_by as U %}{% include "webview/t/user.html" %}{% endwith %}<br />{% endif %}
+   
+    {% if group.info %}<p><i>{{ group.info|urlize|bbcode|linebreaks }}</i></p>{% endif %}
+
+    <a href="{% url dv-newgroups %}?group={{ group.id }}&amp;status=A"><img src="{{ MEDIA_URL }}thumb_up.png" title="Approve" alt="Approve" /> Approve</a> or <a href="{% url dv-newgroups %}?group={{ group.id }}&amp;status=R"><img src="{{ MEDIA_URL }}thumb_down.png" title="Reject" alt="Reject" /> Reject</a>
+    </td>
+    </tr>
+    </table>
+    <br />
+{% endfor %}
+<br />
+{% endblock %}

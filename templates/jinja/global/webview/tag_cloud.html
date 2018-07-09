@@ -1,0 +1,13 @@
+{% extends "base/base.html" %}
+
+{% import "macro/display.html" as display %}
+
+{% block title %}{{ gettext("Tag cloud") }}{% endblock %}
+
+{% block main %}
+<h2>{{ gettext("Tag cloud") }}</h2>
+{% for tag in tags %}
+<span class="tagview_{{ tag.font_size }}" title="{{ tag.count }} tagged item(s)">{{ display.tag(tag) }}</span>
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,26 @@
+{% import "macro/display.html" as display -%}
+{% cache 172800 mkstr("song_row", song.id, song.last_changed) %}
+ <td>
+  {{ display.song(song) }}
+ </td>
+ <td>
+  {% set meta = song.get_metadata() %}
+  {% for artist in meta.artists.all() %}{{ display.artist(artist) }}{% if loop.last %} {% else %}, {% endif %}{% endfor %}
+  {% for group in meta.groups.all() %}{{ display.group(group) }}{% if loop.last %} {% else %}, {% endif %}{% endfor %}
+ </td>
+ <td>
+  {{ song.length() }}
+ </td>
+ <td>
+  {{ song.get_status_display() }}
+ </td>
+ <td>
+  {{ song.rating|floatformat(1) }}
+ </td>
+ {% endcache %}
+ <td>
+    {{ display.queue_song(song, user) }}
+ </td>
+ <td>
+   <span class="lastreqdate">{% if song.last_queued != "Never" %}{{ song.last_queued()|date("Y-m-d") }}{% else %}Never!{% endif %}</span>
+ </td>

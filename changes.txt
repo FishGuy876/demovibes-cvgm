@@ -1,0 +1,8 @@
+ChangeLog
+
+July 9th, 2018
+* Finally took some time to put this repo together and commit it to GitHub for the rest of the world. This initial upload consists of the original GoogleCode tree, with a few tweaks here and there.
+
+Jan 3rd, 2015
+* New year, new changes! Merged the old folder structure from cvgm-merge to stable, and cvgm-unstable to experimental to better seperate the two trees.
+* Both trees are currently the exact same, until something happens in the experimental trees.

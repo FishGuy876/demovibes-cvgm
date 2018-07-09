@@ -1,0 +1,29 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block title %}{{ gettext("Themes!") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}music.png" alt="" />{{ gettext("Themes") }}</h2>
+
+ {% set objs, paging = dv.paginate(themes) %}
+ {% for theme in objs %}
+    {% set shot = theme.get_main_screenshot() %}
+    <div class="theme {{ theme.is_active_for(user) and "activetheme" or "" }}">
+        <div class="themename"><a href="{{ theme.get_absolute_url() }}">{{ theme.title }}</a></div>
+        <div class="themeby">By {{ display.user(theme.creator) }}</div>
+        {% if shot %}
+            <div class="themeimage"><a href="{{ theme.get_absolute_url() }}"><img src="{{ shot.image.get_thumb_url() }}" alt="Preview"/></a></div>
+        {% endif %}
+        <div class="islocal">Stored locally: {{ theme.is_local() and "Yes" or "No" }}</div>
+        <div class="isdefault">Default theme: {{ theme.default and "Yes" or "No" }}</div>
+        <div class="user_count">Users: {{ theme.user_count }}</div>
+        <form method="post" action=".">
+            <input type="submit" value="Activate"/>
+            <input type="hidden" name="theme_id" value="{{ theme.id }}" />
+        </form>
+    </div>
+ {% endfor %}
+
+<p>{{ paging }}</p>
+
+{% endblock %}

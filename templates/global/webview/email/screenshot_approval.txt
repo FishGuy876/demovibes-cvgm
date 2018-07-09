@@ -1,0 +1,5 @@
+{% load dv_extend %}This is an automated message from the {{ site.name }} Approval System.
+
+This message is to inform you that your recent Screenshot request for '{{ screenshot.name }}' has been {{ stat }} on the site. {% ifequal stat 'Accepted' %}The direct link to the screenshot is: [url]http://{{ url.domain }}{{ screenshot.get_absolute_url }}[/url]{% endifequal %}
+
+If you have any additional questions, please contact an administrator/moderator. Thank-you.

@@ -1,0 +1,20 @@
+<span>{% if A.home_country %}
+ {{ dv.flag(A.home_country) }}
+{% else %}
+ <img src="{{ STATIC_URL }}user_green.png" />
+{% endif %}
+<a href="{{ A.get_absolute_url() }}" 
+ {% if A.alias_of %}
+   title="Alias of {{A.alias_of|e}}"
+ {% else %}
+   {% if A.aliases.all() %}
+     title="Aliases : {% for alias in A.aliases.all() %}{{ alias.handle|e }} {% endfor %}"
+   {% endif %}
+ {% endif %}>
+ {{ A.handle|e }}
+ {% if A.name %} ({{ A.name|e }}){% endif %}
+ </a>
+ {% if A.is_deceased %}
+    <img src="{{ STATIC_URL }}deceased.png" class="countryflag" title="Deceased {% if A.deceased_date %}[On {{ A.deceased_date }}]{% endif %}" />
+ {% endif %}
+</span>

@@ -1,0 +1,18 @@
+{% import "macro/display.html" as display %}
+<tr class='postmain'>
+	<td class='djangoForumThreadPostDetail'>
+        {{ display.user(comment.user) }}<br/>
+		{% if comment.user.get_profile().avatar %}
+		<img src="{{ comment.user.get_profile().avatar.url }}" alt="avatar" /><br />
+		{% endif %}
+		{{ comment.user.get_profile().infoline }}
+	</td>
+	<td class="post">
+		{{ comment.comment|mksafe|linebreaks|bbcode|smileys }}
+	</td>
+</tr>
+<tr class='postfooter'>
+	<td colspan=2>
+		{{ comment.added|timesince }} ago
+	</td>
+</tr>

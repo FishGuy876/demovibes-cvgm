@@ -1,0 +1,27 @@
+{% extends "base/base.html" %}
+
+{% block main %}
+<h2>{{ gettext("Search") }}</h2>
+ <div id="searchform"><form method="get" action=".">
+ <table>
+ {{ form }}
+ </table>
+ <input type="submit" value="{{ gettext("Search") }}" />
+ <input type="submit" name="songsonly" value="{{ gettext("Songs only") }}" />
+ </form></div>
+{% if query %}
+ {% if sugg %}Did you mean <a href=".?q={{sugg}}">{{sugg}}</a>?{% endif %}
+ <h2>{{ gettext("Results") }}</h2>
+ {% if sqs %}
+  {% set objs, paging = dv.paginate(sqs) %}
+  {% for r in objs %}
+   <p class="search-result">{{ r.render|replace("[MEDIA_URL]", STATIC_URL) }}</p>
+  {% endfor %}
+
+  {{ paging }}
+
+ {% else %}
+ {{ gettext("No results found") }}
+ {% endif %}
+{% endif %}
+{% endblock %}

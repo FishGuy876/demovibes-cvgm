@@ -1,0 +1,15 @@
+{% extends "base/base.html" %}
+
+{% block title %}Votes for {{ song.title }}{% endblock %}
+{% load dv_extend %}
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}song.png" alt="" />Song Voting History</h2>
+{% for vote in votelist %}
+ <img src="{{ MEDIA_URL }}rating_{{ vote.vote }}.gif" title="Rated {{ vote.vote }} Stars" alt="Rated {{ vote.vote }} Stars" /> - Voted By: {% with vote.user as U%}{% include "webview/t/user.html" %}{% endwith %} ({{ vote.added|timesince }} Ago)  
+<br />
+{% endfor %}
+Pages : 
+{% for p in page_range %}
+{% ifequal page p %}<b>{{ p }}</b>{% else %}<a href="{% url dv-song_votes song.id %}?page={{ p }}">{{ p }}</a> {% endifequal %}
+{% endfor %}
+{% endblock %}

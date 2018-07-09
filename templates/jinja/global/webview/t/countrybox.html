@@ -1,0 +1,5 @@
+{% for alpha2 in alpha2list %}
+    <div class="countrybox-country" alpha2="{{ alpha2 }}">
+        {{ dv.flag (alpha2) }} {{ dv.countryname (alpha2) }}
+    </div>
+{% endfor %}

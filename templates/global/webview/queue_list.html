@@ -1,0 +1,35 @@
+{% extends "base/base.html" %}
+
+{% load dv_extend %}
+
+{% block title %}Queue list{% endblock %}
+
+{% block main %}
+<h2>
+<img class="icon_header" src="{{ MEDIA_URL }}sound.png" alt="" />
+Currently Playing
+</h2>
+
+<div data-name="nowplaying">
+
+</div>
+
+<h2>
+<img class="icon_header" src="{{ MEDIA_URL }}script.png" alt="" />
+Pending Queue List
+</h2>
+
+<div data-name="queue">
+{{ queue|safe }}
+</div>
+
+<h2>
+<img class="icon_header" src="{{ MEDIA_URL }}hourglass.png" alt="" />
+Request History
+</h2>
+
+<div data-name="history">
+{{ history|safe }}
+</div>
+
+{% endblock %}

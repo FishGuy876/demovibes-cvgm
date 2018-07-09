@@ -1,0 +1,12 @@
+{% extends "base/base.html" %} {% import "macro/display.html" as display -%}
+
+{% block title %}{{ gettext("Frequently Asked Questions (FAQ)") }}{% endblock %}
+
+{% block main %}
+<a name="top"></a><h2><img class="icon_header" src="{{ STATIC_URL }}comment.png" alt="" />{{ gettext("Frequently Asked Questions (FAQ)") }}</h2>
+{{ display.onelinerlink("faq", object.id, user) }}
+
+{# {% cache 86400 "faq_a" object.id object.last_updated %} #}<a name="{{ object.id }}"></a><strong>Q. {{ object.question|e }}</strong>{% if user.is_staff %} - [<a href="/admin/webview/faq/{{ object.id }}"><img src="{{ STATIC_URL }}link_edit.png" title="Edit FAQ Question/Answer" /></a>]{% endif %}<br />
+{{ object.answer|urlize|linebreaks|smileys|bbcode }}<br />
+{{ gettext("Added by") }} {% set U = object.added_by %}{% include "webview/t/user.html" %} ({{ gettext("Last Updated") }}: {{ object.last_updated|timesince }}){# {% endcache %} #} [<a href="{{ url("dv-faq") }}">{{ gettext("Full FAQ List") }}</a>]<br />
+{% endblock %}

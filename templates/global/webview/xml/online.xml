@@ -1,0 +1,8 @@
+{% load dv_extend %}<?xml version="1.0" encoding="UTF-8"?>
+<online>
+<count>{{ online_data.count }}</count>
+{% for line in online_data %} 
+ <users>
+  <user flag="{{ line.user.get_profile.country|safe }}">{{ line.user }}</user>
+ </users>{% endfor %}
+</online>

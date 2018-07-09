@@ -1,0 +1,21 @@
+{% extends "base/base.html" %}
+
+{% block title %}Song List{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />List Of Songs</h2>
+{% for l in al %}<a href="{% url dv-songs_letter l %}">{{ l|upper }}</a> {% endfor %}<br /><br />
+{% include "webview/t/songheader.html" %}
+{% for song in object_list %}
+ <tr class="{% cycle 'row1' 'row2' %}">
+{% include "webview/t/songlist.html" %}
+ </tr>
+{% endfor %}
+</table>
+<br />
+Pages: 
+{% for p in page_range %}
+{% ifequal page p %}<b>{{ p }}</b>{% else %}<a href="{% if letter %}{% url dv-songs_letter letter %}{% else %}{% url dv-songs %}{% endif %}?page={{ p }}">{{ p }}</a> {% endifequal %}
+{% endfor %}
+
+{% endblock %}

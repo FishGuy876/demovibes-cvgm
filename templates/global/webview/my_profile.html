@@ -1,0 +1,21 @@
+{% extends "base/base.html" %}
+
+{% block title %}Edit My Profile{% endblock %}
+{% load dv_extend %}
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}user.png" alt="" />My Profile Settings</h2>
+<a href="/accounts/password/change/">Change My Password</a><br /><a href="{% url dv-profile profile.user %}">View My Live Profile</a>
+
+<h2>OpenID</h2>
+{% for id in user.openid_set.all %}
+http://{% site_url %}{{ id.get_absolute_url }}<br/>
+{% endfor %}
+
+<h2><img class="icon_header" src="{{ MEDIA_URL }}page_white_edit.png" alt="" />Profile Settings</h2>
+<form action="." method="post" enctype="multipart/form-data">
+<table>
+{{ form.as_table }}
+</table>
+<input type="submit" value="Update" />
+</form>
+{% endblock %}

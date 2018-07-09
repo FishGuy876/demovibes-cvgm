@@ -1,0 +1,1 @@
+<img src="[MEDIA_URL]user_green.png" title="Artist" alt="Artist"/> <a href="{{ object.get_absolute_url }}">{{ object.handle }}</a>

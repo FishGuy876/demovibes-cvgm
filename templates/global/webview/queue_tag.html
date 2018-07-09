@@ -1,0 +1,1 @@
+{% include "webview/t/songname.html" %} by {% for artist in artists.all %}{% with artist as A%}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %} {% endfor %} <span data-name="a_queue_{{ song.id }}">{% include "webview/t/songlist_span_noauth.html" %}</span>

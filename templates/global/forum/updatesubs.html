@@ -1,0 +1,37 @@
+{% extends "forum_base.html" %}
+{% block title %}Update Thread Subscriptions{% endblock %}
+{% block pagetitle %}Update Thread Subscriptions{% endblock %}
+
+
+{% block forumcontent %}
+
+{% if user.is_authenticated %}
+{% if not subs %}
+<p>No subscriptions.</p>
+{% else %}
+<form method='post' action='./'>
+<table id='djangoForumThreadList'>
+
+<tr>
+<th>Forum</th>
+<th>Thread</th>
+<th>Subscribed Via Email</th>
+</tr>
+
+{% for s in subs %}
+<tr>
+<td><a href='{{ s.thread.forum.get_absolute_url }}'>{{ s.thread.forum.title }}</a></td>
+<td>{% if s.thread.sticky %}Sticky {% endif %}<a href='{{ s.thread.get_absolute_url }}'>{{ s.thread.title|escape }}</a>{% if s.thread.closed %} (Closed){% endif %}</td>
+<td><input type='checkbox' checked='checked' name='{{ s.thread.id }}' /></td>
+</tr>
+{% endfor %}
+</table>
+
+<p><input type='submit' value='Update Subscriptions' name="updatesubs" /></p>
+</form>
+{% endif %}
+{% else %}
+<p>Please log in to update your forum subscriptions.</p>
+{% endif %}
+
+{% endblock %}

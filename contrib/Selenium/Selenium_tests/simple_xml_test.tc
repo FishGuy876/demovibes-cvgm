@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" href="http://demovibes:9877/" />
+<title>SimpleXmlTest</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">SimpleXmlTest</td></tr>
+</thead><tbody>
+<tr>
+	<td>open</td>
+	<td>/demovibes/xml/queue/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyElementPresent</td>
+	<td>//playlist/now/entry</td>
+	<td></td>
+</tr>
+<tr>
+	<td>open</td>
+	<td>/demovibes/xml/song/2/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyElementPresent</td>
+	<td>//song[@id='2']/title</td>
+	<td></td>
+</tr>
+<tr>
+	<td>open</td>
+	<td>/demovibes/xml/oneliner/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyElementPresent</td>
+	<td>//oneliner/entry/message</td>
+	<td></td>
+</tr>
+<tr>
+	<td>open</td>
+	<td>/demovibes/xml/online/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyElementPresent</td>
+	<td>//online/count</td>
+	<td></td>
+</tr>
+<tr>
+	<td>open</td>
+	<td>/demovibes/xml/streams/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyElementPresent</td>
+	<td>//streams</td>
+	<td></td>
+</tr>
+<tr>
+	<td>open</td>
+	<td>/demovibes/xml/artist/1/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyElementPresent</td>
+	<td>//artist[@id='1']/handle</td>
+	<td></td>
+</tr>
+<tr>
+	<td>open</td>
+	<td>/demovibes/xml/compilation/1/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyElementPresent</td>
+	<td>//comp[@id='1']/status</td>
+	<td></td>
+</tr>
+<tr>
+	<td>open</td>
+	<td>/demovibes/xml/group/1/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyElementPresent</td>
+	<td>//group[@id='1']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>open</td>
+	<td>/demovibes/xml/user/test/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyElementPresent</td>
+	<td>//user/extra/group</td>
+	<td></td>
+</tr>
+<tr>
+	<td>open</td>
+	<td>/demovibes/xml/user/test/favorites/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyElementPresent</td>
+	<td>//favorites/song</td>
+	<td></td>
+</tr>
+<tr>
+	<td>open</td>
+	<td>/demovibes/xml/user/terra/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyElementPresent</td>
+	<td>//user/avatar</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyElementPresent</td>
+	<td>//user/extra/hidden</td>
+	<td></td>
+</tr>
+<tr>
+	<td>open</td>
+	<td>/demovibes/xml/user/terra/favorites/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyElementPresent</td>
+	<td>//favorites/hidden</td>
+	<td></td>
+</tr>
+</tbody></table>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{% load dv_extend %}<?xml version="1.0" encoding="UTF-8"?>
+<oneliner>
+{% for line in oneliner_data %} <entry time="{{ line.added|date:"r" }}">
+  <author flag="{{ line.user.get_profile.country|safe }}">{{ line.user }}</author>
+  <message>{{ line.message|force_escape|safe }}</message>
+ </entry>
+{% endfor %}
+</oneliner>

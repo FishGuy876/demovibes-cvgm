@@ -1,0 +1,17 @@
+{% if now_playing.song %}
+ {% with now_playing.song as song %}{% include "webview/t/songname.html" %}{% endwith %} by{% for artist in now_playing.song.artists.all %} {% with artist as A%}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}<br />
+
+ Requested By: {% with now_playing.requested_by as U%}{% include "webview/t/user.html" %}{% endwith %}<br />
+ {% ifnotequal now_playing.song.labels.count 0 %}
+  Production Labels: {% for label in now_playing.song.labels.all %}{% with label as L %}{% include "webview/t/label.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}<br />
+ {% endifnotequal %}
+ {% ifnotequal comps.count 0 %}
+  In Compilations: {% for comp in comps.all %}{% with comp as C %}{% include "webview/t/compilation.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}<br />
+ {% endifnotequal %}
+ {% with now_playing.song as S %}{% include "webview/t/song-icons.html" %}{% endwith %}<br />
+ 
+ <p>Time Left: <span data-name="counter" sec="{{ now_playing.timeleft }}" inc="-1">{{ now_playing.song.length }}</span></p>
+ 
+{% else %}
+ No Song Playing!!
+{% endif %}

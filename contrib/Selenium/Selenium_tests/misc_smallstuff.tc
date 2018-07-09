@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" href="http://demovibes:9877/" />
+<title>Misc small stuff</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">Misc small stuff</td></tr>
+</thead><tbody>
+<!--VotingHistory-->
+<tr>
+	<td>open</td>
+	<td>/demovibes/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Songs</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>//table[@id='fd-table-1']/tbody/tr[4]/td/span/a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=View Voting History</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>Voted By</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyElementPresent</td>
+	<td>css=img[alt=&quot;Rated 5 Stars&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>open</td>
+	<td>/demovibes/song/2/comments/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>123TestingSongComment123</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyElementPresent</td>
+	<td>//table[@id='djangoForumThreadPosts']/tbody/tr[2]/td[2]/p[2]/a</td>
+	<td></td>
+</tr>
+<!---->
+<!--Listen link for admin-->
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Licenses</td>
+	<td></td>
+</tr>
+<tr>
+	<td>open</td>
+	<td>/demovibes/license/1/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>Symphony 1 part 2</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>This license lets others remix, tweak, and build upon your work non-commercially</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Symphony 1 part 3</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>[Listen]</td>
+	<td></td>
+</tr>
+<!---->
+<!--Online users overview-->
+<tr>
+	<td>open</td>
+	<td>/demovibes/online/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>Users seen the last 5 minutes</td>
+	<td></td>
+</tr>
+<!---->
+<!--Recent Updates-->
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Recent Updates</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>Maumau group</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>Hurr</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>Symphony 1 part 3</td>
+	<td></td>
+</tr>
+<!---->
+<!--Smiley list-->
+<tr>
+	<td>open</td>
+	<td>/demovibes/smileys/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>Smiley list!</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>:nectawall:</td>
+	<td></td>
+</tr>
+<!---->
+<!--New uploads-->
+<tr>
+	<td>clickAndWait</td>
+	<td>link=New Uploads</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>Symphony 1 part 2</td>
+	<td></td>
+</tr>
+</tbody></table>
+</body>
+</html>

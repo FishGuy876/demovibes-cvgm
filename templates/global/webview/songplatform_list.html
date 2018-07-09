@@ -1,0 +1,12 @@
+{% extends "base/base.html" %}
+
+{% block title %}Platforms{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}sound.png" alt="" />Song Platforms</h2>
+{% for p in object_list %}
+ {% ifnotequal p.song_set.count 0 %}
+  {% with p as P %}{% include "webview/t/platformname.html" %}{% endwith %} ({{ p.song_set.count }} Songs)<br />
+ {% endifnotequal %}
+{% endfor%}
+{% endblock %}

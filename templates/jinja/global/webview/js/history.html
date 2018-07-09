@@ -1,0 +1,15 @@
+<!-- history                    -->
+{% set row_class = cycler('row1', 'row2') -%}
+<table class="songlist">
+ <tr>
+  <th>Song</th>
+  <th>Artist</th>
+  <th>Song Length</th>
+  <th>Request Time</th>
+  <th>Play Time</th>
+  <th>Requested By</th>
+ </tr>
+{% for req in history %}
+ {% include "webview/t/history.html" with context %}
+{% endfor %}
+</table>

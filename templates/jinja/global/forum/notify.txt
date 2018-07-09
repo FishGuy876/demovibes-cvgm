@@ -1,0 +1,8 @@
+
+{{ author.username|e }} wrote in '{{ subject|e }}':
+
+{{ body|e }}
+
+--
+You have received this message as you are subscribed to a forum thread at {{ site.name|e }}.  Log in using this URL to manage your email subscriptions: http://{{ site.domain }}{{ thread.get_absolute_url() }}
+

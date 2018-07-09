@@ -1,0 +1,44 @@
+.countrybox-holder {
+    background-color: rgba(0,0,0,0.5);
+    position: fixed;
+    top:0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+}
+
+.countrybox {
+    border: 1px solid #000;
+    background-color: #BFBFBF;
+    position: fixed;
+    top: 30%;
+    max-height: 60%;
+    overflow: auto;
+    left: 20%;
+    right: 20%;
+    padding: 1em;
+}
+
+.countrybox-country {
+    float: left;
+    padding: 5px 10px;
+    border: 1px solid #eee;
+}
+
+.countrybox-country:hover {
+    padding: 5px 10px;
+    background-color: #ddd;
+    border: 1px solid #eee;
+}
+
+.countrybox-clicker {
+    font-weight: bold;
+    cursor: pointer;
+    display: inline;
+    padding-left: 10px;
+}
+
+.countrybox-clicker:hover {
+    color: #404080;
+}

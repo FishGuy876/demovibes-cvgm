@@ -1,0 +1,1 @@
+<img class="compilation_icon" {% if C.comp_icon %}src="{{ C.comp_icon.url }}"{% else %}src="{{ STATIC_URL }}recplay_ico.png"{% endif %} /><a href="{{ C.get_absolute_url() }}">{{ C.name|e }}</a>

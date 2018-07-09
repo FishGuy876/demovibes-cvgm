@@ -1,0 +1,27 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block title %}{{ license.name }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}transmit_blue.png" alt="" />{{ license.name }}</h2>
+
+
+{% if license.icon %}
+<img src="{{ license.icon.url }}" alt="License logo"/>
+{% endif %}
+
+<p class="licensedescription">
+{{ license.description|urlize|bbcode|linebreaks }}
+</p>
+
+<p>
+{% if license.url %}<a href="{{ license.url }}" target="_blank">More information</a><br/>{% endif %}
+{% if license.downloadable %}Songs with this license can be downloaded<br>{% endif %}
+</p>
+
+
+<h2>Songs with this license</h2>
+ {% set objs, paging = dv.paginate(license.song_set.all()) %}
+ {{ display.songslist(objs, user) }}
+ <p>{{ paging }}</p>
+{% endblock %}

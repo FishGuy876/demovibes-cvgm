@@ -1,0 +1,9 @@
+{{ object.user.username }}
+{{ object.user.username }}
+{{ object.user.username }}
+{{ object.infoline }}
+{{ object.location }}
+{{ object.info }}
+{{ object.group }}
+{{ object.web_page }}
+{{ object.twitter_id }}

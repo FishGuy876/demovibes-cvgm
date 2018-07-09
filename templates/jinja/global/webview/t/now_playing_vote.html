@@ -1,0 +1,20 @@
+{% if user.is_authenticated() %}
+{% import "macro/display.html" as display %}
+<table class="vote">
+<tr>
+<td>
+{{ display.song_vote(song, myvote) }}
+</td>
+    <td> </td>
+    <td>
+    {{ display.favorite(song, user) }}
+    </td>
+    <td>
+        <a href="/demovibes/song/{{ song.id }}/votes/">
+            <img class="song_head" src="{{ STATIC_URL }}script.png" title="Voting History" />
+        </a>
+    </td>
+</tr>
+</table>
+{% endif %}
+Rating: <span id="songrating">{{ song.rating|floatformat(2)|default("No votes", true) }}</span> (<span id="songrating_votes">{{ song.rating_votes }}</span> Votes)<br />

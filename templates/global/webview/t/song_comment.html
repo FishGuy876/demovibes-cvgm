@@ -1,0 +1,18 @@
+{% load dv_extend %}
+<tr class='postmain'>
+	<td class='djangoForumThreadPostDetail'>
+		{% with comment.user as U%}{% include "webview/t/user.html" %}{% endwith %}<br />
+		{% if comment.user.get_profile.avatar %}
+		<img src="{{ comment.user.get_profile.avatar.url }}" alt="avatar" /><br />
+		{% endif %}
+		{{ comment.user.get_profile.infoline }}
+	</td>
+	<td class="post">
+		{{ comment.comment|force_escape|linebreaks|bbcode|wordwrap:"100"|smileys }}
+	</td>
+</tr>
+<tr class='postfooter'>
+	<td colspan=2>
+		{{ comment.added|timesince }} ago
+	</td>
+</tr>

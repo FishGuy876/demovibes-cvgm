@@ -1,0 +1,5 @@
+This is an automated message from the {{ site.name }} Approval System.
+
+This message is to inform you that your recent upload ([song]{{ songid }}[/song]) has been {{ stat }} on the site. {% ifequal stat 'Accepted' %}The direct link to the song is: http://{{ url.domain }}{{ song.get_absolute_url }}{% endifequal %}
+
+If you have any additional questions, please contact an administrator/moderator. Thank-you.

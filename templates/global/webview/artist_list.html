@@ -1,0 +1,17 @@
+{% extends "base/base.html" %}
+
+{% block title %}Artists{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}user_green.png" alt="" />Complete Artist List</h2>
+{% for l in al %}<a href="{% url dv-artists_letter l%}">{{ l|upper }}</a> {% endfor %} [<a href="{% url dv-artists %}">All Artists</a>]<br /><br />
+{% for artist in object_list %}
+{% with artist as A%}{% include "webview/t/artist.html" %}{% endwith %}<br />
+{% endfor %}
+<br />
+Page Number:
+{% for p in page_range %}
+{% ifequal page p %}<b>{{ p }}</b>{% else %}<a href="{% if letter %}{% url dv-artists_letter letter %}{% else %}{% url dv-artists %}{% endif %}?page={{ p }}">{{ p }}</a> {% endifequal %}
+{% endfor %}<br />
+Not Finding Who You're Looking For? <a href="{% url dv-createartist %}">Suggest A New Artist!</a><br />
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block title %}{{ gettext("Oneliner") }}{% endblock %}
+
+{% block main %}
+<h2>Search</h2>
+<form method="post">
+    <table>
+        {{ form }}
+    </table>
+    <input type="submit"/>
+</form>
+{% if results %}
+<h2>Results</h2>
+<table>
+    <tr>
+        <th>Time</th>
+        <th>User</th>
+        <th>Message</th>
+    </tr>
+    {% for e in results %}
+    <tr>
+        <td>{{ display.datetime(e.added) }}</td>
+        <td>{{ display.user(e.user) }}</td>
+        <td>{{ e.message|mksafe|bbcode_oneliner|smileys_oneliner|oneliner_mediaparse|bbcode_oneliner|dv_urlize }}</td>
+    </tr>
+
+    {% endfor %}
+</table>
+{% endif %}
+
+{% endblock %}

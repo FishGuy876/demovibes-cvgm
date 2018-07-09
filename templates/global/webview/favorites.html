@@ -1,0 +1,31 @@
+{% extends "base/base.html" %}
+
+{% block title %}My Favourite Songs{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}heart.png" alt="" />My Favourite Songs</h2>
+{% spaceless %}
+
+{% include "webview/t/songheader.html" %}
+
+{% for fav in songs %}{% with fav.song as song %}
+<tr class="{% cycle 'row1' 'row2' %}">
+ {% include "webview/t/songlist.html" %}
+ <td>
+  <a href="{% url dv-del_fav fav.song.id %}">
+   <img class="song_tail" src="{{ MEDIA_URL }}heart_delete.png" alt="Remove From Favorites" title="Remove From Favorites" />
+  </a>
+ </td>
+</tr>
+{% endwith %}{% endfor %}
+</table>
+<br />
+
+Pages:
+{% for p in page_range %}
+{% ifequal page p %}<b>{{ p }}</b>{% else %}<a href="{% url dv-favorites %}?page={{ p }}">{{ p }}</a> {% endifequal %}
+{% endfor %}
+
+{% endspaceless %}
+
+{% endblock %}

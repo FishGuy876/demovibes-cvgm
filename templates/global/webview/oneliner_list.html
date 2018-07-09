@@ -1,0 +1,31 @@
+{% extends "base/base.html" %}
+
+{% block title %}Oneliner{% endblock %}
+{% load dv_extend %}
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}user_green.png" alt="" />Oneliner History</h2>
+
+<div class="olh_wrapper">
+{% load cache %}
+{% for line in object_list %}{% cache 86400 olhistory line.id %}
+<div class="olh_item">
+<div class="olh_user">
+    <p>{% with line.user as U%}{% include "webview/t/user.html" %}{% endwith %}<br />
+    {{ line.added|date:"j M y H:i" }}</p>
+</div>
+
+<div class="olh_message">
+    <p>{{ line.message|force_escape|wordwrap:100|smileys|oneliner_mediaparse|bbcode_oneliner|dv_urlize|safe }}</p>
+</div>
+</div>{% endcache %}
+{% endfor %}
+
+</div>
+
+<div class="olh_pages">
+<p>Pages:
+{% for p in page_range|slice:":20" %}
+{% ifequal page p %}<b>{{ p }}</b>{% else %}<a href="{% url dv-oneliner %}?page={{ p }}">{{ p }}</a> {% endifequal %}
+{% endfor %}</p>
+</div>
+{% endblock %}

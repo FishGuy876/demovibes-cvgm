@@ -1,0 +1,24 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block title %}{{ gettext("History For ") }}{{ song|e }}{% endblock %}
+
+{% block main %}
+<h2>{{ song.title|e }} - {{ gettext("History") }}</h2>
+
+{% set objs, paging = dv.paginate(requests) %}
+
+<p>{{ gettext("A history of play requests for song") }} {{ display.song(song) }}</p>
+<table>
+<tr>
+ <th>{{ gettext("Requester") }}</th>
+ <th>{{ gettext("Date") }}</th>
+</tr>
+{% for request in objs %}
+ <tr>
+  <td>{{ display.user(request.requested_by) }}</td>
+  <td>{{ display.datetime(request.requested) }}</td>
+ </tr>
+{% endfor %}
+</table>
+{{ paging }}
+{% endblock %}

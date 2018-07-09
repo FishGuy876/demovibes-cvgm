@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" href="http://demovibes:9877/" />
+<title>AdminAreaTest</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">AdminAreaTest</td></tr>
+</thead><tbody>
+<tr>
+	<td>open</td>
+	<td>/admin/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Labels</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=TheNewNewLabel</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id_info</td>
+	<td>Once again, some test info22322322</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id_name</td>
+	<td>TheNewNewLabelX</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>id_status</td>
+	<td>label=Active</td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>_save</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>TheNewNewLabelX</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Webview</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Queues</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=retrorespect</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id_played</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//form[@id='queue_form']/div[2]/fieldset/div[6]/div/p/span[1]/a[1]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//form[@id='queue_form']/div[2]/fieldset/div[6]/div/p/span[2]/a[1]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>_save</td>
+	<td></td>
+</tr>
+<tr>
+	<td>open</td>
+	<td>/admin/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Generic base links</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Add generic base link</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=id_name</td>
+	<td>YouTuber</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=id_link</td>
+	<td>http://www.youtube.com/user/terrasque</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=id_link</td>
+	<td>http://www.youtube.com/user/%linkval%</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=id_regex</td>
+	<td>\w+</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>id=id_linktype</td>
+	<td>label=Users</td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>name=_save</td>
+	<td></td>
+</tr>
+</tbody></table>
+</body>
+</html>

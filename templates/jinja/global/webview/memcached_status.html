@@ -1,0 +1,27 @@
+{% extends "base/base.html" %}
+
+{% block title %}Memcached Status{% endblock %}
+
+{% block main %}
+ <h2><img class="icon_header" src="{{ STATIC_URL }}link_add.png" alt="" />Memcached Status</h2>
+ <ul>
+ <li>Memory usage:
+    {{ stats.bytes|filesizeformat }}
+ <li>Keys in cache:
+    {{ stats.curr_items }} of {{ stats.total_items }}
+ <li>Cache hits:
+    {{ stats.get_hits }} of {{ stats.cmd_get }}:
+    <b>{{ hit_rate }}% Hit Rate</b>
+ <li>Cache traffic:
+    {{ stats.bytes_read|filesizeformat }} in,
+    {{ stats.bytes_written|filesizeformat }} out
+ <li>Current Connections: {{ stats.curr_connections }}
+ <li>Uptime: {{ stats.uptime }}
+ <li>Limit (MaxBytes): {{ stats.limit_maxbytes|filesizeformat }}
+ <li>Dropped Items (Evictions): {{ stats.evictions }}
+ <li>Threads: {{ stats.threads }}
+ <li>Total Items: {{ stats.total_items }}
+ <li>Memcached version: {{ stats.version }}
+ </ul>
+{% endblock %}
+

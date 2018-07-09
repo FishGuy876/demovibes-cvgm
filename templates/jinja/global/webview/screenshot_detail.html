@@ -1,0 +1,36 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block title %}{{ gettext("Image Info For") }} {{ object.name|e }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}icon_screenshot.png" alt="" />{{ gettext("Image For '") }} {{ object.name|e }}' {% if user.is_staff %} [<a href="/admin/webview/screenshot/{{ object.id }}/">{{ gettext("Edit Image Info") }}</a>]{% endif %}</h2>
+{% cache 172800 mkstr(object.id, object.last_updated, "screenshotinfo") %}
+<div id="screenshot-image">{% if object.image %}<img class="screenshot" src="{{ object.image.url }}" />{% else %}(No Image!){% endif %}</div>
+<div id="screenshot-data">
+<div id="songinfo-title">Image information</div>
+{% if object.status %}{{ gettext("Current Status") }}: {{ object.get_status_display() }}<br />{% endif %}
+{% if not object.thumbnail %}<font color="red">This Image Is Missing A Thumbnail!</font><br>{% endif %}
+{% if object.last_updated %}{{ gettext("Last Updated") }}: {{ display.date(object.last_updated) }}<br />{% endif %}
+{% if object.added_by %}{{ gettext("Added By") }}: {% set U = object.added_by %}{% include "webview/t/user.html" %}<br />{% endif %}
+<div id="screenshot-connected">Connected to :
+    <ul>
+        {% for o in object.get_objects() %}<li>{{ display.showobject(o) }}</li>{% endfor %}
+    </ul>
+</div>
+</div>
+
+<h2><img class="icon_header" src="{{ STATIC_URL }}script.png" alt="" />{{ gettext("Image Description") }}</h2>
+{% if object.description %}
+<p><i>{{ object.description|urlize|bbcode|linebreaks }}</i></p>
+{% endif %}
+
+<h2><img class="icon_header" src="{{ STATIC_URL }}music.png" alt="" />{{ gettext("Songs Related To This Image") }}</h2>
+{% endcache %}
+
+{% if user.is_staff %}<h2><img class="icon_header" src="{{ STATIC_URL }}icon_screenshot.png" alt="" />{{ gettext("Thumbnail Administration") }} [<a href="/demovibes/screenshot/{{ object.id }}/rethumb/">{{ gettext("Rebuild Thumbnail") }}</a>]</h2>
+Current Thumbnail:<br />
+{{ display.screenshot(object) }}
+{% endif %}
+
+{{ paging }}
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base/base.html" %}
+
+{% block headblock %}
+  <script src="{{ STATIC_URL }}js/jquery.doomEdit.js"></script>
+{% endblock %}
+  
+{% block title %}{{ gettext("Queue list") }}{% endblock %}
+  
+{% block main %}
+  
+<h2>
+<img class="icon_header" src="{{ STATIC_URL }}script.png" alt="" />
+<span>{{ gettext("Pending Queue List") }}</span>
+</h2>
+
+<div data-name="queue">
+{{ queue }}
+</div>
+
+{% if perms.webview.change_djrandom_options %}
+    <div id="djrandom-options">
+        <span id="djrandom-quote-nick">{{  gettext("DJRandom Mood:") }}</span><br>
+        <span data-name="djrandom_mood" class="edit_inline">{{ djrandom_mood_html }}</span>
+        <span data-name="djrandom_avoid_explicit" class="edit_inline">{{ djrandom_avoid_explicit_html }}</span>
+    </div>   
+    <script type="text/javascript">     
+      $(document).ready (function () {
+            $('[data-name="djrandom_mood"]').doomEdit ({
+                editForm : {
+                    action  : "{{ url('dv-ax-djrandom-mood') }}",
+                    method  : "post"
+                },
+
+                ajaxSubmit      : true,
+                editField       : "{{ djrandom_mood_field_html|escapejs }}",
+
+                htmlFilter      : function (el_html) {
+                    return jQuery (el_html).attr ('mood');
+                },
+
+                afterFormSubmit : function (new_html, form, el) {
+                    el.html (new_html);
+                }
+            });
+
+            $('[data-name="djrandom_avoid_explicit"]').doomEdit ({
+                editForm : {
+                    action  : "{{ url('dv-ax-djrandom-avexp') }}",
+                    method  : "post"
+                },
+
+                ajaxSubmit      : true,
+                editField       : "{{ djrandom_avoid_explicit_field_html|escapejs }}",
+
+                htmlFilter      : function (el_html) {
+                    return jQuery (el_html).attr ('avoidexplicit');
+                },
+
+                afterFormSubmit : function (new_html, form, el) {
+                    el.html (new_html);
+                }
+            });
+        });
+    </script>
+{% endif %}
+
+<h2>
+<img class="icon_header" src="{{ STATIC_URL }}hourglass.png" alt="" />
+<span>{{ gettext("Request History") }}</span>
+</h2>
+
+<div data-name="history">
+{{ history }}
+</div>
+
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base/base.html" %}
+
+{% block title %}Frequently Asked Questions (FAQ){% endblock %}
+
+{% block main %}
+<a name="top"></a><h2><img class="icon_header" src="{{ MEDIA_URL }}comment.png" alt="" />Frequently Asked Questions (FAQ)</h2>
+
+{% if object_list %}{# The loop occurs twice; First to list Q's, then to apply answers #}
+ Currently, there are {{ object_list.count }} Active FAQ's:<br /><br />
+ {% load dv_extend %}{% load cache %}{% for faq in object_list %}
+  {% cache 86400 "faq_q" faq.id faq.last_updated %}Q. <a href="#{{ faq.id }}">{{ faq.question }}</a>{% endcache %}<br />
+ {% endfor %}<br />
+ [<a href="#top">Back To Top</a>]<br />
+ <hr>
+ {% for faq in object_list %}
+  {% cache 86400 "faq_a" faq.id faq.last_updated %}<a name="{{ faq.id }}"></a><strong>Q. {{ faq.question }}</strong>{% if user.is_staff %} - [<a href="/admin/webview/faq/{{ faq.id }}"><img src="{{ MEDIA_URL }}link_edit.png" title="Edit FAQ Question/Answer" /></a>]{% endif %}<br />
+  {{ faq.answer|force_escape|linebreaks|smileys|bbcode|dv_urlize|safe }}<br />
+  Added by {% with faq.added_by as U%}{% include "webview/t/user.html" %}{% endwith %} (Last Updated: {{ faq.last_updated|timesince }}){% endcache %} [<a href="#top">Top</a>]<br />
+  <hr>
+ {% endfor %}
+ [<a href="#top">Back To Top</a>]<br />
+{% else %}
+ No FAQ Questions have been added! Go to the Admin page and add some!!<br />
+{% endif %}
+
+{% endblock %}

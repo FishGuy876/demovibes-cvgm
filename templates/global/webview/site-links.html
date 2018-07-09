@@ -1,0 +1,15 @@
+{% extends "base/base.html" %}
+
+{% block title %}Site Links{% endblock %}
+
+{% block main %}
+{% load dv_extend %}<h2><img class="icon_header" src="{{ MEDIA_URL }}link.png" alt="" />Site Links</h2>
+As part of our ongoing discovery of musician/music related websites, we are pround to present this list of links for you to explore.
+{% if link_cats %}
+ {% for cat in link_cats.all %}
+  {% get_text_links cat.id_slug %}
+ {% endfor %}
+{% endif %}<br />
+<br />
+Know of a great link that belongs here? <a href="{% url dv-createlink %}">Send Us Your Link!</a><br />
+{% endblock %}

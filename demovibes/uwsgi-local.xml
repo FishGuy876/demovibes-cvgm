@@ -1,0 +1,21 @@
+<uwsgi>
+  <socket>127.0.0.1:3031</socket>
+  <home>/home/cvgm/cvgm_virt</home> 
+  <pythonpath>/home/cvgm/cvgm.net/demovibes</pythonpath>
+  <bin-path>/usr/bin/uwsgi</bin-path>
+  <module>uwsgi-launcher</module>
+  <processes>8</processes>
+  <master/>
+  <disable-logging/>
+  <daemonize>/tmp/demovibes-uwsgi.log</daemonize>
+  <pidfile>/tmp/demovibes-uwsgi.pid</pidfile>
+  <harakiri>600</harakiri>
+  <reload-mercy>8</reload-mercy>
+  <cpu-affinity>3</cpu-affinity>
+  <max-requests>2000</max-requests>
+  <reload-on-as>256</reload-on-as>
+  <reload-on-rss>192</reload-on-rss>
+  <socket-timeout>300</socket-timeout>
+  <no-orphans/>
+  <vacuum/>
+</uwsgi>

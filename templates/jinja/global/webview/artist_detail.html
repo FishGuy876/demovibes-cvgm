@@ -1,0 +1,119 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+
+{% block title %}{{ object.handle|e }}{% endblock %}
+
+{% block main %}
+<h2>
+ <img class="icon_header" src="{{ STATIC_URL }}user_green.png" alt="" />
+ <span class="header">
+  {{ gettext("Artist Info") }}{% if user.is_staff %} [<a href="/admin/webview/artist/{{ object.id }}/">{{ gettext("Edit Artist Info") }}</a>]{% endif %}
+ </span>
+</h2>
+{{ display.onelinerlink("artist", object.id, user) }}
+<table>
+<tr>
+<td class="artist_details">
+    {% if object.artist_pic %}
+        <img class="artist_logo" src="{{ object.artist_pic.url }}" title="{{ object.handle|e }}'s Picture" />
+    {% else %}
+        <img class="artist_logo" src="{{ STATIC_URL }}no_artist_pic.png" alt="No Picture"/>
+    {% endif %}
+        
+    <br /><img src="{{ STATIC_URL }}spacer.gif" /><br />
+    
+    {% if object.wiki_link %}
+     <a href="{{ object.wiki_link|e }}" target="_blank"><img src="{{ STATIC_URL }}wiki-icon.png" title="{{ object.handle|e }} on Wikipedia" /></a>{% endif %}
+    {% if object.hol_id %}<a href="http://hol.abime.net/hol_search.php?N_ref_artist={{ object.hol_id }}" target="_blank"><img src="{{ STATIC_URL }}hol-icon.png" title="{{ object.handle|e }} at Hall of Light" /></a>{% endif %}
+    {% if object.twitter_id %}<a href="http://www.twitter.com/{{ object.twitter_id|e }}" target="_blank"><img src="{{ STATIC_URL }}twitter-icon.png" title="{{ object.handle|e }} on Twitter!" /></a>{% endif %}
+    {% if object.last_fm_id %}<a href="http://www.last.fm/music/{{ object.last_fm_id|e }}" target="_blank"><img src="{{ STATIC_URL }}lastfm-icon.png" title="{{ object.handle|e }} on Last.FM" /></a>{% endif %}
+
+    {{ display.links(object) }}
+
+</td>
+<td class="artist_information">
+<strong>{{ object.handle|e }}</strong> {% if object.is_deceased %}<img src="{{ STATIC_URL }}deceased.png" class="countryflag" alt="Deceased {% if object.deceased_date %}[On {{ display.date(object.deceased_date) }}]{% endif %}" />{% endif %}
+<br />
+
+{% if object.link_to_user %}
+ <a href="/demovibes/user/{{ object.link_to_user.username|e }}/">{{ gettext("View Artist's User Page") }}</a><br />
+{% endif %}
+
+{% if object.alias_of %}
+ <strong>{{ gettext("This is an alias of") }} : {{ display.artist(object.alias_of) }}!</strong><br />
+{% endif %}
+
+{% if object.groups.all() %}
+ {{ gettext("Groups") }} : {% for group in object.groups.all() %}{{ display.group(group) }}{% endfor %}<br />
+{% endif %}
+
+{% if object.aliases.all() %}
+ {{ gettext("Aliases") }} : {% for alias  in object.aliases.all() %}{{ display.artist(alias)}}{% if loop.last %}{% else %}, {% endif %}{% endfor %}<br />
+{% endif %}
+<br />
+
+{% if object.name %}
+ {{ gettext("Name") }} : {{ object.name|e }}<br />
+{% endif %}
+
+{{ gettext("Location") }}: {{ dv.flag(object.home_country) }} {% if object.home_location %}{{ object.home_location|e }}{% endif %}<br />
+
+{% if object.dob %}
+ {{ gettext("Date Of Birth") }} : {{ display.date(object.dob) }}<br />
+{% endif %}
+
+{% if object.is_deceased %}
+Date Of Death: {{ display.date(object.deceased_date) }}<br />
+{% endif %}
+
+{% if object.labels.count() != 0 %}
+ {{ gettext("Associated Labels") }} : {% for labels in object.labels.all() %}{{ display.label(labels) }}{% if loop.last %} {% else %}, {% endif %}{% endfor %}<br />
+{% endif %}
+
+{% if object.info %}
+<br />{{ gettext("Additional Information") }}:<br />
+<p><i>{{ object.info|urlize|linebreaks|bbcode }}</i></p>
+{% endif %}<br />
+
+{% if object.webpage %}
+<br /><a href="{{ object.webpage|e }}" target="_blank">{{ gettext("Artist's Website") }}</a><br />
+{% endif %}
+
+{% if object.status == "A" %}
+ <a href="{{ object.get_absolute_url() }}upload/">{{ gettext("Upload a new song by this artist") }}</a><br />
+{% else %}
+ <strong>{{ gettext("Artist Locked For Uploading!") }}</strong><br />
+{% endif %}
+<br />
+{% if object.last_updated %}{{ gettext("Last Updated") }}: {{ display.date(object.last_updated) }}<br />{% endif %}
+{% if object.created_by %}{{ gettext("Added By") }}: {{ display.user(object.created_by) }}<br />{% endif %}
+</td>
+</tr>
+</table>
+
+
+<h2><img class="icon_header" src="{{ STATIC_URL }}recplay_ico.png" alt="" />{{ gettext("Compilations Connected To This Artist") }}</h2>
+{% for comp in object.compilation_set.all().order_by('rel_date') %}
+{{ display.compilation(comp) }}<br />
+{% endfor %}
+
+<br />
+
+{% include "webview/t/new_compilation_link.html" %}
+
+
+<h2><img class="icon_header" src="{{ STATIC_URL }}music.png" alt="" />{{ gettext("Songs Connected To This Artist") }}</h2>
+{% include "webview/t/songheader.html" %}
+
+{% set songlist = object.get_songs() %}
+{% set objs, paging = dv.paginate(songlist, 300) %}
+
+{% for song in objs %}
+<tr class="{{ loop.cycle('row1', 'row2') }}">
+{% include "webview/t/songlist.html" %}
+</tr>
+{% endfor %}
+</table>
+{{ paging }}
+{% endblock %}
+

@@ -1,0 +1,51 @@
+{% extends "base/base.html" %}
+
+{% import "macro/display.html" as display %}
+
+{% block earlyheadblock %}
+    <link href="{{ STATIC_URL }}themes/compilation.css" rel="stylesheet" type="text/css"/>
+{% endblock %}
+
+{% block headblock %}
+    <link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" rel="stylesheet" type="text/css"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+    <script src="{{ STATIC_URL }}js/compilation.js"></script>
+{% endblock %}
+
+{% block title %}{{ gettext("Add compilation") }}{% endblock %}
+
+{% block main %}
+
+<h2>{{ gettext("Cool stuff") }}</h2>
+<p>
+    <form id="addsongform">
+        <label for="songid">{{ gettext("Search song") }} : </label><input type="text" id="songid"/>
+        <input type="submit" value="{{ gettext("Search") }}" id="addsongsubmit"/> <div id="errr" style="color:#f00;"></div>
+    </form>
+</p>
+
+<div id="help">
+    {{ gettext("Hint : Drag... and drop!") }}
+</div>
+
+<div id="dragarea">
+    {{ gettext("Search result") }} <span id="addall" class="songaddall">{{ gettext("[Add all]") }}</span>
+
+    <ul id="sortsongsearchlist">
+    </ul>
+
+    <p>{{ gettext("Songs in compilation") }} (<span id="timelength">0:00:00</span>)</p>
+    <ol id="sortsonglist">
+    </ol>
+</div>
+
+<form id="compilationsubmitform" action="." method="post">
+    <h2>{{ gettext("Compilation info") }}</h2>
+    <input id="songsinput" name="songsinput" type="hidden" value="{{ songsinput }}"/>
+    <table>
+        {{ compform }}
+    </table>
+    <input type="submit" value="{{ gettext("Save entry") }}"/>
+</form>
+
+{% endblock %}

@@ -1,0 +1,6 @@
+{% extends "base/base.html" %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}tick.png" alt="" />Activated</h2>{# Note : blatant lie. No checking is done #}
+Your account is now verified and activated on the site. You may now <a href="/account/signin/">log in</a> using your requested user name and password.
+{% endblock %}

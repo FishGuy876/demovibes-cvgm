@@ -1,0 +1,27 @@
+#sortsonglist {
+    min-height: 30px;
+    background-color: #eee;
+    width: 100%;
+    padding-top: 5px;
+}
+
+#help {
+    float: right;
+    font-size: 1.3em;
+}
+
+.songli {
+    cursor: move;
+}
+
+.songlirm {
+    color: #f00;
+    cursor: pointer;
+}
+
+.songaddall {
+    color: #f00;
+    cursor: pointer;
+    padding-left: 15px;
+    display: none;
+}

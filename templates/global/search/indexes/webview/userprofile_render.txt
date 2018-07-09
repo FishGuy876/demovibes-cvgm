@@ -1,0 +1,1 @@
+<img src="[MEDIA_URL]user.png"> <a href="/demovibes/user/{{ object.user.username }}/">{{ object.user.username }}</a>

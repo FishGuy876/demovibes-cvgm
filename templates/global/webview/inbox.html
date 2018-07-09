@@ -1,0 +1,20 @@
+{% extends "base/base.html" %}
+
+{% block title %}Inbox{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}email.png" alt="" />Inbox - {{ pms }} Private Messages</h2>
+{% ifnotequal pms "sent" %}<a href="{% url dv-inbox %}?type=sent">View Sent Messages</a>{% endifnotequal %}
+<table class="songlist">
+<tr><th>Subject</th><th>From</th><th>To</th><th>Sent Date</th></tr>
+{% for mail in mails %}
+<tr class="{% cycle 'row1' 'row2' %}">
+ <td><a href="{{ mail.get_absolute_url }}">{{ mail.subject }}</a>{% if mail.unread %} <img src="{{ MEDIA_URL }}new.png" alt="[New Message]" />{% endif %}</td>
+ <td>{% with mail.sender as U%}{% include "webview/t/user.html" %}{% endwith %}</td>
+ <td>{% with mail.to as U%}{% include "webview/t/user.html" %}{% endwith %} </td>
+ <td>{{ mail.sent }}</td>
+ {% ifnotequal pms "sent" %}<td><a href=".?delete={{ mail.id }}">Delete</a></td>{% endifnotequal %}
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

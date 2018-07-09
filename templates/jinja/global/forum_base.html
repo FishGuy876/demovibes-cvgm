@@ -1,0 +1,14 @@
+{% extends "base/base.html" %}
+
+{% block headblock %}
+<link rel="alternate" type="application/rss+xml" title="All Latest Posts via RSS" href="{{ url("forum_index") }}rss/" />
+<link rel="alternate" type="application/atom+xml" title="All Latest Posts via ATOM" href="{{ url("forum_index") }}atom/" />
+{% endblock %}
+
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}user_comment.png" alt="" />{% block pagetitle %}Discussion Forums{% endblock %}</h2>
+<div id='djangoForumBreadcrumbs'><a href='{{ url("forum_index") }}'>Discussion Forums</a>{% block breadcrumbs %}{% endblock %}</div>
+{% block forumcontent %}{% endblock %}
+{% endblock %}
+

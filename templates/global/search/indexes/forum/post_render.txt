@@ -1,0 +1,7 @@
+{% load dv_extend %}
+<img src="[MEDIA_URL]user_comment.png" /> <a href="{{ object.get_absolute_url }}"><strong>{{ object.thread }}</strong></a>@<a href="{{ object.thread.forum.get_absolute_url }}">{{ object.thread.forum }}</a>
+
+<div class="searchpostpreview"><p>
+<span class="searchinfo"><a href="/demovibes/user/{{ object.author.username }}/">{{ object.author }}</a>@{{object.time}}</span><br/>
+{{ object.body|force_escape|linebreaks|bbcode|wordwrap:"100"|smileys|truncatewords:"15" }}</p>
+</div>

@@ -1,0 +1,16 @@
+{% extends "base/base.html" %}
+
+{% block title %}{{ gettext("Site Links") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}link.png" alt="" />{{ gettext("Site Links") }}</h2>
+<span>{{ gettext("As part of our ongoing discovery of musician/music related websites, we are pround to present this list of links for you to explore.") }}</span>
+{% if link_cats %}
+ {% for cat in link_cats.all() %}
+  {{ dv.get_text_link_entries(cat.id_slug) }}
+ {% endfor %}
+{% endif %}<br />
+<br />
+{{ gettext("Know of a great link that belongs here?") }} <a href="{{ url("dv-createlink") }}">{{ gettext("Send Us Your Link!") }}</a><br />
+{% endblock %}
+

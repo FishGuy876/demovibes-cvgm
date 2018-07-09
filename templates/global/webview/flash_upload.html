@@ -1,0 +1,84 @@
+{% extends "base/base.html" %}
+
+{% block title %}Upload{% endblock %}
+
+{% block headblock %}
+<script type="text/javascript" src="{{ MEDIA_URL }}flash/upload/js/swfupload.js"></script> 
+<script type="text/javascript" src="{{ MEDIA_URL }}flash/upload/js/swfupload.swfobject.js"></script> 
+<script type="text/javascript" src="{{ MEDIA_URL }}flash/upload/js/fileprogress.js"></script> 
+<script type="text/javascript" src="{{ MEDIA_URL }}flash/upload/js/handlers.js"></script> 
+<script type="text/javascript"> 
+		var swfu;
+ 
+		window.onload = function () {
+			swfu = new SWFUpload({
+				// Backend settings
+				upload_url: "upload.php",
+				file_post_name: "resume_file",
+ 
+				// Flash file settings
+				file_size_limit : "20 MB",
+				file_types : "*.mp3",			// or you could use something like: "*.doc;*.wpd;*.pdf",
+				file_types_description : "MP3 Files",
+				file_upload_limit : "0",
+				file_queue_limit : "1",
+ 
+				// Event handler settings
+				swfupload_loaded_handler : swfUploadLoaded,
+				
+				file_dialog_start_handler: fileDialogStart,
+				file_queued_handler : fileQueued,
+				file_queue_error_handler : fileQueueError,
+				file_dialog_complete_handler : fileDialogComplete,
+				
+				//upload_start_handler : uploadStart,	// I could do some client/JavaScript validation here, but I don't need to.
+				upload_progress_handler : uploadProgress,
+				upload_error_handler : uploadError,
+				upload_success_handler : uploadSuccess,
+				upload_complete_handler : uploadComplete,
+ 
+				// Button Settings
+				button_image_url : "XPButtonUploadText_61x22.png",
+				button_placeholder_id : "spanButtonPlaceholder",
+				button_width: 61,
+				button_height: 22,
+				
+				// Flash Settings
+				flash_url : "{{ MEDIA_URL }}flash/upload/swfupload.swf",
+ 
+				custom_settings : {
+					progress_target : "fsUploadProgress",
+					upload_successful : false
+				},
+				
+				// Debug settings
+				debug: false
+			});
+ 
+		};
+	</script> 
+{% endblock %}
+
+{% block main %}
+<h2>Upload New Song</h2>
+<p><strong>Please read <a href="http://www.scenemusic.eu/forum/thread/133/">the upload rules</a> before uploading songs! The most common questions and answers regarding uploads are answered here.</strong></p>
+
+{% if artist.alias_of %}<h2>Warning!</h2> This artist is an alias of <a href="{{ artist.alias_of.get_absolute_url }}">{{ artist.alias_of }}</a>!<br />
+We reccomend that you upload your song to the main artist entry.<h2>/Warning</h2>{% endif %}
+
+<br />
+
+
+<form action="{% url flash_upload %}?ticket={{ ticket }}" method="post" enctype="multipart/form-data">
+<input type="text" id="txtFileName" disabled="true" style="border: solid 1px; background-color: #FFFFFF;" />
+							<div class="flash" id="fsUploadProgress"> 
+							</div> 
+<span id="spanButtonPlaceholder"></span>
+<input type="hidden" name="hidFileID" id="hidFileID" value="" /> 
+<table>
+<tr><th>Artist:</th><td>{{ artist }}</td></tr>
+{{ form.as_table }} 
+</table>
+<input type="submit" value="Upload" id="btnSubmit" />
+</form>
+{% endblock %}

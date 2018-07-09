@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+{% set meta = song.get_metadata() %}
+<song id="{{ song.id }}">
+ <title>{{ song.title|e }}</title>
+ <status v="{{ song.status }}">{{ song.get_status_display() }}</status>
+ <bitrate>{{ song.bitrate }}</bitrate>
+ <samplerate>{{ song.samplerate }}</samplerate>
+ <rating votes="{{ song.rating_votes }}">{{ song.rating }}</rating>
+ {% if meta.info %}<info>{{ meta.info|e }}</info>{% endif %}
+ <songlength>{{ song.get_songlength() }}</songlength>
+ <locked>{{ song.is_locked() }}</locked>
+ <locked_until>{{ song.locked_until }}</locked_until>
+ <lastplayed>{{ song.last_queued() }}</lastplayed>
+ {% if meta.platform %}<platform id="{{ meta.platform.id }}">{{ meta.platform|e }}</platform>{% endif %}
+ {% if meta.type %}<type id="{{ meta.type.id }}">{{ meta.type|e }}</type>{% endif %}
+ {% if meta.pouetid %}<pouetid>{{ meta.pouetid }}</pouetid>{% endif %}
+ {% if meta.ytvidid %}<ytid>{{ meta.ytvidid|e }}</ytid>{% endif %}
+ {% if meta.ytvidoffset %}<ytoffset>{{ meta.ytvidoffset }}</ytoffset>{% endif %}
+ {% if meta.license %}<license id="{{ meta.license.id }}">{{ meta.license|e }}</license>{% endif %}
+ <artists>
+  {% for artist in meta.artists.all() %}<artist id="{{ artist.id }}">{{ artist.handle|e }}</artist>{% endfor %}
+ </artists>
+ <groups>
+  {% for group in meta.groups.all() %}<group id="{{ group.id }}">{{ group.name|e }}</group>{% endfor %}
+ </groups>
+ {% if meta.labels.all()|length > 0 %}<labels>
+  {% for label in meta.labels.all() %}<label id="{{ label.id }}">{{ label.name|e }}</label>{% endfor %}
+ </labels>{% endif %}
+ <tags>{% for tag in song.tags %}
+  <tag>{{ tag.name|e }}</tag>
+  {% endfor %}
+ </tags>
+ <links>
+ {% for link in song.get_active_links() %}
+  <link>
+    <url>{{ link.get_link()|e }}</url>
+    <comment>{{ link.comment|e }}</comment>
+    <type id="{{ link.link.id }}">
+        <name>{{ link.link.name|e }}</name>
+        <icon>{% if link.link.icon %}{{ link.link.icon.url|e }}{% endif %}</icon>
+    </type>
+  </link>
+ {% endfor %}
+ </links>
+</song>

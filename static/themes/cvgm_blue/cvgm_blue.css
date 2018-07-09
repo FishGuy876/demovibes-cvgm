@@ -1,0 +1,1122 @@
+/*
+ * Modified default (by Goatfather) theme for cvgm.net/demovibes.
+ * Last update: 2012-09-21
+ */
+
+/* ---------------------------------------- GENERAL ---------------------------------------- */
+* {
+	font-family : sans-serif;
+	font-size   : 8pt;
+}
+
+td {
+	vertical-align : top;
+}
+
+body {
+	font-size   : 9pt;
+	color       : #ccc;
+	text-shadow : 1px 1px 1px #000;
+}
+
+body#site {
+	width             : 100%;
+	margin            : 0;
+	padding           : 0;
+	border            : none;
+	position          : absolute;
+	left              : 0;	
+	top               : 0;
+	overflow          : visible;
+	background-color  : #155072 !important;
+	background-image  : url("trackerpatternblue.png");
+	background-repeat : repeat-x;
+}
+
+/* ---------------------------------------- HEADERS ---------------------------------------- */
+h1, h2, h3 {
+	color       : #eee;
+	text-shadow : 0px 0px 8px #000, 2px 2px 2px #444;
+        background  : rgb(36,113,126); /* Old browsers */
+        background  : -moz-linear-gradient(top,  rgba(36,113,126,1) 0%, rgba(35,96,113,1) 50%, rgba(31,85,97,1) 51%, rgba(16,113,140,1) 100%); /* FF3.6+ */
+        background  : -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(36,113,126,1)), color-stop(50%,rgba(35,96,113,1)), color-stop(51%,rgba(31,85,97,1)), color-stop(100%,rgba(16,113,140,1))); /* Chrome,Safari4+ */
+        background  : -webkit-linear-gradient(top,  rgba(36,113,126,1) 0%,rgba(35,96,113,1) 50%,rgba(31,85,97,1) 51%,rgba(16,113,140,1) 100%); /* Chrome10+,Safari5.1+ */
+        background  : -o-linear-gradient(top,  rgba(36,113,126,1) 0%,rgba(35,96,113,1) 50%,rgba(31,85,97,1) 51%,rgba(16,113,140,1) 100%); /* Opera 11.10+ */
+        background  : -ms-linear-gradient(top,  rgba(36,113,126,1) 0%,rgba(35,96,113,1) 50%,rgba(31,85,97,1) 51%,rgba(16,113,140,1) 100%); /* IE10+ */
+        background  : linear-gradient(to bottom,  rgba(36,113,126,1) 0%,rgba(35,96,113,1) 50%,rgba(31,85,97,1) 51%,rgba(16,113,140,1) 100%); /* W3C */
+        filter      : progid:DXImageTransform.Microsoft.gradient( startColorstr='#24717e', endColorstr='#10718c',GradientType=0 ); /* IE6-9 */
+}
+
+h3 {
+	margin        : -1px;
+	font-size     : 9pt;
+	text-align    : center;
+	margin-bottom : 1ex;
+}
+
+.icon_header {
+	padding             : 4px;
+	padding-left        : 2px;
+	vertical-align      : middle;
+	margin              : 0px;
+	border              : 0px;
+}
+
+/* ---------------------------------------- LEFT MENU ---------------------------------------- */
+#sidebar {
+	float               : left;
+	display             : inline;
+	position            : relative;
+	width               : 200px;
+	margin              : 8px;
+	padding-bottom      : 10px;
+	border-width        : 1px;
+	border-top-width    : 0px;
+	border-style        : solid;
+	border-color        : #11708A;
+	border-top-color    : #11708A; /* stupid ie */
+	border-right-color  : #24707D;
+	border-bottom-color : #24707D;
+	background-color    : transparent;
+	background-image    : url("bland.png");
+	text-align          : center;
+}
+
+#sidebar li a {
+	margin-left : 2px;
+	color       : #ddd;
+}
+
+#sidebar a:hover {
+	color : #fc0;
+}
+
+#sidebar ul {
+	padding         : 0;
+	margin          : 4px;
+	list-style-type : none;
+	text-align      : left;
+}
+
+#sidebar ul li {
+	margin-bottom       : 2px;
+	background-position : 0px 50%;
+	background-repeat   : no-repeat;
+	min-height          : 16px;
+	padding-left        : 18px;
+	display             : block;
+	border-bottom       : 1px dotted #369;
+}
+
+#home              {background-image: url("http://www.cvgm.net/static/house.png");}
+#songs             {background-image: url("http://www.cvgm.net/static/music.png");}
+#song-source       {background-image: url("http://www.cvgm.net/static/sound.png");}
+#song-platform     {background-image: url("http://www.cvgm.net/static/sound.png");}
+#artists           {background-image: url("http://www.cvgm.net/static/user_green.png");}
+#compilations      {background-image: url("http://www.cvgm.net/static/recplay_ico.png");}
+#recent            {background-image: url("http://www.cvgm.net/static/new.png");}
+#recentchanges     {background-image: url("http://www.cvgm.net/static/page_white_edit.png");}
+#menuqueue         {background-image: url("http://www.cvgm.net/static/script.png");}
+#search            {background-image: url("http://www.cvgm.net/static/find.png");}
+#forum             {background-image: url("http://www.cvgm.net/static/user_comment.png");}
+#faq               {background-image: url("http://www.cvgm.net/static/comment.png");}
+#profile           {background-image: url("http://www.cvgm.net/static/user.png");}
+#favorites         {background-image: url("http://www.cvgm.net/static/heart.png");}
+#register          {background-image: url("http://www.cvgm.net/static/page_white_edit.png");}
+#logout            {background-image: url("http://www.cvgm.net/static/door_out.png");}
+#login             {background-image: url("http://www.cvgm.net/static/door_in.png");}
+#admin             {background-image: url("http://www.cvgm.net/static/door.png");}
+#inbox             {background-image: url("http://www.cvgm.net/static/email.png");}
+#unap-artists      {background-image: url("http://www.cvgm.net/static/user_green.png");}
+#unap-groups       {background-image: url("http://www.cvgm.net/static/group.png");}
+#unap-compilations {background-image: url("http://www.cvgm.net/static/recplay_ico.png");}
+#unap-labels       {background-image: url("http://www.cvgm.net/static/transmit_blue.png");}
+#unap-links        {background-image: url("http://www.cvgm.net/static/link.png");}
+#unap-nju          {background-image: url("http://www.cvgm.net/static/tick.png");}
+#groups            {background-image: url("http://www.cvgm.net/static/group.png");}
+#labels            {background-image: url("http://www.cvgm.net/static/transmit_blue.png");}
+#links             {background-image: url("http://www.cvgm.net/static/link.png");}
+#screenshots       {background-image: url("http://www.cvgm.net/static/icon_screenshot.png");}
+#unap-screenshots  {background-image: url("http://www.cvgm.net/static/icon_screenshot.png");}
+#licenses          {background-image: url("http://www.cvgm.net/static/page_white_edit.png");}
+#chat              {background-image: url("http://www.cvgm.net/static/lips.png");}
+
+/* ---------------------------------------- ONELINER ---------------------------------------- */
+#oneliner {
+	margin        : 1px;
+	margin-top    : 0;
+	margin-bottom : 8px;
+	text-align    : left;
+	overflow      : hidden;
+}
+
+span.onelinerpre {
+	background-color : #284858;
+	border           : 1px solid #356;
+	width            : auto;
+	height           : 18px;
+	display          : block;
+	padding          : 1px;
+	padding-top      : 1px;
+	border-radius    : 8px;
+}
+
+.onelinerpre .username {
+	font-family      : "Lucida Console", monospace;
+	background-color : transparent;
+	padding          : 1px;
+	font-size        : 11px;
+	vertical-align   : middle;
+}
+
+.onelinerpre .username a {
+	color : #ddd;
+}
+
+.onelinerpre .onelinertime {
+	float         : right;
+	padding-right : 2px;
+}
+
+#oneliner .onelinermsg {
+	background-color : transparent;
+	color            : #eee;
+	float            : none;
+	margin           : 1px;
+	margin-bottom    : 4px;
+	vertical-align   : middle;
+}
+
+.onelinerpre .username .countryflag {
+	overflow     : hidden;
+	margin       : 2px;
+	margin-right : 3px;
+	padding      : 0px;
+}
+
+.lastreqdate {
+	white-space : nowrap;
+}
+
+.onelinertext {
+	display        : block;
+	vertical-align : middle;
+	padding        : 3px;
+	padding-bottom : 4px;
+	line-height    : 12px;
+}
+
+p.onelinermsg br {
+  display : none;
+}
+ 
+.onelinertext img {
+	vertical-align : middle;
+}
+
+#menuonline {
+	margin-top : 4px;
+}
+
+/* ---------------------------------------- LINKS ---------------------------------------- */
+a {
+	text-decoration : none;
+	font-weight     : bold;
+}
+
+a:link {
+	color : #488;
+}
+
+a:visited {
+	color : #48a;
+}
+
+a:hover {
+	color           : #0cf;
+	text-decoration : underline;
+}
+
+
+/* ---------------------------------------- RIGHT MENU ---------------------------------------- */
+#rightside {
+	float               : right;
+	display             : inline;
+	position            : relative;
+	width               : 200px;
+	margin              : 8px;
+	padding-bottom      : 10px;
+	border-width        : 1px;
+	border-top-width    : 0px;
+	border-style        : solid;
+	border-color        : #11708A;
+	border-top-color    : #11708A; /* stupid ie */
+	border-right-color  : #24707D;
+	border-bottom-color : #24707D;
+	background-color    : transparent;
+	background-image    : url("bland.png");
+	text-align          : center;
+}
+
+#rightside ul {
+	padding         : 0;
+	margin          : 4px;
+	list-style-type : none;
+	text-align      : left;
+}
+
+#rightside ul li {
+	margin-bottom       : 2px;
+	background-position : 0px 50%;
+	background-repeat   : no-repeat;
+	min-height          : 16px;
+	padding-left        : 18px;
+	display             : block;
+	border-bottom       : 1px dotted #369;
+}
+
+#rightside li a {
+	margin-left : 2px;
+	color       : #ddd;
+}
+
+#rightside a:hover  {
+	color : #fc0
+}
+
+.message-display-settings {
+	font-weight : bold;
+}
+.message-display-settings:hover {
+	color : #fc0;
+}
+
+/* ---------------------------------------- MUSIC PLAYER ---------------------------------------- */
+#nowplaying .songname {
+	display : block;
+}
+#nowplaying .artistname {
+	display : inline-block;
+	width : 190px;
+}
+#nowplaying .username {
+	display : block;
+}
+
+.song-resource, .user-resource {
+	vertical-align : middle;
+	margin-top     : 8px;
+	margin-left    : 1px;
+	margin-right   : 1px;
+}
+
+/* Video link icon next to track name. */
+.text-link {
+	vertical-align : middle;
+	margin-top     : 0px;
+	margin-left    : 1px;
+	margin-right   : 1px;
+}
+
+#nowplaying {
+	padding-bottom : 8px;
+}
+
+/* ---------------------------------------- MAIN/CONTENTS (CENTER PAGE) ---------------------------------------- */
+#main {
+	position            : relative;
+	margin              : 7px;
+	margin-left         : 215px;
+	margin-right        : 215px;
+	padding             : 0px;
+	padding-bottom      : 1ex;
+	border-width        : 1px;
+	border-style        : solid;
+	border-color        : #11708A;
+	border-top-color    : #11708A; /* stupid ie */
+	border-right-color  : #24707D;
+	border-bottom-color : #24707D;
+	border-bottom-style : double;
+	border-bottom-width : 3px;
+	border-top-width    : 0px;
+	background-color    : transparent;
+	background-image    : url("bland.png");
+	background-position : center;
+}
+
+/* ---------------------------------------- MAIN/CONTENTS (CENTER PAGE) - COMPILATIONS ---------------------------------------- */
+#main .songname + .artistname {
+	line-height : 20px;
+	padding-left : 4px;
+}
+
+.compilation_description .songname {
+	float : left;
+	padding-left : 4px;
+	line-height : 16px;
+	padding-right: 4px;
+}
+
+.compilation_description .artistname {
+	padding-left : 4px;
+	line-height : 20px;
+}
+
+/* ---------------------------------------- MAIN/CONTENTS (CENTER PAGE) - TABLES ---------------------------------------- */
+table.songlist {
+	width           : 99%;
+	border-collapse : collapse;
+	border-spacing  : 0px;
+}
+
+table.songlist td {
+	border : 1px solid #234;
+	padding-bottom : 0px;
+	padding-top    : 1px;
+	padding-left   : 5px;
+	padding-right  : 5px;
+}
+
+table.songlist th.fd-column-2 {
+	width      : 80px;
+}
+table.songlist th.fd-column-3 {
+	width      : 80px;
+}
+table.songlist th.fd-column-4 {
+	width      : 40px;
+}
+table.songlist th.fd-column-5 {
+	width      : 48px;
+}
+table.songlist th.fd-column-6 {
+	width      : 88px;
+}
+
+table.songlist th {
+	padding : 3px;
+}
+
+table.songlist tr.row1 td {
+	background-color : #204050;
+	height : 19px;
+	vertical-align : middle;
+}
+
+table.songlist tr.row2 td {
+	background-color : #214957;
+	height : 19px;
+	vertical-align : middle;
+}
+
+/* ---------------------------------------- MAIN/CONTENTS (CENTER PAGE) - IMAGE PAGE ---------------------------------------- */
+#screenshot-image img {
+	display : block !important;
+	border-width: 8px 8px;
+    -moz-border-image: url(frame_game.png) 8 8 stretch;
+    -webkit-border-image: url(frame_game.png) 8 8 stretch;
+    -o-border-image: url(frame_game.png) 8 8 stretch;
+    -ms-border-image: url(frame_game.png) 8 8 stretch;
+    border-image: url(frame_game.png) 8 8 stretch;
+}
+
+#screenshot-data {
+	float : left;
+}
+
+/* ---------------------------------------- FOOTER ---------------------------------------- */
+#copyleft, #copyright {
+	display   : block;
+	font-size : 10px;
+	position  : relative;
+	bottom    : -10px;
+	margin    : 0px;
+}
+
+#copyleft {
+	float : left;
+}
+
+#copyright {
+	float : right;
+}
+
+#copyleft a, #copyright a {
+	color: #0cf;
+}
+
+/* ---------------------------------------- IMAGES ---------------------------------------- */
+img {
+	border         : 0px;
+	vertical-align : bottom;
+}
+
+img.artist_logo {
+	border-width: 8px 8px;
+    -moz-border-image: url(frame_artist.png) 8 8 stretch;
+    -webkit-border-image: url(frame_artist.png) 8 8 stretch;
+    -o-border-image: url(frame_artist.png) 8 8 stretch;
+    -ms-border-image: url(frame_artist.png) 8 8 stretch;
+    border-image: url(frame_artist.png) 8 8 stretch;
+}
+
+/* ---------------------------------------- ICONS ---------------------------------------- */
+.countryflag {
+	margin         : -2px 2px 1px 1px;
+	vertical-align : middle; 
+}
+
+.platform_icon, .label_icon, .group_icon, .comp_icon {
+	vertical-align : middle;
+	margin-right   : 1px;
+}
+
+/* ---------------------------------------- SEARCH ---------------------------------------- */
+.searchpostpreview {
+	border-width        : 1px;
+	border-style        : solid;
+	border-left-color   : #11708A;
+	border-top-color    : #11708A;
+	border-right-color  : #24707D;
+	border-bottom-color : #24707D;
+	background-color    : #666;
+	color               : #eee;
+}
+.search-result {
+	margin      : 4px;
+	line-height : 16px;
+}
+
+.fl {
+	margin-left   : 16px;
+	margin-top    : 8px;
+	margin-bottom : 8px;
+}
+
+/* ---------------------------------------- RECENT CHANGES ---------------------------------------- */
+table.recentchanges {
+	vertical-align : text-top;
+	border-spacing : 2px;
+	width          : 99%;
+}
+
+table.recentchanges td {
+	vertical-align : text-top;
+	padding        : 2px;
+	padding-left   : 18px;
+	padding-right  : 18px;
+}
+
+.recent_icon_header {
+	padding-right  : 8px;
+	padding-top    : 4px;
+	padding-bottom : 4px;
+	vertical-align : middle;
+	margin         : 0px;
+	border         : 0px;
+}
+
+/* ---------------------------------------- TAGS ---------------------------------------- */
+.taglist {
+	background-color : #245 !important;
+}
+
+/* ---------------------------------------- FORUM ---------------------------------------- */
+#djangoForumBreadcrumbs, .pages {
+	margin-bottom : 8px;
+}
+
+#djangoForumList, #djangoForumThreadList {
+	width               : 99%;
+	margin              : auto;
+	margin-bottom       : 8px;
+	border-width        : 1px;
+	border-style        : solid;
+	border-left-color   : #11708A;
+	border-top-color    : #11708A;
+	border-right-color  : #24707D;
+	border-bottom-color : #24707D;
+	border-collapse     : collapse;
+	background-color    : transparent;
+}
+
+#djangoForumList th, #djangoForumThreadList th, #djangoForumThreadPosts th {
+	padding             : 0px;
+	padding-left        : 8px;
+	padding-right       : 8px;
+	border-width        : 1px;
+	border-top-color    : #11708A;
+	border-left-color   : #11708A;
+	border-right-color  : #24707D;
+	border-bottom-color : #24707D;
+	border-style        : solid;
+	background-color    : #4080a0;
+	text-align          : center;
+	color               : #fff;
+}
+
+#djangoForumList td, #djangoForumThreadList td {
+	vertical-align      : middle;
+	padding             : 0px;
+	border-width        : 1px;
+	border-style        : solid;
+	border-top-color    : #11708A;
+	border-left-color   : #11708A;
+	border-right-color  : #24707D;
+	border-bottom-color : #24707D;
+}
+
+.djangoForumListDetails, .post {
+	background : #245;
+}
+
+.djangoForumListDetails p {
+	margin : 0;
+}
+
+#djangoForumList .djangoForumListDetails .djangoForumStats {
+	position      : relative !important;
+	position      : static; /* ha! lost stupid ie6 again! */
+	z-index       : 5;
+	float         : right;
+	margin-top    : -12pt;
+	padding-right : 8px;
+	font-size     : 10px;
+}
+
+.forumName {
+	display        : block;
+	position       : relative !important;
+	position       : static; /* ha! */
+	z-index        : 10;
+	padding-left   : 8px;
+	padding-right  : 8px;
+	padding-bottom : 12pt;
+	font-size      : 10px;
+}
+
+.djangoForumListDetails .forumDescription{
+	display       : block;
+	position      : relative !important;
+	position      : static; /* ha! */
+	z-index       : 5;
+	margin-top    : -12px;
+	padding       : 0px;
+	padding-left  : 8px;
+	padding-right : 8px;
+	margin-right  : 100px;
+}
+
+#djangoForumList .djangoForumListDetails {
+	width   : 70%;
+	padding : 0px;
+}
+
+#djangoForumList td, #djangoForumThreadList td {
+	padding-left  : 8px;
+	padding-right : 8px;
+}
+
+.djangoForumListDetails {
+	padding : 0;
+}
+
+#djangoForumThreadList td {
+	width      : 5%;
+	text-align : center;
+}
+
+#djangoForumThreadList .djangoForumThreadListName {
+	width            : 60%;
+	text-align       : left;
+	background-color : #245;
+}
+
+#djangoForumList .djangoForumListLastPost, #djangoForumThreadList .djangoForumThreadLastPost {
+	width      : 30%;
+	text-align : left;
+}
+
+#djangoForumThreadList .djangoForumThreadListName {
+	padding          : 0;
+	background-color : #245;
+}
+
+.threadName {
+	display       : block;
+	line-height   : 24px;
+	padding-left  : 8px;
+	padding-right : 8px;
+}
+
+#djangoForumThreadPosts {
+	width            : 99%;
+	margin           : auto;
+	border           : 0px;
+	border-collapse  : collapse;
+	background-color : transparent;
+}
+
+#djangoForumThreadPosts td {
+	padding-left  : 8px;
+	padding-right : 8px;
+}
+
+
+#djangoForumThreadPosts .djangoForumThreadPostDetail {
+	vertical-align : top;
+	border-left    : 1px solid #11708A;
+	padding-top    : 16px;
+}
+
+#djangoForumThreadPosts .postfooter {
+	border-left   : 1px solid #11708A;
+	border-right  : 1px solid #24707D;
+	border-bottom : 1px solid #24707D;
+	text-align    : right;
+}
+
+#djangoForumThreadPosts .postfooter td:first-child {
+	text-align : left;
+	font-size  : 10px;
+}
+
+#djangoForumThreadPosts .post {
+	vertical-align : top;
+	padding-top    : 16px;
+	border         : 0px;
+	border-left    : 1px solid #11708A;
+	border-right   : 1px solid #24707D;
+	border-bottom  : 1px solid #24707D;
+	width          : 85%;
+}
+
+.post p {
+	margin        : 0;
+	margin-bottom : 12px;
+}
+
+#newThread {
+	width  : 99%;
+	margin : auto;
+}
+
+#newThread .label {
+	text-align     : right;
+	vertical-align : top;
+}
+
+#newThread #postThread {
+	text-align: center;
+}
+
+/* ---------------------------------------- FORM FIELDS ---------------------------------------- */
+input, textarea, button {
+	background-color : #b4bcc2;
+}
+
+select[multiple] {
+    height: 200px;
+}
+
+/* ---------------------------------------- VOTING/RATING & QUEUING ---------------------------------------- */
+#formvote input, .queuesongimage {
+	border           : none;
+	background-color : transparent;
+}
+
+.starbutton {
+	min-height     : 24px;
+	height         : 24px;
+	display        : table-cell;
+	vertical-align : top;
+	color          : transparent;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ---------------------------------------- UNCHANGED/UNTOUCHED CONTENT FROM DEFAULT GRAY THEME BY Goatfather ---------------------------------------- */
+.olh_wrapper 	{
+		width: 604px;
+		min-height: 800px;
+		margin: 15px;
+		}
+.olh_item	{ 
+		overflow:auto; 
+		} 
+.olh_user	{
+		width: 150px;
+		float: left;
+		margin: 0;
+		padding: 0;
+		min-height: 50px;
+		}
+
+.olh_message	{
+		width: 450px;
+		float: right;
+		margin: 0;
+		padding: 0;
+		min-height: 50px;
+		}
+
+.olh_pages	{
+		text-align: justify;
+		font-family: sans-serif;
+		/*font-size: 8px;*/		
+		}
+
+.bbquote	{
+		font-style: italic;
+		}
+
+.bbcode		{
+		font-family: monospace;
+		display: block;
+		border: 1px dotted #000;
+		padding: 10px;
+		margin-left: 25px;
+		margin-right: 25px;
+		line-height: 12px;
+		font-style: italic;
+		background: #e2e2e2;
+		}
+
+pre
+{
+	font-family: "rez ascii", "Lucida Console", monospace;
+}
+
+html#transparent
+{
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	border: none;
+	position: absolute;
+	left: 0;
+	top: 0;
+	background: transparent;
+}
+
+.headline
+{
+	vertical-align: middle;
+}
+
+.date
+{
+	position: absolute;
+	right: 8px;
+	bottom: .25ex;
+	font-size: 9pt;	
+	color: #eee;
+}
+
+h1
+{
+	font-size: 15pt;
+}
+
+h2
+{
+	font-size: 12pt;
+	position: relative;
+	vertical-align: middle;
+}
+
+div.pmview {
+	vertical-align: top;
+	border: 1px solid #aaa;
+	background-color:#ddd;
+	width: 85%;
+}
+
+p
+{
+	margin: 0;
+	margin-top: 1em;
+}
+
+.header a:link {
+	color: #eee;
+}
+
+.header a:visited {
+	color: #ddd;
+}
+
+.header a:hover {
+	color: #0cf;
+}
+
+#forum, #favorites, #logout
+{
+	margin-bottom: 1em;
+}
+
+p.pmtitle {
+    font-weight: bold;
+}
+
+#sidebar form
+{
+	display: block;
+	padding: 0;
+	padding-top: 1ex;
+	margin: 0;
+	border: none;
+	white-space: nowrap;
+}
+
+#blah
+{
+	display: inline-block;
+	width: 176px;
+	padding: 0;
+	margin: 0;
+	padding-right: 11px;
+	border: 1px #888 solid;
+	border-right-color: white;
+	border-bottom-color: white;
+	height: 16px;
+	background-color: transparent;
+	background-image: url("http://www.cvgm.net/static/themes/default/hilight.png");
+	background-position: center;
+}
+
+#makeitso
+{
+	border: none;
+	width: 16px;
+	margin-left: -16px;
+	background-color: transparent;
+	background-image: url("http://www.cvgm.net/static/comment.png");
+	background-repeat: no-repeat;
+	background-position: center center;
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+.newstext
+{
+	padding-left: 8px;
+	padding-right: 8px;
+}
+	
+#main h1, #main h2
+{
+	margin-left: 6px;
+	margin-right: 6px;
+	margin-bottom: 1ex;
+	padding-left: 8px;
+	padding-right: 0px;
+}
+
+#main h1
+{
+	margin-top: 0px;
+	margin-left: -1px;
+	margin-right: 0px;
+	padding: 0;
+	padding-left: 1ex;
+	padding-right: 1ex;
+	font-variant: small-caps;
+	text-align: center;
+}
+
+#main h2
+{
+	margin-top: 16px;
+	margin-left: 0px;
+	margin-right: 0px;
+}
+
+#main p
+{
+	margin-left: 8px;
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+#logo
+{
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+
+}
+
+.lastreqdate {
+	white-space:nowrap;
+}
+
+#main ul
+{
+	margin: 0;
+	padding: 0;
+	margin-left: 3em;
+	list-style-type: disc;
+	list-style-position: outside;
+	display: block;
+}
+
+#main ul.imgbull li
+{
+	list-style-type: none;
+	background-position: 0px 50%;
+	background-repeat: no-repeat;
+	min-height: 16px;
+	margin-left: -3.5ex;
+	padding-left: 3.5ex;
+}
+
+#validator
+{
+	position: absolute;
+	right: 1px;
+	top: 1px;
+}
+
+/* froumzz */
+
+#whosonline {
+	line-height: 135%;
+}
+
+#whosonline span {
+	white-space: nowrap;
+}
+
+.bubbleInfo {
+	position: relative;
+}
+
+/*.popup {
+	// Commented out to prevent streams page from breaking
+	position: absolute;
+	background-color: #fff;
+	border-color: #1f60d6;
+	border-style: solid;
+	padding: 5px;
+	z-index:10;
+	border-radius: 10px;
+	display: none; /* keeps the popup hidden if no JS available */
+} */
+.messagetitle {
+	background-color: #000;
+	color: #f00;
+	padding-left: 8em;
+	font-size: 12px;
+	color: #f00; /* Text Colour */
+	font-family: Consolas, Andale Mono, monospace;
+	font-weight: bold;
+	text-align: center;
+}
+.messageholder {
+    background-color: #000;
+	padding-left:  8em;
+	padding-right: 8em;
+}
+.messagefade {
+        background-color: #000;
+}
+
+.messagefadeborder {
+	display: none;
+}
+
+.messagebox {
+	border: 5px solid #f00;
+	border-top-width: 0px;
+	border-bottom-width: 0px;
+	right: 0px;
+	left: 0px;
+	width: auto;
+}
+
+.messagetitle {
+	border-top: 5px solid #f00;
+}
+
+.messagelist .messageholder:last-child  {
+    border-bottom: 5px solid #f00;
+}
+
+.messagesetting-save, .messagesetting-cancel {
+	border-top-color: #EEE;
+	border-left-color: #EEE;
+	border-right-color: #888;
+	border-bottom-color: #888;
+}
+
+.messagesetting-save:hover, .messagesetting-cancel:hover {
+	background-color: #CCC;
+}
+
+.messagesettingsbox {
+	color: #000;
+	background-color: #BBB;
+	font-weight: bold;
+	padding: 5px;
+	border: 1px solid #888;
+	border-top-color: #EEE;
+	border-left-color: #EEE;
+}
+	
+.messagetitle-flash {
+	font-size: 12px;
+	background-color: #400;
+}
+.messagetime,.messagecat,.messagetext {
+	padding-right: 4em;
+	font-size: 12px;
+	color: #f00;
+	font-family: Consolas, Andale Mono, monospace;
+	font-weight: bold;
+}
+
+.messagetext  a {
+	color: #f00 !important;
+	text-decoration: underline;
+}
+
+.message-remove {
+	font-size: 12px;
+	font-family: Consolas, Andale Mono, monospace;
+	font-weight: bold;
+}
+
+/* select, input, textarea { */
+#id_file, #id_title, #id_release_year, #id_remix_of_id, #id_groups, #id_labels, #id_info, #id_type,
+#id_platform, #id_pouetid, #id_ytvidid, #id_ytvidoffset, #id_artists,
+#id_LL_1, #id_LL_2, #id_LL_3, #id_LL_4, #id_LL_5, #id_LL_6, #id_LL_7, #id_LL_8, #id_LL_9, #id_LL_10,
+#id_LL_11, #id_LL_12, #id_LL_13, #id_LL_14, #id_LL_15, #id_LL_16, #id_LL_17, #id_LL_18, #id_LL_19,
+#id_LL_1_comment, #id_LL_2_comment, #id_LL_3_comment, #id_LL_4_comment, #id_LL_5_comment, #id_LL_6_comment,
+#id_LL_7_comment, #id_LL_8_comment, #id_LL_9_comment, #id_LL_10_comment, #id_LL_11_comment, #id_LL_12_comment,
+#id_LL_13_comment, #id_LL_14_comment, #id_LL_15_comment, #id_LL_16_comment, #id_LL_17_comment, #id_LL_18_comment,
+#id_LL_19_comment,
+#id_infoline, #id_visible_to, #id_web_page, #id_aol_id, #id_yahoo_id, #id_icq_id, #id_twitter_id, #id_hol_id,
+#id_country, #id_location, #id_avatar, #id_fave_id, #id_theme, #id_custom_css, #id_info
+{
+	background-color: #eee;
+	border: solid 1px #888;
+	border-bottom: solid 1px #fff;
+	border-right: solid 1px #fff;
+	color: #000;
+}
+
+#id_title {
+	width: 40em;
+}

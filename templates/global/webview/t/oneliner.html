@@ -1,0 +1,2 @@
+{% load dv_extend %}{% load cache %}{% for line in oneliner %}{% cache 1800 olcache line.id %}
+<p><span class="onelinerpre">{% with line.user as U%}{% include "webview/t/user.html" %}{% endwith %} <span style="color: #777; float: right; margin: auto; text-align: right;">({{ line.added|time:"H:i:s" }})</span></span><br /><span class="onelinertext">{{line.message|force_escape|smileys|oneliner_mediaparse|bbcode_oneliner|dv_urlize|safe }}</span></p>{% endcache %}{% endfor %}

@@ -1,0 +1,14 @@
+{% extends "base/base.html" %}
+
+{% block title %}Read Private Message{% endblock %}
+{% load dv_extend %}
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}newspaper.png" alt="" />Read Private Message</h2>
+Message From: {% with pm.sender as U%}{% include "webview/t/user.html" %}{% endwith %}<br/>
+Sent On: {{ pm.sent }}
+<p class="pmtitle">{{ pm.subject }}</p>
+<div class="pmview">
+{{ pm.message|force_escape|linebreaks|bbcode|smileys }}
+</div>
+<a href="{% url dv-inbox %}">Back To Inbox</a> | <a href="{% url dv-send_pm %}?to={{ pm.sender }}&amp;title=RE: {{ pm.subject }}">Send Reply</a>
+{% endblock %}

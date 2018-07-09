@@ -1,0 +1,29 @@
+{% if links %}
+	<h2><img class="icon_header" src="{{ STATIC_URL }}world_link.png" alt="" />{{ title }}</h2>
+    <table id="linksform">
+    {% for ll in links %}
+      <tr>
+         <th>{% if ll.link.icon %}<label for="id_LL_{{ ll.link.id }}"><img src="{{ ll.link.icon.url }}" /> {% endif %}{{ ll.link.name }} link</label></th>
+         <td>
+            <input name="LL_{{ ll.link.id }}" id="id_LL_{{ ll.link.id }}" value="{{ ll.value }}"/>
+            {% if ll.error %}
+                <p class="errorinfo">{{ ll.error }}</p>
+            {% endif %}
+        </td>
+         {% if ll.link.inputinfo %}
+            <td title="{{ ll.link.inputinfo }}">
+                <span class="formq">
+                    <img src="{{ STATIC_URL }}question.png" alt="?"/>
+                </span>
+            </td>
+        {% else %}
+            <td>&nbsp;</td>
+        {% endif %}
+        <td class="linkdesc">
+            {{ ll.link.description }}
+        </td>
+        <td><label for="id_LL_{{ ll.link.id }}_comment">Optional comment: </label> <input name="LL_{{ ll.link.id }}_comment" id="id_LL_{{ ll.link.id }}_comment"></td>
+      </tr>
+    {% endfor %}
+    </table>
+{% endif %}

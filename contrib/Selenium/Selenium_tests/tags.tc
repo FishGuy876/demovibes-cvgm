@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" href="http://demovibes:9877/" />
+<title>Tags</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">Tags</td></tr>
+</thead><tbody>
+<tr>
+	<td>open</td>
+	<td>/demovibes/songs/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Monday monday test</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Edit tags</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>tagfield</td>
+	<td>testtag_123</td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>//input[@value='Update tags']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>testtag_123</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Songs</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=monday test2</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Edit tags</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>tagfield</td>
+	<td>testtag_123 test2</td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>//input[@value='Update tags']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>Monday monday test</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Tag cloud</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=testtag_123</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>test2</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=[+]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>monday test2</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextNotPresent</td>
+	<td>Monday monday test</td>
+	<td></td>
+</tr>
+<tr>
+	<td>open</td>
+	<td>/demovibes/tags/testtag_124/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertTextPresent</td>
+	<td>Info for tag(s) &quot;testtag_124&quot;</td>
+	<td></td>
+</tr>
+</tbody></table>
+</body>
+</html>

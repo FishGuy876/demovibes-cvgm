@@ -1,0 +1,50 @@
+{% extends "base/base.html" %}
+
+{% block title %}Recent Song Approvals{% endblock %}
+{% load cache %}
+{% block main %}
+ <h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />Recently Approved Songs</h2>
+Displaying the latest {{ settings.UPLOADED_SONG_COUNT }} uploaded songs:<br /><br />
+
+ <table class="recent-approvals">
+ <tr>
+  <th>Song Title</th>
+  <th>Artist</th>
+  <th>Added</th>
+  <th>Length</th>
+  <th>Uploader</th>
+  <th>Status</th>
+</tr>
+{% if songs %}
+    {% for song in songs %}{% cache 604800 recsongs song.id %}
+        <tr>
+            <td>
+                {% with song.song as song %}{% include "webview/t/songname.html" %}{% endwith %}
+            </td>
+            <td>
+                {% for artist in song.song.artists.all %}{% with artist as A %}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}
+                {% for group in song.song.groups.all %}{% with group as G %}{% include "webview/t/group.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}
+            </td>
+            <td>
+                {{ song.approved|date:"d M Y" }}
+            </td>
+            <td>
+                {{ song.song.length }}
+            </td>
+	    <td>
+		{% with song.uploaded_by as U%}{% include "webview/t/user.html" %}{% endwith %}
+	    </td>
+	    {% endcache %}{# Otherwise, Locked/Unlocked State Is Cached #}
+            <td>
+                <span data-name="a_queue_{{ song.song.id }}">{% with song.song as song %}{% include "webview/t/songlist_span_noauth.html" %}{% endwith %}</span>
+                {% with song.song as song %}{% include "webview/t/fav_icon.html" %}{% endwith %}
+            </td>
+        </tr>
+    {% endfor %}
+{% else %}
+   <tr><td>No Entries!!</td><td></td><td></td><td></td><td></td><td></td></tr>
+{% endif %}
+ </table>
+
+{% endblock %}
+

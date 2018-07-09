@@ -1,0 +1,16 @@
+{% extends "base/base.html" %}
+
+{% block title %}{{ gettext("Pending Link Approvals") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}link.png" alt="" />{{ gettext("Pending Link Approvals") }}</h2>
+<p>{{ gettext("The following links are listed as 'Pending'. Check the information is OK before approving them!") }}</p>
+
+{% if text_links %}
+ <h2><img class="icon_header" src="{{ STATIC_URL }}link.png" alt="" />{{ gettext("Pending Text Links") }}</h2>
+ {% for link in text_links.all() %}
+  {% set L = link %}{% include "webview/t/link_text.html" %} [<a href="{{ L.url_cat.get_absolute_url() }}" title="See All Links In Category">{{ L.url_cat.name|e }}</a>] {% include "webview/t/pending_link_toolbar.html" %}{% if loop.last %}{% else %}<br />{% endif %}
+ {% endfor %}
+{% endif %}
+{% endblock %}
+

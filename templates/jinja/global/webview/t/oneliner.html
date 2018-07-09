@@ -1,0 +1,11 @@
+{% import "macro/display.html" as display -%}
+{%- for line in oneliner -%}
+<p class="onelinermsg">
+    <span class="onelinerpre">
+        {{ display.user(line.user) }}
+        <span class="onelinertime">(<span class="tzinfo">{{ line.added|time("H:i:s") }}</span>)</span>
+    </span>
+    <br />
+    <span class="onelinertext">{{ display.format_oneliner(line.message, line.user) }}</span>
+</p>
+{%- endfor -%}

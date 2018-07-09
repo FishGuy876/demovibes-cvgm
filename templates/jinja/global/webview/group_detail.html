@@ -1,0 +1,49 @@
+{% extends "base/base.html" %}
+
+{% import "macro/display.html" as display -%}
+
+{% block title %}{{ gettext("Group Info For") }} {{ object.name|e }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" {% if object.group_icon %}src="{{ object.group_icon.url }}"{% else %}src="{{ STATIC_URL }}group.png"{% endif %} alt="" />{{ gettext("Group Information For") }} {{ object.name|e }} {% if user.is_staff %} [<a href="/admin/webview/group/{{ object.id }}/">{{ gettext("Edit Info") }}</a>]{% endif %}</h2>
+{{ display.onelinerlink("group", object.id, user) }}
+
+<table>
+<tr>
+<td class="group_summary">
+{% if object.group_logo %}<img class="group_logo" src="{{ object.group_logo.url }}">{% else %}<img class="group_logo" src="{{ STATIC_URL }}no_picture.png" />{% endif %}
+<br /><strong>{{ object.name|e }}</strong><br />{% if object.found_date %}(Founded On: {{ display.date(object.found_date) }}){% endif %}<br />
+
+{% if object.webpage %}<a href="{{ object.webpage|e }}" target="_blank">{{ gettext("Visit Group's Website") }}</a><br />{% endif %}
+{% if object.pouetid %}<a href="http://www.pouet.net/groups.php?which={{ object.pouetid }}" target="_blank">{{ gettext("Pouet Link") }}</a><br />{% endif %}
+{% if object.last_updated %}{{ gettext("Last Updated") }}: {{ display.date(object.last_updated) }}<br />{% endif %}
+{% if object.created_by %}{{ gettext("Added By") }}: {{ display.user(object.created_by) }}<br />{% endif %}
+{{ display.links(object) }}
+</td>
+<td class="group_description">
+{% if object.info %}
+<p><i>{{ object.info|urlize|bbcode|linebreaks }}</i></p>
+{% endif %}<br />
+
+{% if object.artist_set.count() != 0 %}
+ <b>{{ gettext("Active Group Members") }}:</b><br />
+ {% for artist in object.artist_set.all() %}
+  {{ display.artist(artist) }}<br />
+ {% endfor %}<br />
+{% endif %}
+
+{% if object.get_songs().count() != 0 %}
+ <b>{{ gettext("Active Group Songs") }}:</b><br />
+
+ {% set objs, paging = dv.paginate(object.get_songs().all()) %}
+
+ {% for song in objs %}
+  {{ display.song(song) }} {{ gettext("by") }} {{ display.artists(song)}} {{ display.queue_song(song, user) }}<br />
+ {% endfor %}<br />
+{% endif %}
+</td>
+</tr>
+</table>
+{{ paging }}
+{% endblock %}
+

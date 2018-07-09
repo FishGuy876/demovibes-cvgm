@@ -1,0 +1,32 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display %}
+
+{% block maindiv %} class="newspage"{% endblock %}
+
+{% block main %}
+<div id="newslist">
+{% if object_list %}
+ {% for news in object_list %}{% if news.status == "S" %}{# Sticky ones first! #}
+  <div class="newsentry newsentrystatic">
+   <h2><img class="icon_header" src="{% if news.icon %}{{ news.icon }}{% else %}{{ STATIC_URL }}newspaper.png{% endif %}" alt="" /><span class="headline"> {{ news.title }}</span></h2>
+   <div class="newstext">{{ news.text|linebreaksbr|bbcode }}</div>
+  </div>
+ {% endif %}{% endfor %}
+
+ {% for news in object_list %}{% if (news.status == "A") or ( user.is_authenticated() and news.status == "L" ) %}{# Then the rest. All active #}
+  <div class="newsentry{% if news.is_new() %} freshnews{% endif %}">
+   <h2><img class="icon_header" src="{% if news.icon %}{{ news.icon }}{% else %}{{ STATIC_URL }}newspaper.png{% endif %}" alt="" /><span class="headline"> {{ news.title }}</span> <span class="date">{{ display.datetime(news.added) }}</span></h2>
+   <div class="newstext">{{ news.text|linebreaksbr|bbcode }}</div>
+  </div>
+ {% endif %}
+
+{% endfor %}
+
+
+{% else %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}newspaper.png" alt="" />{{ gettext("There Is No News!") }}</h2>
+<span>{{ gettext("No news here yet! You should take a trip to the admin interface and add some!") }}</span>
+{% endif %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,27 @@
+{% extends "base/base.html" %}
+
+{% block title %}{{ gettext("Frequently Asked Questions (FAQ)") }}{% endblock %}
+
+{% block main %}
+<a name="top"></a><h2><img class="icon_header" src="{{ STATIC_URL }}comment.png" alt="" />{{ gettext("Frequently Asked Questions (FAQ)") }}</h2>
+
+{% if object_list %}{# The loop occurs twice; First to list Q's, then to apply answers #}
+ Currently, there are {{ object_list.count() }} {{ gettext("Active FAQ's") }}:<br /><br />
+ {% for faq in object_list %}
+  {# {% cache 86400 "faq_q" faq.id faq.last_updated %} #}Q. <a href="#{{ faq.id }}">{{ faq.question|e }}</a>{# {% endcache %} #}<br />
+ {% endfor %}<br />
+ [<a href="#top">{{ gettext("Back To Top") }}</a>]<br />
+ <hr>
+ {% for faq in object_list %}
+  {# {% cache 86400 "faq_a" faq.id faq.last_updated %} #}<a name="{{ faq.id }}"></a><strong>Q. {{ faq.question|e }}</strong>{% if user.is_staff %} - [<a href="/admin/webview/faq/{{ faq.id }}"><img src="{{ STATIC_URL }}link_edit.png" title="Edit FAQ Question/Answer" /></a>]{% endif %}<br />
+  {{ faq.answer|urlize|linebreaks|smileys|bbcode }}<br />
+  Added by {% set U = faq.added_by %}{% include "webview/t/user.html" %} (Last Updated: {{ faq.last_updated|timesince }}){# {% endcache %} #} [<a href="#top">{{ gettext("Top") }}</a>]<br />
+  <hr>
+ {% endfor %}
+ [<a href="#top">{{ gettext("Back To Top") }}</a>]<br />
+{% else %}
+ No FAQ Questions have been added! Go to the Admin page and add some!!<br />
+{% endif %}
+
+{% endblock %}
+

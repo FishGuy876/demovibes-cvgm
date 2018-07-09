@@ -1,0 +1,41 @@
+{% extends "base/base.html" %}
+{% block title %}User Profile Of {{profile.user}}{% endblock %}
+
+{% block main %}
+{% load dv_extend %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}{{ profile.get_littleman }}" alt="" />User Profile For {{ profile.user }}{% if profile.web_page %} <a href="{{ profile.web_page }}" target="_blank">[Visit User's Website]</a>{% endif %}</h2>
+
+{% if profile.avatar %}
+ <img src="{{ profile.avatar.url }}" title="[{{ profile.user }}'s Avatar]" alt="[{{ profile.user }}'s Avatar]" /><br />
+{% endif %}
+
+{% if profile.user.artist %}
+ <a href="{{ profile.user.artist.get_absolute_url }}">View User's Artist Page</a><br />
+{% endif %}
+
+{% if profile.location %}
+ {{ profile.user.get_profile.country|flag|safe }} {{ profile.location }}<br />
+ {% if profile.infoline %}<strong>{{ profile.infoline }}</strong><br />{% else %}<em>[No Info Line]</em><br />{% endif %}
+{% else %}
+ {{ profile.user.get_profile.country|flag|safe }} {% if profile.infoline %}<strong>{{ profile.infoline }}</strong>{% else %}<em>[No Info Line]</em>{% endif %}<br />
+{% endif %}
+{% with profile.user as U %}{% include "webview/t/user-icons.html" %}{% endwith %}<br />
+<br />
+Member Since: {{ profile.user.date_joined|date:"F j, Y" }}<br />
+Last Login: {{ profile.user.last_login|date:"F j, Y" }}<br />
+
+<a href="{% url dv-send_pm %}?to={{ profile.user }}"><img src="{{ MEDIA_URL }}email.png" alt="mail" /> Send A Message</a> | View {{ profile.user }}'s <a href="{% url dv-user-favs profile.user %}">Favourites List</a>.<br/>
+
+{% if profile.hol_id %}
+ <a href="http://hol.abime.net/hol_search.php?N_ref_artist={{ profile.hol_id }}" target="_blank">See User's H.O.L. Details</a><br />
+{% endif %}
+
+{% if profile.fave_id %}
+ <font color="blue">{{ profile.user }}'s <em>Ultimate</em> Song:</font> {% get_song_queuetag profile.fave_id %}
+{% endif %}
+
+<h2><img class="icon_header" src="{{ MEDIA_URL }}script.png" alt="" />Public information</h2>
+<p>
+{{ profile.info|force_escape|linebreaks|bbcode|smileys }}
+</p>
+{% endblock %}

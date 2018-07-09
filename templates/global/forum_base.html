@@ -1,0 +1,87 @@
+{% extends "base/base.html" %}{% load i18n %}
+
+{% block headblock %}
+<link rel="alternate" type="application/rss+xml" title="All Latest Posts via RSS" href="{% url forum_index %}rss/" />
+<link rel="alternate" type="application/atom+xml" title="All Latest Posts via ATOM" href="{% url forum_index %}atom/" />
+{% block extrahead %}{% endblock %}
+{% endblock %} {#
+<style type='text/css'><!--
+body {
+    font-family: Verdana;
+    font-size: 10px;
+    text-align: center;
+}
+
+#djangoForumBody {
+    width: 90%;
+    margin: 0 auto;
+    text-align: left;
+}
+
+#djangoForumList,
+#djangoForumThreadList,
+#djangoForumThreadPosts {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#djangoForumList td,
+#djangoForumThreadList td,
+#djangoForumThreadPosts td {
+    border: solid #777 1px;
+    padding: 6px;
+}
+
+#djangoForumList .djangoForumListDetails {
+    width: 70%;
+}
+
+#djangoForumList .djangoForumListDetails strong {
+    font-size: 120%;
+}
+
+#djangoForumList .djangoForumListDetails .djangoForumStats {
+    font-size: 80%;
+}
+
+.djangoForumListLastPost,
+.djangoForumThreadLastPost {
+    background-color: #ccc;
+    border-bottom: solid #777 1px;
+}
+
+#djangoForumList th,
+#djangoForumThreadList th,
+#djangoForumThreadPosts th {
+    background-color: #3a3;
+    border: solid #777 1px;
+    color: #fff;
+    text-align: left;
+    padding: 4px;
+}
+
+#djangoForumThreadPosts th {
+    width: 20%;
+}
+
+#djangoForumBreadcrumbs {
+    padding: 20px;
+}
+
+#djangoForumBody label {
+    font-size: 110%;
+    font-weight: bold;
+    display: block;
+    padding: 4px;
+}
+
+#djangoForumThreadPostDetail {
+    width: 20%;
+}
+--></style>
+#}
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}user_comment.png" alt="" />{% block pagetitle %}Forum{% endblock %}</h2>
+<div id='djangoForumBreadcrumbs'><a href='{% url forum_index %}'>{% trans "Forums" %}</a>{% block breadcrumbs %}{% endblock %}</div>
+{% block forumcontent %}{% endblock %}
+{% endblock %}

@@ -1,0 +1,8 @@
+{% import "macro/display.html" as display -%}
+{% set su = song.get_screenshots_or_covers()|random %}
+{% set ss = su.image %}
+{% if now_playing.song %}
+<div id="screenshotview">
+ <a href="{{ url ("dv-screenshot", ss.id) }}">{% if ss.thumbnail %}<img src="{{ ss.thumbnail.url }}" alt="{{ ss.name }} Screenshot" border="{{ scrborder }}">{% else %}(No Thumbnail){% endif %}</a><br />
+</div>
+{% endif %}

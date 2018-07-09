@@ -1,0 +1,89 @@
+{% extends "base/base.html" %}
+
+{% import "macro/display.html" as display %}
+
+{% block title %}{{ meta.song|e }} - {{ gettext("Meta info") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}tick.png" alt="" />{{ gettext("Correction Status") }}</h2>
+<table>
+    <tr>
+        <th>{{ gettext("Song") }}</th>
+        <td>{{ display.song(meta.song) }}</td>
+    </tr>
+    <tr>
+        <th>{{ gettext("Active") }}</th>
+        <td>{{ display.yesno(meta.active) }}</td>
+    </tr>
+    <tr>
+        <th>{{ gettext("Checked") }}</th>
+        <td>{{ display.yesno(meta.checked) }}</td>
+    </tr>
+    <tr>
+        <th>{{ gettext("Added by") }}</th>
+        <td>{{ display.user(meta.user) }}</td>
+    </tr>
+    <tr>
+        <th>{{ gettext("Added date") }}</th>
+        <td>{{ display.datetime(meta.added) }}</td>
+    </tr>
+    <tr>
+        <th>{{ gettext("Changed fields") }}</th>
+        <td>{{ meta.get_changelist()|join(", ") }}</td>
+    </tr>
+</table>
+
+<h2><img class="icon_header" src="{{ STATIC_URL }}sound.png" alt="" />{{ gettext("Song Information") }}</h2>
+<table>
+    <tr>
+        <th>{{ gettext("Artists") }}</th>
+        <td>{{ display.artists_meta(meta) }}</td>
+    </tr>
+    <tr>
+        <th>{{ gettext("Groups") }}</th>
+        <td>{% for g in meta.groups.all() %}{{ display.group(g) }} {% endfor %}</td>
+    </tr>
+    <tr>
+        <th>{{ gettext("Labels") }}</th>
+        <td>{% for l in meta.labels.all() %}{{ display.label(l) }} {% endfor %}</td>
+    </tr>
+    <tr>
+        <th>{{ gettext("Info") }}</th>
+        <td>{{ meta.info }}</td>
+    </tr>
+    <tr>
+        <th>{{ gettext("Platform") }}</th>
+        <td>{{ display.platform(meta.platform) }}</td>
+    </tr>
+    <tr>
+        <th>{{ gettext("Type") }}</th>
+        <td>{{ display.platform(meta.type) }}</td>
+    </tr>
+    <tr>
+        <th>{{ gettext("Release year") }}</th>
+        <td>{{ meta.release_year }}</td>
+    </tr>
+    <tr>
+        <th>{{ gettext("Remix of") }}</th>
+        <td>{{ display.song(meta.get_remix()) }}</td>
+    </tr>
+    <tr>
+        <th>{{ gettext("Pouet ID") }}</th>
+        <td>{% if meta.pouetid %}<a href="http://pouet.net/prod.php?which={{ meta.pouetid }}" target="_blank">{{ meta.pouetid }}</a>{% else %}{{ gettext("None") }}{% endif %}</td>
+    </tr>
+    <tr>
+        <th>{{ gettext("YouTube link") }}</th>
+        <td>{% if meta.ytvidid %}<a href="http://www.youtube.com/watch?v={{ meta.ytvidid }}" target="_blank">{{ meta.ytvidid }}</a> - {{ gettext("Offset") }}: {{ meta.ytvidoffset }}{% else %}{{ gettext("None") }}{% endif %}</td>
+    </tr>
+</table>
+<h2><img class="icon_header" src="{{ STATIC_URL }}explicit.gif" alt="" />{{ gettext("Respond To Change") }}</h2>
+{% if meta.comment %}{{ gettext("Note from user") }}:
+ <div id="metainfo">{{ meta.comment|linebreaks }}</div>
+{% endif %}
+
+<form method="post" action=".">
+ {% if not meta.checked %}<input type="submit" name="deactivate" value="{{ gettext("Reject Changes") }}" />{% endif %}
+ {% if not meta.active %}<input type="submit" name="activate" value="{{ gettext("Accept Changes") }}" />{% endif %}
+</form>
+
+{% endblock %}

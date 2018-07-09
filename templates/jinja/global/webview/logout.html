@@ -1,0 +1,9 @@
+{% extends "base/base.html" %}
+
+{% block main %}
+<h1>{{ gettext("Log Out") }}</h1>
+<form action="." method="post">
+<input type="submit" value="{{ gettext("Log Me Out!") }}" />
+</form>
+{% endblock %}
+

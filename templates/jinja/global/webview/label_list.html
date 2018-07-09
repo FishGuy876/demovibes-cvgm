@@ -1,0 +1,19 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block title %}{{ gettext("All Producers / Labels") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}transmit_blue.png" alt="" />{{ gettext("Producers / Labels List") }}</h2>
+{% for l in al %}<a href="{{ url ("dv-labels_letter", l) }}">{{ l|upper }}</a> {% endfor %} [<a href="{{ url("dv-labels") }}">{{ gettext("All Labels") }}</a>]<br /><br />
+
+{% set objs, paging = dv.paginate(object_list) %}
+
+{% for label in objs %}
+    {{ display.label(label) }}<br />
+{% endfor %}
+<br />
+{{ paging }}
+<br />
+{{ gettext("Not Finding What You're Looking For?") }} <a href="{{ url("dv-createlabel") }}">{{ gettext("Suggest A New Label!") }}</a><br />
+
+{% endblock %}

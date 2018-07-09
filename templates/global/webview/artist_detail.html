@@ -1,0 +1,86 @@
+{% extends "base/base.html" %}
+
+{% block title %}{{ object.handle }}{% endblock %}
+
+{% block main %}
+{% load dv_extend %}<h2><img class="icon_header" src="{{ MEDIA_URL }}user_green.png" alt="" /><span class="header">Artist Info{% if user.is_staff %} [<a href="/admin/webview/artist/{{ object.id }}/">Edit Artist Info</a>]{% endif %}</h2>
+<table>
+<tr>
+<td class="artist_details">
+{% if object.artist_pic %}<img class="artist_logo" src="{{ object.artist_pic.url }}" title="{{ object.handle }}'s Picture" />{% else %}<img class="artist_logo" src="{{ MEDIA_URL }}no_artist_pic.png" alt="No Picture" />{% endif %}
+<br /><img src="{{ MEDIA_URL }}spacer.gif" /><br />
+{% if object.wiki_link %}
+ <a href="{{ object.wiki_link }}" target="_blank"><img src="{{ MEDIA_URL }}wiki-icon.png" title="{{ object.handle }} on Wikipedia" /></a>{% endif %}
+{% if object.hol_id %}<a href="http://hol.abime.net/hol_search.php?N_ref_artist={{ object.hol_id }}" target="_blank"><img src="{{ MEDIA_URL }}hol-icon.png" title="{{ object.handle }} at Hall of Light" /></a>{% endif %}
+{% if object.twitter_id %}<a href="http://www.twitter.com/{{ object.twitter_id }}" target="_blank"><img src="{{ MEDIA_URL }}twitter-icon.png" title="{{ object.handle }} on Twitter!" /></a>{% endif %}
+{% if object.last_fm_id %}<a href="http://www.last.fm/music/{{ object.last_fm_id }}" target="_blank"><img src="{{ MEDIA_URL }}lastfm-icon.png" title="{{ object.handle }} on Last.FM" /></a>{% endif %}
+</td>
+<td class="artist_information">
+<strong>{{ object.handle }}</strong> {% if object.is_deceased %}<img src="{{ MEDIA_URL }}deceased.png" class="countryflag" alt="Deceased {% if object.deceased_date %}[On {{ object.deceased_date|date:"F j, Y" }}]{% endif %}" />{% endif %}
+<br />
+
+{% if object.link_to_user %}
+ <a href="/demovibes/user/{{ object.link_to_user.username }}/">View Artist's User Page</a><br />
+{% endif %}
+
+{% if object.alias_of %}
+ <strong>This is an alias of : {% with object.alias_of as A%}{% include "webview/t/artist.html" %}{% endwith %}!</strong><br />
+{% endif %}
+
+{% if object.groups.all %}
+ Groups : {% for group in object.groups.all %}{% with group as G %}{% include "webview/t/group.html" %}{% endwith %} {% endfor %}<br />
+{% endif %}
+
+{% if object.aliases.all %}
+ Aliases: {% for alias  in object.aliases.all %}<a href="{{ alias.get_absolute_url }}">{{ alias }}</a>{% if forloop.last %}{% else %}, {% endif %}{% endfor %}<br />
+{% endif %}
+<br />
+
+{% if object.name %}
+ Name : {{ object.name }}<br />
+{% endif %}
+
+Location: {{ object.home_country|flag|safe }} {% if object.home_location %}{{ object.home_location }}{% endif %}<br />
+
+{% if object.dob %}
+ Date Of Birth : {{ object.dob|date:"F j, Y" }}<br />
+{% endif %}
+
+{% if object.is_deceased %}
+Date Of Death: {{ object.deceased_date|date:"F j, Y" }}<br />
+{% endif %}
+
+{% ifnotequal object.labels.count 0 %}
+ Associated Labels: {% for labels in object.labels.all %}{% with labels as L %}{% include "webview/t/label.html" %}{% if forloop.last %} {% else %}, {% endif %}{% endwith %}{% endfor %}<br />
+{% endifnotequal %}
+
+{% if object.info %}
+<br />Additional Information:<br />
+<p><i>{{ object.info|urlize|bbcode|linebreaks }}</i></p>
+{% endif %}<br />
+
+{% if object.webpage %}
+<br /><a href="{{ object.webpage }}" target="_blank">Artist's Website</a><br />
+{% endif %}
+
+{% ifequal object.status "A" %}
+ <a href="{{ object.get_absolute_url }}upload/">Upload a new song by this artist</a><br />
+{% else %}
+ <strong>Artist Locked For Uploading!</strong><br />
+{% endifequal %}
+<br />
+{% if object.last_updated %}Last Updated: {{ object.last_updated|date:"F j, Y" }}<br />{% endif %}
+{% if object.created_by %}Added By: {% with object.created_by as U %}{% include "webview/t/user.html" %}{% endwith %}<br />{% endif %}
+</td>
+</tr>
+</table>
+
+<h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />Songs Connected To This Artist</h2>
+{% include "webview/t/songheader.html" %}
+{% for song in object.song_set.all %}
+<tr class="{% cycle 'row1' 'row2' %}">
+{% include "webview/t/songlist.html" %}
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

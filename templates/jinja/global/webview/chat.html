@@ -1,0 +1,31 @@
+{% extends "base/base_chat.html" %}
+
+{% block content %}
+
+<div id="chatbox-main">
+	<h3>{{ gettext("Chat box") }}</h3>
+	
+	{{ dv.get_roneliner() }}
+
+	{% if user.is_authenticated() %}
+		<form action="{{ url ("dv-oneliner_submit") }}" method="post" enctype="application/x-www-form-urlencoded"  onsubmit="apf('{{ url ("dv-ax-oneliner_submit") }}',this); this.Line.value = ''; return false;" >
+	            <input id="blah" name="Line" autocomplete="off" maxlength="256" onkeydown="return tc(this,event.keyCode);" onkeypress="return canceltab(event.keyCode);" value="…" onfocus="if (this.value == '…') { this.value=''; }" style="width: 100%;" /><input id="makeitso" type="submit" value="" />
+		</form>
+	{% endif %}
+</div>
+
+<div id="chatbox-column">
+
+	<h3>{{ gettext("Who's Online?") }}</h3>
+	<div id="userlist">
+		{{ dv.get_online_users() }}
+	</div>
+
+	<h3>{{ gettext("Currently Playing") }}</h3>
+	<div data-name="nowplaying">
+		{{ dv.current_song(user) }}
+	</div>
+
+</div>
+
+{% endblock %}

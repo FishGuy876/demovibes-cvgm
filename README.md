@@ -1,2 +1,0 @@
-# demovibes-cvgm
-Demovibes CVGM

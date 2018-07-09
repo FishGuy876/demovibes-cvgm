@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tags>
+    {% for tag in object_list %}
+        <tag>{{ tag.name|escape }}</tag>
+    {% endfor %}
+</tags>

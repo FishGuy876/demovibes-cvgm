@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<user>
+    {% set profile = target_user_profile %}
+    <avatar>{% if profile.avatar %}{{ profile.avatar.url|e }}{% endif %}</avatar>
+    <country>{{ profile.country|e }}</country>
+    <infoline>{{ profile.infoline|e }}</infoline>
+    <location>{{ profile.location|e }}</location>
+    <extra>
+    {% if full_info %}
+        <group id="{{ profile.group.id }}">{{ profile.group|e }}</group>
+        {% if profile.real_name %}<realname>{{ profile.real_name|e }}</realname>{% endif %}
+        <twitterid>{{ profile.twitter_id|e }}</twitterid>
+        <votecount>{{ profile.get_votecount() }}</votecount>
+        {% if profile.have_artist() %}<artistlink id="{{ profile.user.artist.id }}">{{ profile.user.artist|e }}</artistlink>{% endif %}
+        {% if profile.fave_id %}<faveid>{{ profile.fave_id }}</faveid>{% endif %}
+        <webpage>{{ profile.web_page|e }}</webpage>
+    {% else %}
+        <hidden/>
+    {% endif %}
+    </extra>
+</user>

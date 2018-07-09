@@ -1,0 +1,27 @@
+{% extends "base/base.html" %}
+{% block title %}{{ gettext("Top") }} {{ numsongs }} {{ title }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}statistics.png" alt="" />{{ gettext("Top") }} {{ numsongs }} {{ title }}</h2>
+
+<table class="songlist statistics">
+<tr>
+ <th>{{ gettext("Nr") }}</th>
+ <th>{{ gettext("Song Title") }}</th>
+ <th>{{ gettext("Artist") }}</th>
+ <th>{{ gettext("Song Length") }}</th>
+ <th>{{ gettext("Status") }}</th>
+ <th>{{ gettext("Vote") }}</th>
+ <th>{{ gettext("Queue") }}</th>
+ <th>{{ gettext("Last Request") }}</th>
+ {% if stat %}<th>{{ name }}</th>{% endif %}
+</tr>
+{% for song in songs %}
+<tr class="{{ loop.cycle('row1', 'row2') }}">
+    <td>{{ loop.index }}</td>
+{% include "webview/t/songlist.html" %}
+{% if stat %}<td>{{ song[stat] }}</td>{% endif %}
+ </tr>
+{% endfor %}
+</table>
+{% endblock %}

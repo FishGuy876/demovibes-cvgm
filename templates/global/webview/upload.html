@@ -1,0 +1,25 @@
+{% extends "base/base.html" %}
+
+{% block title %}Upload New Song{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}sound.png" alt="" />Upload A New Song</h2>
+<p>Use this form to upload a new song to the database. All uploads are checked by a moderator before being approved. Please try to fill in as much information as you can about the entry to make the job easier on the moderators.</p>
+
+{% include "webview/upload_instructions.html" %}
+
+{% if artist.alias_of %}<h2>Warning!</h2> This artist is an alias of <a href="{{ artist.alias_of.get_absolute_url }}">{{ artist.alias_of }}</a>!<br />
+We recommend that you upload your song to the main artist entry.<h2>/Warning</h2>{% endif %}
+
+<br />
+
+<form action="." method="post" enctype="multipart/form-data">
+<table>
+<tr><th>Artist:</th><td>{% with artist as A %}{% include "webview/t/artist.html" %}{% endwith %} [<a href="{% url dv-artists %}">Change Artist</a>]</td></tr>
+{{ form.as_table }}
+</table>
+<input type="submit" value="Upload" />
+</form>
+<br />
+* <strong>Song_ID Of Original Mix</strong>: If you are uploading a remix, you can specify the song number of the original here. When someone views the page of the remix, it will provide a clickable link back to the original.<br />
+{% endblock %}

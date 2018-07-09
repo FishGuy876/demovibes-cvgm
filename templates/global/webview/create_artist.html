@@ -1,0 +1,18 @@
+{% extends "base/base.html" %}
+
+{% block title %}Create New Artist{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}user_green.png" alt="" />Create New Artist</h2>
+<p>Use this form to create a new artist. All entries are checked by a moderator before being approved. Please try to fill in as much information as you can about the entry to make the job easier on the moderators. We strongly recommend that you search for your artist (and any known aliases) before making a new entry. If you have any questions, please ask a moderator.</p>
+<br />
+<form action="." method="post" enctype="multipart/form-data">
+<table>
+{{ form.as_table }}
+</table>
+<input type="submit" value="Send Artist Request" />
+</form><br />
+<strong>*</strong> - Requires an entry in this field.<br />
+<br />
+<strong>Last.FM Accounts</strong>: This field let's you enter the artists ID from Last.FM, this is in the form of the ID name, not the complete URL. Any spaces should be replaced with '+', for example, Martin+Galway. To learn more, or search for this artist, visit the <a href="http://last.fm" target="_blank">Last.FM</a> website.<br />
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base/base.html" %}
+
+{% block title %}{{ cat.name }} - All Links{% endblock %}
+
+{% block main %}
+{% load dv_extend %}<h2>{% if cat.icon %}<img class="icon_header" src="{{ cat.icon.url }}">{% else %}<img class="icon_header" src="{{ MEDIA_URL }}transmit_blue.png">{% endif %}{{ cat.name }} - ({% count_text_links cat.id_slug %} Links)</h2>
+{{cat.description|linebreaks}}
+<br />
+{% if links_txt %}
+ {% for link in links_txt.all %}
+  {% with link as L %}{% include "webview/t/link_text.html" %}<br />{% endwith %}
+ {% endfor %}
+{% endif %}
+{% endblock %}

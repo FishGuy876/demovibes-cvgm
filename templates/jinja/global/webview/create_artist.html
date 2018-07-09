@@ -1,0 +1,26 @@
+{% extends "base/base.html" %}
+
+{% block headblock %}
+    <link rel="stylesheet" href="{{ STATIC_URL }}themes/countrybox.css" type="text/css" />
+    <script src="{{ STATIC_URL }}js/countrybox.js"></script>
+{% endblock %}
+
+{% block title %}{{ gettext("Create New Artist") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}user_green.png" alt="" />{{ gettext("Create New Artist") }}</h2>
+<p>{{ gettext("Use this form to create a new artist. All entries are checked by a moderator before being approved. Please try to fill in as much information as you can about the entry to make the job easier on the moderators. We strongly recommend that you search for your artist (and any known aliases) before making a new entry. If you have any questions, please ask a moderator.") }}</p>
+<br />
+<form action="." method="post" enctype="multipart/form-data">
+<table>
+{{ form.as_table() }}
+</table>
+
+{{ links }}
+
+<input type="submit" value="{{ gettext("Send Artist Request") }}" />
+</form><br />
+<strong>*</strong> - {{ gettext("Fields marked with a * are required") }}<br />
+<br />
+{% endblock %}
+

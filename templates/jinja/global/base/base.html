@@ -1,0 +1,127 @@
+{% extends "base/base_skeleton.html" %}
+
+{% block content %}
+    <div id="sidebar">
+        <div id="sitemenu">
+        <h3>{{ gettext("Welcome") }}, {% if user.is_authenticated() %}{{ user }}{% else %}{{ gettext("Visitor") }}{% endif %}!</h3>
+            {% block sidebar %}
+            <ul class="menulist">
+                <li id="home"><a href="{{ url("dv-root") }}">{{ gettext("Home") }}</a></li>
+                <li id="forum"><a href="{{ url ("forum_index") }}">{{ gettext("Forum") }}</a></li>
+                <li id="songs"><a href="{{ url ("dv-songs") }}">{{ gettext("Songs") }}</a></li>
+                <li id="song-source"><a href="{{ url ("dv-sources") }}">{{ gettext("Song Sources") }}</a></li>
+                <li id="song-platform"><a href="{{ url ("dv-platforms") }}">{{ gettext("Song Platforms") }}</a></li>
+                <li id="artists"><a href="{{ url ("dv-artists") }}">{{ gettext("Artists") }}</a></li>
+                <li id="groups"><a href="{{ url ("dv-groups") }}">{{ gettext("Groups") }}</a></li>
+                <li id="labels"><a href="{{ url ("dv-labels") }}">{{ gettext("Labels") }}</a></li>
+                <li id="compilations"><a href="{{ url ("dv-compilations") }}">{{ gettext("Compilations") }}</a></li>
+                <li id="screenshots"><a href="{{ url ("dv-screenshots") }}">{{ gettext("Images") }}</a></li>
+                <li id="licenses"><a href="{{ url ("dv-licenses") }}">{{ gettext("Licenses") }}</a></li>
+                {% if not user.is_authenticated() or user.get_profile().use_tags %}<li id="tagcloud"><a href="{{ url('dv-tagcloud') }}">{{ gettext("Tags") }}</a></li>{% endif %}
+                <li id="statistics"><a href="{{ url ("dv-stats-index") }}">{{ gettext("Statistics") }}</a></li>
+                <li id="menuqueue"><a href="{{ url ("dv-queue") }}">{{ gettext("Queue") }}</a></li>
+                <li>&nbsp;</li>
+                <li id="search"><a href="{{ url ("s-all") }}">{{ gettext("Search") }}</a></li>
+                <li id="recent"><a href="{{ url ("dv-recent") }}">{{ gettext("New Uploads") }}</a></li>
+            <li id="recentchanges"><a href="{{ url ("dv-updates") }}">{{ gettext("Recent Updates") }}</a></li>
+                <li>&nbsp;</li>
+                <li id="faq"><a href="{{ url ("dv-faq") }}">{{ gettext("FAQ") }}</a></li>
+                <li id="links"><a href="{{ url ("dv-links") }}">{{ gettext("Links") }}</a></li>
+            <li id="chat"><a href="{{ url ("dv-chat") }}">{{ gettext("Simple Chat") }}</a></li>
+            </ul>
+             {% endblock %}
+        </div>
+        <div id="menuoneliner">
+            <h3>{{ gettext("Infamous OneLiner") }}</h3>
+            {% if user.is_authenticated() %}
+                {% include "webview/oneliner_form.html" %}
+            {% endif %}
+            {{ dv.get_oneliner() }}
+            <a href="{{ url ("dv-oneliner") }}">{{ gettext("Oneliner History") }}</a>
+        </div>
+
+        <div id="menuonline">
+            <h3>{{ gettext("Who's Online?") }}</h3>
+            <div id="whosonlinenicks">{{ dv.get_online_users() }}</div>
+        </div>
+    </div>
+
+    <div id="rightside">
+        <div id="usermenu">
+            <h3>{{ gettext("User Menu") }}</h3>
+            <div class="message-display-settings">Notification settings</div>
+            <ul class="menulist">
+            {% if user.is_authenticated() %}
+                <li id="profile"><a href="{{ url ("dv-my_profile") }}">{{ gettext("Edit My Profile") }}</a></li>
+                <li id="favorites"><a href="{{ url ("dv-favorites") }}">{{ gettext("My Favourites") }}</a></li>
+                <li id="inbox"><a href="{{ url ("dv-inbox") }}">{{ gettext("My Inbox") }}</a> {{ dv.get_unread_count(user) }}</li>
+                <li id="logout"><a href="{{ url ("webview.views.log_out") }}">{{ gettext("Log Me Out") }}</a></li>
+            {% else %}
+                <li id="login"><a href="/account/signin/">{{ gettext("Log In / Register") }}</a></li>
+            {% endif %}
+            {% if user.is_staff %}
+                <li id="admin"><a href="/admin" target="admin">{{ gettext("Admin Area") }}</a></li>
+            {% endif %}
+            {% if perms.webview.change_song %}
+                <li id="menuqueue"><a href="{{ url ("dv-uploads") }}">{{ gettext("Unapproved Uploads") }}</a> {{ dv.pending("songs")}}</li>
+            {% endif %}
+            {% if perms.webview.add_mute_oneliner %}
+                <li id="menumute"><a href="{{ url ("dv-muteoneliner") }}">{{ gettext("Mute Account") }}</a></li>
+            {% endif %}
+            {% if user.is_staff %}
+                <li></li>
+                {% if perms.webview.change_artist %}
+                    <li id="unap-artists"><a href="{{ url ("dv-newartists") }}">{{ gettext("Pending Artists") }}</a> {{ dv.pending("artists")}}</li>
+                {% endif %}
+                {% if perms.webview.change_group %}
+                    <li id="unap-groups"><a href="{{ url ("dv-newgroups") }}">{{ gettext("Pending Groups") }}</a> {{ dv.pending("groups")}}</li>
+                {% endif %}
+                {% if perms.webview.change_compilation %}
+                    <li id="unap-compilations"><a href="{{ url ("dv-newcompilations") }}">{{ gettext("Pending Compilations") }}</a> {{ dv.pending("compilations")}}</li>
+                {% endif %}
+                {% if perms.webview.change_label %}
+                    <li id="unap-labels"><a href="{{ url ("dv-newlabels") }}">{{ gettext("Pending Labels") }}</a> {{ dv.pending("labels")}}</li>
+                {% endif %}
+                {% if perms.webview.change_screenshot %}
+                    <li id="unap-screenshots"><a href="{{ url ("dv-newscreenshots") }}">{{ gettext("Pending Screenshots") }}</a> {{ dv.pending("screenshots")}}</li>
+                {% endif %}
+                {% if perms.webview.change_link %}
+                    <li id="unap-links"><a href="{{ url ("dv-newlinks") }}">{{ gettext("Pending Links") }}</a> {{ dv.pending("links")}}</li>
+                {% endif %}
+                    <li id="unap-nju"><a href="{{ url ("dv-new-info") }}">{{ gettext("New info") }}</a> {{ dv.pending("info")}}</li>
+            {% endif %}
+            </ul>
+        </div>
+
+        <div id="nowplaying">
+            <h3>{{ gettext("Currently Playing") }}</h3>
+            <div data-name="nowplaying">
+                {{ dv.current_song(user) }}
+            </div>
+            <hr style="width: 80%; background-color: #000; height: 1px; border: 0px;" />
+            <input type="button" style="border: 1px solid; border-color: #333;" value="Listen" onclick="window.open('{{ url ("dv-play_stream") }}','player','width=340,height=25,toolbar=no,scrollbars=no,resizable=no,location=no,directories=no,status=no,menubar=no,copyhistory=no')" /> - <a href="{{ url ("dv-streams") }}">{{ gettext("Streams") }}</a>
+        </div>
+        <div id="sidebarnews">
+        {% for item in dv.get_news("B") %}
+            <div class="newsentryside">
+                <h3 class="entrytitle">{{ item.title }}</h3>
+                <div class="entrytext">{{ item.text }}</div>
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+
+    <div id="main">
+        <h1 id="mainheader">{{ dv.site_name() }}</h1>
+        <div id="mainlogo">{{ dv.logo() }}</div>
+
+        <div style="overflow:auto" id="maincontent"{% block maindiv %}{% endblock %}>
+            {% block main %}{% endblock %}
+        </div>
+    {% include "base/page_footer.html" %}
+    </div>
+
+<script>
+    STATIC_URL = "{{ STATIC_URL }}";
+</script>
+{% endblock %}

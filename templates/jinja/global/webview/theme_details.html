@@ -1,0 +1,47 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block title %}{{ gettext("Theme info") }}{% endblock %}
+
+{% block main %}
+<h2>Theme {{ theme.title }}</h2>
+{{ display.onelinerlink("theme", theme.id, user) }}
+<div class="themedetail">
+    <a href="{{ url ("dv-themelist") }}">Show full theme list</a>
+    {% set shot = theme.get_main_screenshot() %}
+        {% if shot %}
+          <div class="themeimage_large"><img src="{{ shot.image.get_thumb_url() }}" alt="Preview"/></div>
+        {% endif %}
+
+        <div class="themeby">Created by {{ display.user(theme.creator) }}</div>
+
+        <div class="islocal">Stored locally: {{ theme.is_local() and "Yes" or "No" }}</div>
+        <div class="isdefault">Default theme: {{ theme.default and "Yes" or "No" }}</div>
+        <div class="user_count">Users: {{ theme.user_count }}</div>
+        <form method="post" action="{{ url ("dv-themelist") }}">
+            <input type="submit" value="Activate"/>
+            <input type="hidden" name="theme_id" value="{{ theme.id }}" />
+        </form>
+
+        <h2>Screenshots</h2>
+        {% for shot in theme.get_screenshots() %}
+            <div class="theme_shot">
+                <a href="{{ url ("dv-screenshot", shot.image.id) }}">
+                    {% if shot.image.thumbnail %}
+                        <img src="{{  shot.image.thumbnail.url }}" alt="{{  shot.image.name|e }}" />
+                    {% else %}
+                        (No thumbnail)
+                    {% endif %}
+                </a>
+            </div>
+        {% endfor %}
+        <div class="clear"></div>
+        {% if user == theme.creator %}
+            <a href="{{ url("dv-themeaddimage", theme.id) }}">Add an image</a>
+        {% endif %}
+        <h2>Description</h2>
+        <div class="themedescription">{{ display.text(theme.description) }}</div>
+         {% if user == theme.creator %}
+            <a href="{{ url("dv-themeedit", theme.id) }}">Edit theme data</a>
+        {% endif %}
+</div>
+{% endblock %}

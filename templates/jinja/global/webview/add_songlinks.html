@@ -1,0 +1,17 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display %}
+{% block title %}Add songlinks{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}link_edit.png" alt="" />{{ gettext("Add Links For") }} {{ song }}</h2>
+<p>{{ gettext("Add links for the song") }} {{ display.song(song) }}</p>
+
+<p>{{ gettext("The information here will be submitted, but won't be active until a moderator has checked and approved it.") }}</p>
+
+<form method="post" action=".">
+<table>
+            {{ links.as_table() }}
+ </table>
+<input type="submit" value="{{ gettext("Save") }}">
+</form>
+{% endblock %}

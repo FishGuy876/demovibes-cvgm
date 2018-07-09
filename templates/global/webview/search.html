@@ -1,0 +1,57 @@
+{% extends "base/base.html" %}
+
+{% block title %}Search Site{% endblock %}
+
+{% block main %}
+ <h2><img class="icon_header" src="{{ MEDIA_URL }}find.png" alt="" />Search For Users / Songs / Groups / Compilations / Labels / Artists</h2>
+ <form action='.' method="post">
+ <input name="Search" /><input type="submit" value="Search" />
+ </form>
+
+{% if users %}
+  <h2><img class="icon_header" src="{{ MEDIA_URL }}user.png" alt="" />Users Found</h2>
+  {% for u in users %}
+  {% with u as U %}{% include "webview/t/user.html" %}{% endwith %}<br/>
+  {% endfor %}
+{% endif %}
+
+ {% if artists %}
+  <h2><img class="icon_header" src="{{ MEDIA_URL }}user_green.png" alt="" />Artists Found</h2>
+  {% for artist in artists %}
+   {% with artist as A %}{% include "webview/t/artist.html" %}{% endwith %}<br />
+  {% endfor %}
+ {% endif %}
+
+ {% if groups %}
+  <h2><img class="icon_header" src="{{ MEDIA_URL }}group.png" alt="" />Groups Found</h2>
+  {% for group in groups %}
+   {% with group as G %}{% include "webview/t/group.html" %}{% endwith %}<br />
+  {% endfor %}
+ {% endif %}
+
+{% if compilations %}
+ <h2><img class="icon_header" src="{{ MEDIA_URL }}recplay_ico.png" alt="" />Compilations Found</h2>
+  {% for comp in compilations %}
+   {% with comp as C %}{% include "webview/t/compilation.html" %}{% endwith %}<br />
+  {% endfor %}
+{% endif %}
+
+{% if labels %}
+ <h2><img class="icon_header" src="{{ MEDIA_URL }}transmit_blue.png" alt="" />Labels Found</h2>
+ {% for lab in labels %}
+  {% with lab as L %}{% include "webview/t/label.html" %}{% endwith %}<br />
+ {% endfor %}
+{% endif %}
+
+ {% if songs %}
+  <h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />Songs Found</h2>
+{% include "webview/t/songheader.html" %}
+  {% for song in songs %}
+   <tr>{% include "webview/t/songlist.html" %}</tr>
+  {% endfor %}
+  </table>
+ {% endif %}
+
+
+
+{% endblock %}

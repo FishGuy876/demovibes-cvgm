@@ -1,0 +1,30 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display %}
+{% block title %}{{ gettext("Edit songinfo") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}script.png" alt="" />{{ gettext("Edit Metadata For") }} {{ song }}</h2>
+<p>{{ gettext("Edit song info for the song") }} <a href="{{ song.get_absolute_url() }}">{{ song }}</a></p>
+
+<p>{{ gettext("The information here will be submitted, but won't be active until a moderator has checked and approved it.") }}</p>
+
+<form method="post" action=".">
+<table>
+    {{ form.as_table() }}
+</table>
+<input type="submit" value="{{ gettext("Submit data") }}">
+</form>
+
+{% if form2 %}
+<h2>Change song license</h2>
+<form method="post" action=".">
+Change the license of this song.
+<table>
+    {{ form2.as_table() }}
+</table>
+{{ form2.media }}
+<input type="submit" value="{{ gettext("Change license") }}">
+<input type="hidden" value="licchange" name="special">
+</form>
+{% endif %}
+{% endblock %}

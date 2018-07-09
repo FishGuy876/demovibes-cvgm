@@ -1,0 +1,37 @@
+{% import "macro/display.html" as display -%}<html>
+<head><title>{{ song }} {{ gettext("playing") }}</title></head>
+<body>
+<p>{{ gettext("Song") }}: {{ display.song(song) }}</p>
+<table>
+{% set songurl = song.get_file_url(user) %}
+<tr><th>{{ gettext("Flash player") }}</th><th>{{ gettext("Java player") }}</th></tr>
+    <tr>
+        <td>
+        <object type="application/x-shockwave-flash" data="{{ STATIC_URL }}flash/player_mp3_multi.swf" width="200" height="20">
+             <param name="movie" value="{{ STATIC_URL }}flash/player_mp3_multi.swf" />
+             <param name="bgcolor" value="#ffffff" />
+             <param name="FlashVars" value="mp3={{ songurl }}&amp;showlist=0" />
+        </object>
+        </td>
+        <td>
+        <applet code="de.quippy.javamod.main.applet.JavaModApplet.class"
+                archive="{{ STATIC_URL }}javamod/javamod.jar"
+                width="170"
+                height="70">
+        <param name="file" value="http://{{ dv.site_url() }}{{ songurl }}" />
+        <param name="a" value="-" />
+        </applet>
+        </td>
+    </tr>
+    <tr>
+        <td>Good at playing MP3's</td>
+        <td>Good at playing most formats</td>
+    </tr>
+</table>
+<a href="{{ songurl }}">Download song</a>
+{% if limit != None %}<p>This song link will only be valid for <b>60</b> seconds after this window was opened.</p>{% endif %}
+{% if limit %}
+<p>Number of previews left : {{ limit }}</p>
+{% endif %}
+</body>
+</html>

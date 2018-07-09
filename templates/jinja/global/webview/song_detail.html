@@ -1,0 +1,251 @@
+{% extends "base/base.html" %}
+
+{% import "macro/display.html" as display %}
+
+{% block title %}{{ object.artist()|e }} - {{ object.title|e }}{% endblock %}
+
+{% block main %}
+    {% set meta = object.get_metadata() %}
+
+    <h2>
+        <img class="icon_header" src="{{ STATIC_URL }}music.png" alt="" />{{ gettext("Song Information") }}
+        {% if user.is_staff %}
+            [<a href="/admin/webview/song/{{ object.id }}/">{{ gettext("Edit Info") }}</a>]
+        {% endif %}
+
+        {% if object.downloadable_by(user) %}
+            <em>{{ gettext("Preview") }}:</em>
+            {% set song = object %}
+            {% include "webview/t/flash_playsong.html" %}
+        {% endif %}
+    </h2>
+    
+    {{ display.onelinerlink("song", object.id, user) }}
+
+    {% if not user.is_authenticated() or user.get_profile().use_tags %}
+        <div class="taglist">
+            {% cache 86400 mkstr(object.id, object.last_changed, "tgcache") %}
+                <p>{{ gettext("Tags for song") }}:</p>
+                {% set tags = tags_f () %}
+                {% if tags %}
+                    {% for tag in tags %}
+                        <span title="{{ tag.count }} song(s)">{{ display.tag(tag) }}</span>
+                    {% endfor %}
+                {% else %}
+                    <em>{{ gettext("No tags") }}</em>
+                {% endif %}
+
+                <p><a href="{{ url('dv-songtags', object.id) }}">{{ gettext("Edit tags") }}</a></p>
+
+                {% set related = related_f () %}
+                {% if related %}
+                    <p>{{ gettext("Related songs") }}:</p>
+                    {% for S in related[:5] %}
+                        {{ display.song(S) }} {{ gettext("by") }} {{ display.artists(S) }}{% if not loop.last %}<br/> {% endif%}
+                    {% endfor %}
+                {% endif %}
+                <br/>
+            {% endcache %}
+        </div>
+    {% endif %}
+
+    {% cache 86400 mkstr(object.id, object.last_changed, "songinfo") %}
+        {{ display.song(object) }}
+
+        <p>
+            Author:
+            {% for artist in meta.artists.all() %}
+                {{ display.artist(artist) }}{% if loop.last %} {% else %}, {% endif %}
+            {% endfor %}
+
+            {% for group in meta.groups.all() %}
+                {{ display.group(group) }}
+            {% endfor %}
+        </p>
+
+        {% if meta.labels.count() != 0 %}
+            {{ gettext("Production Label") }}:
+            {% for label in meta.labels.all() %}
+                {{ display.label(label) }}{% if loop.last %} {% else %}, {% endif %}
+            {% endfor %}
+            <br />
+        {% endif %}
+
+        {% if object.uploader %}
+            {{ gettext("Uploaded By") }}: {{ display.user(object.uploader) }}
+        {% endif %}
+
+        <p>{{ gettext("Extra Resources") }}: {{ display.songicons(object) }} {{ display.links(object) }}</p>
+
+        <p>
+            {{ gettext("Song Length") }}: {{ object.length() }}<br />
+            {% if meta.release_year %}{{ gettext("Release Year") }}: <a href="{{ url ("dv-year", meta.release_year) }}">{{ meta.release_year }}</a><br />{% endif %}
+            {{ gettext("Song Status") }}: {{ object.get_status_display() }}
+            {% if object.bitrate %}<br />{{ gettext("Song Bitrate") }}: {{ object.bitrate }} kbps{% endif %}
+            {% if meta.type %}<br />{{ gettext("Song Source") }}: {{ meta.type|e }}{% endif %}
+            {% if meta.platform %}<br />{{ gettext("Song Platform") }}: {{ display.platform(meta.platform) }}{% endif %}
+            {% if object.license %}<br />{{ gettext("Song License") }}: {{ display.songlicense(object) }}{% endif %}
+        </p>
+
+        {% if meta.info %}
+            <br />{{ gettext("Additional Information") }}:<br /><i>{{ meta.info|urlize|linebreaks|bbcode }}</i>
+        {% endif %}
+    {% endcache %}
+
+    <p>
+        {{ gettext("Last Queued") }} :
+        {% if object.last_queued() != "Never" %}
+            {{ object.last_queued()|timesince }} ago
+        {% else %}
+            {{ gettext("Never Been Queued!") }}
+        {% endif %}
+    </p>
+
+    {% if user.is_authenticated() %}
+        <div>
+            {{ display.queue_song(object, user, addtext="Queue song!") }}
+            {% if object.is_locked() %}
+                <i>
+                    {{ gettext("Song is currently locked for queuing.") }}
+                    {% if object.locked_until and object.is_active() %}
+                        {{ gettext("It will be available for request again") }} {{ display.datetime(object.locked_until) }}
+                    {% endif %}
+                </i>
+            {% endif %}<br />
+            {{ display.favorite(object, user, "Add to your favorite list!", "Remove from your favorite list!") }}
+        </div>
+    {% endif %}
+
+    {% cache 86400 mkstr(object.id, object.last_changed, "songinfo2") %}
+        <p>
+            {{ gettext("This song has been played %(num)d times.", num=object.times_played) }}
+            [<a href="{{object.get_absolute_url()}}queue_history">{{ gettext("See Request History") }}</a>]
+            <br />
+            {{ gettext("It was added %(timesince)s ago.", timesince=object.added|timesince) }}
+        </p>
+
+        {% if object.get_metadata().pouetid %}
+            {{ object.get_pouet_screenshot() }}
+            {{ object.get_pouet_download() }}
+        {% endif %}
+
+        {% if object.get_metadata().screenshot %}
+            <h2><img class="icon_header" src="{{ STATIC_URL }}icon_screenshot.png" alt="" />{{ gettext("Screenshot") }}</h2>
+            <a href="{{ url ("dv-screenshot", object.get_metadata().screenshot.id) }}">
+                {% if object.get_metadata().screenshot.thumbnail %}
+                    <img src="{{ object.get_metadata().screenshot.thumbnail.url }}" alt="{{ object.get_metadata().screenshot.name|e }}" />
+                {% else %}
+                    (No thumbnail
+                {% endif %}
+            </a>
+        {% endif %}
+
+        {% if object.songdownload_set.all()  %}
+            <h2><img class="icon_header" src="{{ STATIC_URL }}link_go.png" alt="" />{{ gettext("Download Links") }}</h2>
+            <ul>
+                {% for dl in object.songdownload_set.all() %}
+                    <li><a href="{{ dl.download_url|e }}">{{ dl.title|e }}</a></li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endcache %}
+
+    <h2><img class="icon_header" src="{{ STATIC_URL }}star.png" alt="" />{{ gettext("Song Rating") }}</h2>
+    {% if object.rating_votes %}
+        {{ gettext("Song Rating") }}: {{ object.rating|floatformat }} - {{ gettext("Votes Placed") }}: {{ object.rating_votes }}
+        <a href="{{ object.get_absolute_url() }}votes/">{{ gettext("View Voting History") }}</a>
+        <br />
+    {% else %}
+        {{ gettext("No Votes Yet :(") }} <br />
+    {% endif %}
+
+    {% if user.is_authenticated() %}
+        {{ display.song_vote(object, object.get_vote(user)) }}
+    {% endif %}
+
+    {% cache 86400 mkstr(object.id, object.last_changed, "songinfo3") %}
+        {{ gettext("A total of %(num)d users have this song on their favourites list.", num=object.num_favorited) }}
+        <br />
+
+        <h2>
+            <img class="icon_header" src="{{ STATIC_URL }}music.png" alt="" />{{ gettext("Compilation / Remix Information") }}
+        </h2>
+
+        {% if meta.remix_of_id %}
+            {{ gettext("This song is a remix of") }}: {{ dv.get_song_queue_tag(meta.remix_of_id) }}
+            <br />
+        {% endif %}
+
+        {% if comps %}
+            <p><strong>{{ gettext("This Song Is Listed In The Following Compilations") }}:</strong><br /><br />
+                {% for comp in comps.all() %}{{ display.compilation(comp) }}<br />{% endfor %}
+            </p>
+        {% endif %}
+    {% endcache %}
+
+    {% cache 60 mkstr(object.id, "song_remixes") %}
+        {% if remixes %}
+            <br />
+            <strong>{{ gettext("Remixes Based On This Song") }}:</strong>
+            <br />
+            <br />
+
+            {% for mix in remixes %}
+                {{ dv.get_song_queue_tag_j(mix) }}<br />
+            {% endfor %}
+        {% endif %}
+    {% endcache %}
+
+    <h2><img class="icon_header" src="{{ STATIC_URL }}icon_screenshot.png" alt="" />{{ gettext("Screenshots") }}</h2>
+    {% if object.screenshots %}
+        {% for ss in object.get_screenshots() %}
+            {{ display.screenshot(ss.image) }}
+        {% endfor %}
+    {% endif %}
+
+    <div class="clear"></div>
+    <a href="{{ url('dv-add_screenshot', object.id) }}">Add new screenshot</a>
+
+    <h2>
+        <img class="icon_header" src="{{ STATIC_URL }}link_edit.png" alt="" />
+        {{ gettext("Song Corrections &amp; Updates") }}
+    </h2>
+
+    <p>
+        <a href="{{ url ("dv-song-edit", object.id) }}">[{{ gettext("Edit Information") }}]</a>
+        - <a href="{{ url ("dv-song-addlink", object.id) }}">[{{ gettext("Add Links") }}]</a>
+        {% if user.is_staff %}
+            - <a href="{{ url ("dv-song-infolist", object.id) }}">[{{ gettext("View Change History") }}]</a>
+        {% endif %}
+    </p>
+
+    <h2>
+        <img class="icon_header" src="{{ STATIC_URL }}comment.png" alt="" />
+        <a name="comments">{{ gettext("User Comments") }}</a>
+    </h2>
+
+    <p>
+        {% set objs, paging = dv.paginate(object.songcomment_set.all(), 5, anchor = "comments") %}
+
+        <table id="djangoForumThreadPosts">
+            <tr>
+                <th>{{ gettext("User") }}</th>
+                <th>{{ gettext("Song Comment") }}</th>
+            </tr>
+            {% for comment in objs %}
+                {% include "webview/t/song_comment.html" %}
+            {% endfor %}
+        </table>
+
+        {{ paging }}
+
+        {% if user.is_authenticated() %}
+            <p>{{ gettext("Add New Song Comment") }}:</p>
+            <form action="{{ url ("dv-addcomment", object.id) }}" method="post">
+                <textarea name="Comment" rows='8' cols='50' class="input"></textarea><br />
+                <input type="submit" value="Add New Comment" />
+            </form>
+        {% endif %}
+    </p>
+{% endblock %}
+

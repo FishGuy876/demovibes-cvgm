@@ -1,0 +1,449 @@
+#main .paging li.active {
+    font-size:1.2em;
+}
+
+#main #profileform {
+    width: 100%
+}
+
+#main #profileform #id_info {
+    width: 95%;
+}
+
+#main .paging li.prev,li.next {
+    margin-left:0.5em;
+    margin-right:0.5em;
+}
+
+#linksform tr:hover {
+    background-color: #FFFFC2;
+}
+
+p.errorinfo {
+    color: #EC3030;
+}
+
+ul.errorlist li {
+   color: #EC3030;
+}
+
+#main .paging li {
+    display: inline;
+    list-style-type: none;
+}
+
+.tagview_1 a {
+    font-size:0.8em;
+}
+
+.searchpostpreview {
+    margin-left:1.5em;
+    padding:2px;
+    background:#f5f5f5;
+    border: 1px solid #E6CEA8;
+}
+
+.searchpostpreview p {
+    margin-top: 0;
+    margin-bottom: 3px;
+}
+
+.searchinfo {
+    font-style:italic;
+}
+
+.tagview_2 a {
+    font-size:0.95em;
+}
+
+.tagview_3 a {
+    font-size:1.12em;
+}
+
+.tagview_4 a {
+    font-size:1.25em;
+}
+
+#main h2 {
+    clear:both;
+}
+
+#searchform ul {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#searchform li {
+    display: inline;
+}
+
+div.taglist {
+    background:#eee;
+    float: right;
+    width: 40%;
+    border: 1px solid #E6CEA8;
+    padding:6px;
+    margin-left:6px;
+    overflow: hidden;
+    border-radius:10px;
+    -moz-border-radius:10px;
+    -webkit-border-top-left-radius:10px;
+}
+
+div.taglist p:first-child {
+    margin-top: 0;
+}
+
+#tagfield {
+    width:90%;
+}
+
+#tagcloud {
+    background-image: url("/static/comment.png");
+}
+
+#statistics {
+    background-image: url("/static/statistics.png");
+}
+
+#lic-info {
+    float: right;
+    width: 60%;
+}
+
+div.screenshot {
+    padding: 3px;
+    text-align: center;
+    margin: 4px;
+    float: left;
+    height: 150px;
+    width: 128px;
+}
+
+span.screenshotname {
+    font-weight: bold;
+    font-style: italic;
+}
+
+div.clear {
+    clear: both;
+}
+
+.profile-theme {
+    float: right;
+    font-size: 1.2em;
+}
+
+div#screenshot-image {
+    float: left;
+    margin-right: 25px;
+    margin-bottom: 25px;
+}
+
+div#songinfo-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+div#screenshot-connected li {
+    list-style-type: none;
+}
+
+div.screenshot:hover {
+    background-color: #ddd;
+    border: 1px solid #333;
+    padding: 2px;
+}
+
+.ytvidlink {
+    width: 120px;
+    border: 1px solid #000;
+    text-align: center;
+}
+
+.ytvidlink span.yttitle {
+    margin: 2px;
+    visibility: hidden;
+    font-size: 0.8em;
+    position:absolute;
+    bottom:0;
+    left: 0;
+    width: 120px;
+    color: #fff;
+    opacity: 0.5;
+}
+
+.ytvidlink span.yttitle:hover {
+    background-color: #000;
+    opacity: 1.0;
+}
+
+.ytvidlink span.overlay {
+    position:absolute;
+    bottom:1px;
+    right:1px;
+    filter:alpha(opacity=50);
+    -moz-opacity:0.5;
+    -khtml-opacity: 0.5;
+    opacity: 0.5;
+}
+
+.youtube-link {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    background-color: #eee;
+}
+
+.editbar {
+    padding-left: 10px;
+}
+
+.editButton {
+    padding: 2px;
+}
+
+.ytpopupdesc {
+    font-size: 0.95em;
+    padding: 5px;
+    padding-top: 0;
+}
+
+.ytpopupdata {
+    text-align: center;
+    margin-top: 10px;
+    margin-right: 5px;
+}
+
+.messageholder {
+    opacity: .9;
+    padding: 0.2em;
+    font-size:14px;
+    background-color: #D1EFC3;
+    cursor: pointer;
+}
+
+.messageholder:hover {
+    opacity: 1;
+    background-color: #E1FFD3;
+}
+
+.messagetitle {
+    background-color: #8FC7FF;
+    padding: 2px;
+    padding-right: 1em;
+    padding-left: 1em;
+    cursor: pointer;
+}
+
+.message-display-settings {
+    cursor: pointer;
+}
+
+.message-display-settings:hover {
+    color: #5A5A5A;
+}
+
+.messagebox {
+    width: 100%;
+    position:fixed;
+    top:0;
+    left:0;
+}
+
+.messagetime,.messagecat {
+    padding-right: 1em;
+    font-size:70%;
+}
+
+.messagefadeborder {
+    float: right;
+    width: 50px;
+    height: 6px;
+    border: 1px solid #000;
+}
+
+.messagefade {
+    width: 100%;
+    background-color: #0F5979;
+    height: 100%;
+    right: 0;
+    margin-left: auto;
+}
+
+.messagesettingsbox {
+    position:fixed;
+    top: 45%;
+    left: 50%;
+    width: 350px;
+    margin-left: -175px;
+    background-color: #ffF;
+    border: 1px solid #000;
+}
+
+.messagesettings div {
+    padding: 0.5em;
+}
+
+.messagesettings label {
+    padding-right: 0.5em;
+}
+
+.messagesetting-save,.messagesetting-cancel {
+    padding: 1em;
+    border: 1px solid #000;
+    margin: 1em;
+    float:left;
+    cursor: pointer;
+}
+
+.message_toggle {
+    width: 50%;
+    margin:auto;
+    cursor: pointer;
+    border-bottom: 2px solid #6DC94C;
+}
+
+.message-disabled-true {
+    border-bottom: 2px solid #C44D37;
+}
+
+.messagecat {
+    min-width: 4.5em;
+    display: inline-block;
+}
+
+.messagetitle-flash {
+    background-color: #fff;
+}
+
+.message-remove  {
+    float: right;
+    cursor: pointer;
+}
+
+.linkform {
+    display:inline;
+}
+
+.starview {
+    height: 28px;
+}
+
+.starbutton {
+    border: 0;
+    height: 25px;
+    cursor: pointer;
+    width: 24px;
+    padding: 10px;
+    margin: 0;
+    float: left;
+    font-size: 70%;
+    background: url('../star-white.png') no-repeat;
+}
+
+.star-selected,.starbutton:hover {
+    background: url('../star-gold.png') no-repeat;
+}
+
+.ajax-working {
+    opacity:0.4;
+}
+
+.onelinertime {
+    color: #777;
+    float: right;
+    margin: auto;
+    text-align: right;
+}
+
+#mainlogo {
+    overflow:hidden;
+}
+
+.smileybox-holder {
+    background-color: rgba(0,0,0,0.5);
+    position: fixed;
+    top:0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+}
+
+.theme {
+    float: left;
+    padding: 1em;
+    height:220px;
+}
+
+.theme_shot {
+    float: left;
+}
+
+.activetheme {
+    border: 1px solid #000;
+    height:218px;
+}
+
+.themeimage_large {
+    float: right;
+}
+
+.smileybox {
+    border: 1px solid #000;
+    background-color: #BFBFBF;
+    position: fixed;
+    top: 30%;
+    max-height: 60%;
+    overflow: auto;
+    left: 50%;
+    padding: 1em;
+    width: 500px;
+    margin-left: -250px;
+}
+
+.smileybox-smiley {
+    float: left;
+    padding: 5px;
+    
+}
+
+.smileybox-smiley:hover {
+    border: 2px solid #000;
+    padding: 3px;
+    background-color: #ddd;
+}
+
+.onelinertools > span {
+    margin-right: 4px;
+}
+
+.onelinertools:before {
+    content:"Link: ";
+}
+
+.onelinertools {
+    height: 1.2em;
+}
+
+.clicker {
+    cursor: pointer;
+}
+
+.edit_inline {
+    cursor: pointer;
+}
+
+#djrandom-options {
+    padding-top: 7px;
+}
+
+#djrandom-quote-nick {
+    color: #77eeff;
+}
+
+#users_overview, #top_voters, #top_uploaders, #top_oneliners, #top_taggers, #top_requesters,
+#top_commentators, #top_posters, #top_user_country {
+    display: inline-block;
+}

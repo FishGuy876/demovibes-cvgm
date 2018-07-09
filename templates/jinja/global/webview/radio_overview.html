@@ -1,0 +1,119 @@
+{% extends "base/base.html" %}
+{% block title %}Radio Station Song, Vote & Registration Statistics{% endblock %}
+
+{# =============== list_stats macro =============== #}
+{% macro list_stats(stats_list, field, heading) %}
+    <table class="songstatlist statistics">
+        <tr>
+            <th>{{ gettext(heading) }}</th>
+            <th>{{ gettext("Total songs") }}</th>
+            <th>{{ gettext("Total playtime") }}</th>
+            <th>{{ gettext("Unlocked songs") }}</th>
+            <th>{{ gettext("Unlocked playtime") }}</th>
+        </tr>
+
+        {% for stat in stats_list %}
+            <tr class="{{ loop.cycle('row1', 'row2') }}">
+                <td>{{ stat[field]|e }}</td>
+                <td>{{ stat['count'] }}</td>
+                <td>{{ stat['total_playtime']|timedelta }}</td>
+                <td>{{ stat['unlocked_count'] }}</td>
+                <td>{{ stat['unlocked_playtime']|timedelta }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endmacro %}
+
+{% macro list_reverse_stats(stats_list, field, heading) %}
+    <table class="songstatlist statistics">
+        <tr>
+            <th>{{ gettext(heading) }}</th>
+            <th>{{ gettext("Total songs") }}</th>
+            <th>{{ gettext("Total playtime") }}</th>
+            <th>{{ gettext("Unlocked songs") }}</th>
+            <th>{{ gettext("Unlocked playtime") }}</th>
+        </tr>
+
+        {% for stat in stats_list %}
+            <tr class="{{ loop.cycle('row1', 'row2') }}">
+                <td>{{ loop.cycle('5', '4', '3', '2', '1', 'None') }}</td>  
+                <td>{{ stat['count'] }}</td>
+                <td>{{ stat['total_playtime']|timedelta }}</td>
+                <td>{{ stat['unlocked_count'] }}</td>
+                <td>{{ stat['unlocked_playtime']|timedelta }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endmacro %}
+
+{% block main %}
+    {% cache 60 "radio_overview_html" %}
+        {# =============== Overview =============== #}
+        <h2><img class="icon_header" src="{{ STATIC_URL }}statistics.png" alt="" />{{ gettext("Station Overview") }}</h2>
+        <ul>
+            <li>                
+                {{ gettext("This station has ") }}
+                {{ total_songs }}
+                {{ gettext("available songs, totalling ") }}
+                {{ total_length|timedelta }}
+                {{ gettext("of continuous playback time.") }}
+            </li>
+
+            <li>
+                {{ gettext("There are ") }}
+                {{ unlocked_songs }}
+                {{ gettext("unlocked songs, totalling ") }}
+                {{ unlocked_length|timedelta }}
+                {{ gettext("of continuous playback time.") }}
+            </li>
+
+            <li>
+                {{ gettext("A total of ") }}
+                {{ total_played["total_times_played"] }}
+                {{ gettext("songs have been played, for ") }}
+                {{ total_played["total_played_length"]|timedelta }}
+                {{ gettext("of on-the-air playtime.") }}
+            </li>
+        </ul>
+        
+        <h2><img class="icon_header" src="{{ STATIC_URL }}statistics.png" alt="" />{{ gettext("Song Status Summary") }}</h2>
+        {{ list_stats(stats_by_status, 'status', 'Status') }}
+
+        {# =============== By Source =============== #}
+        <h2><img class="icon_header" src="{{ STATIC_URL }}statistics.png" alt="" />{{ gettext("Song Source Statistics") }}</h2>
+        {{ list_stats(source_stats, 'source', 'Source') }}
+        
+        {# =============== By Votes =============== #}
+        <h2><img class="icon_header" src="{{ STATIC_URL }}statistics.png" alt="" />{{ gettext("User Votes Distribution") }}</h2>
+        {{ list_reverse_stats(vote_stats, 'rating_votes', 'Votes') }}
+    {% endcache %}
+        
+    {% cache 43200 "radio_overview_by_country_html" %}
+        {# =============== By Country =============== #}
+        <h2><img class="icon_header" src="{{ STATIC_URL }}statistics.png" alt="" />{{ gettext("Uploaded Songs By Country") }}</h2>
+        <table class="songstatlist statistics">
+            <tr>
+                <th>{{ gettext("Country") }}</th>
+                <th>{{ gettext("Total songs") }}</th>
+                <th>{{ gettext("Total playtime") }}</th>
+                <th>{{ gettext("Unlocked songs") }}</th>
+                <th>{{ gettext("Unlocked playtime") }}</th>
+            </tr>
+            
+            {% for stat in country_stats %}
+                <tr class="{{ loop.cycle('row1', 'row2') }}">
+                    <td>
+                        {{ dv.flag(stat['songmetadata__artists__home_country']) }}
+                        {{ dv.countryname (stat['songmetadata__artists__home_country']) }}
+                    </td>
+
+                    <td>{{ stat['count'] }}</td>
+                    <td>{{ stat['total_playtime']|timedelta }}</td>
+                    <td>{{ stat['unlocked_count'] }}</td>
+                    <td>{{ stat['unlocked_playtime']|timedelta }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endcache %}
+{% endblock %}
+

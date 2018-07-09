@@ -1,0 +1,11 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display %}
+
+{% block title %}Account Muted until {{muted.time}}{% endblock %}
+
+{% block main %}
+<h2>Account muted</h2>
+
+<p>Reason : {{ muted.reason }}<br/>
+Muted until: {{ display.time(muted.time) }}</p>
+{% endblock %}

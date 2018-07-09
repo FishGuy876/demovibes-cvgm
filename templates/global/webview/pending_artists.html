@@ -1,0 +1,32 @@
+{% extends "base/base.html" %}
+
+{% block title %}Pending Artist Approvals{% endblock %}
+
+{% block main %}
+{% load dv_extend %}<h2><img class="icon_header" src="{{ MEDIA_URL }}user_green.png" alt="" />Pending Artist Approvals</h2>
+<p>The following artists have their status as 'Uploaded'. Moderators should verify the information for each entry to make sure it's ok.</p>
+<br />
+{% for artist in artists.all %}
+    <table>
+    <tr>
+    <td>
+    {% if artist.artist_pic %}<img class="artist_logo" src="{{ artist.artist_pic.url }}" title="{{ artist.handle }}" alt="{{ artist.handle }}" width="100" />{% else %}<img class="artist_logo" src="{{ MEDIA_URL }}no_artist_pic.png" title="No Picture" alt="No Picture" width="100" />{% endif %}
+    </td>
+    <td>
+    Artist: {% with artist as A %}{% include "webview/t/artist.html" %}{% endwith %}<br />
+    Location:{% if artist.home_location %} {{ artist.home_location }}{% endif %} {{ artist.home_country|flag|safe }}<br />
+    {% if artist.webpage %}Website: <a href="{{ artist.webpage }}">{{ artist.webpage }}</a><br />{% endif %}
+    {% if artist.wiki_link %}Wiki Link: <a href="{{ artist.wiki_link }}" target="_blank">{{ artist.wiki_link }}</a><br />{% endif %}
+    {% ifnotequal artist.groups.count 0 %}Groups: {% for group in artist.groups.all %}{% with group as G %}{% include "webview/t/group.html" %}{% endwith %}{% endfor %}<br />{% endifnotequal %}
+    {% if artist.created_by %}Created By: {% with artist.created_by as U %}{% include "webview/t/user.html" %}{% endwith %}<br />{% endif %}
+    
+    {% if artist.info %}<p><i>{{ artist.info|urlize|bbcode|linebreaks }}</i></p>{% endif %}
+
+    <a href="{% url dv-newartists %}?artist={{ artist.id }}&amp;status=A"><img src="{{ MEDIA_URL }}thumb_up.png" title="Approve" alt="Approve" /> Approve</a> or <a href="{% url dv-newartists %}?artist={{ artist.id }}&amp;status=R"><img src="{{ MEDIA_URL }}thumb_down.png" title="reject" alt="Reject" /> Reject</a>
+    </td>
+    </tr>
+    </table>
+    <br />
+{% endfor %}
+<br />
+{% endblock %}

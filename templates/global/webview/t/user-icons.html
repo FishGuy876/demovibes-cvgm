@@ -1,0 +1,8 @@
+{% spaceless %}
+{% if U.get_profile.aol_id or U.get_profile.icq_id or U.get_profile.yahoo_id or U.get_profile.twitter_id %}
+ {% if U.get_profile.aol_id %} <img class="user-resource" src="{{ MEDIA_URL }}aim-icon.png" title="{{ U.get_profile.aol_id }} on AIM" />{% endif %}
+ {% if U.get_profile.icq_id %} <a href="http://www.icq.com/people/about_me.php?uin={{ U.get_profile.icq_id }}" target="_blank"><img class="user-resource" src="{{ MEDIA_URL }}icq-icon.png" title="{{ U.get_profile.icq_id }} on ICQ" /></a>{% endif %}
+ {% if U.get_profile.yahoo_id %} <a href="http://profiles.yahoo.com/{{ U.get_profile.yahoo_id }}" target="_blank"><img class="user-resource" src="{{ MEDIA_URL }}yahoo-icon.png" title="{{ U.get_profile.yahoo_id }} on Yahoo!" /></a>{% endif %}
+ {% if U.get_profile.twitter_id %} <a href="http://www.twitter.com/{{ U.get_profile.twitter_id }}" target="_blank"><img class="user-resource" src="{{ MEDIA_URL }}twitter-icon.png" title="{{ U.get_profile.twitter_id}} on Twitter" /></a>{% endif %}
+{% endif %}
+{% endspaceless %}

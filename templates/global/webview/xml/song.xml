@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+{% with object.get_metadata as meta %}
+<song id="{{ object.id }}">
+ <title>{{ object.title }}</title>
+ <status v="{{ object.status }}">{{ object.get_status_display }}</status>
+ <bitrate>{{ object.bitrate }}</bitrate>
+ <samplerate>{{ object.samplerate }}</samplerate>
+ <rating votes="{{ object.rating_votes }}">{{ object.rating }}</rating>
+ {% if meta.info %}<info>{{ meta.info }}</info>{% endif %}
+ <songlength>{{ object.get_songlength }}</songlength>
+ <locked>{{ object.is_locked }}</locked>
+ <locked_until>{{ object.locked_until }}</locked_until>
+ <lastplayed>{{ object.last_queued }}</lastplayed>
+ {% if meta.platform %}<platform id="{{ meta.platform.id }}">{{ meta.platform }}</platform>{% endif %}
+ {% if meta.type %}<type id="{{ meta.type.id }}">{{ meta.type }}</type>{% endif %}
+ {% if meta.pouetid %}<pouetid>{{ meta.pouetid }}</pouetid>{% endif %}
+ {% if meta.ytvidid %}<ytid>{{ meta.ytvidid }}</ytid>{% endif %}
+ {% if meta.ytvidoffset %}<ytoffset>{{ meta.ytvidoffset }}</ytoffset>{% endif %}
+ {% if meta.license %}<license id="{{ meta.license.id }}">{{ meta.license }}</license>{% endif %}
+ <artists>
+  {% for artist in meta.artists.all %}<artist id="{{ artist.id }}">{{ artist.handle }}</artist>{% endfor %}
+ </artists>
+ {% if meta.groups.all|length > 0 %}<groups>
+  {% for group in meta.groups.all %}<group id="{{ group.id }}">{{ group.name }}</group>{% endfor %}
+ </groups>{% endif %}
+ {% if meta.labels.all|length > 0 %}<labels>
+  {% for label in meta.labels.all %}<label id="{{ label.id }}">{{ label.name }}</label>{% endfor %}
+ </labels>{% endif %}
+ <tags>{% for tag in song.tags %}
+  <tag>{{ tag.name }}</tag>
+ {% endfor %}</tags>
+ <links>
+ {% for link in song.links %}
+  <link type="{{ link.link.id }}">{{ link.get_link }}</link>
+ {% endfor %}
+ </links>
+</song>
+{% endwith %}

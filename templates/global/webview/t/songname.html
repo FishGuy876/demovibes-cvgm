@@ -1,0 +1,1 @@
+{% if song.platform.symbol %}<a href="{{ song.platform.get_absolute_url }}"><img class="platform_icon" src="{{ song.platform.symbol.url }}" title="{{ song.platform.title }}" /></a>{% endif %}<a href="{{ song.get_absolute_url }}">{{ song.title }}</a>{% if song.explicit %}<img class="text-link" src="{{ MEDIA_URL }}explicit.gif" title="Contains Explicit Content!" />{% endif %}

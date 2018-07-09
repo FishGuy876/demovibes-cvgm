@@ -1,0 +1,65 @@
+demosauce - fancy icecast source client
+
+BUILDING
+==================
+officially we support only linux, but the code is written with portability in mind.
+
+Libraries
+------------------
+required libs:
+libsamplerate, libshout, libavcodec, libavformat, libgetopt
+
+optional libs:
+bass, libid3tag
+
+you can use BASS for module playback (mod, s3m, xm, it). the configure script will ask and to the work for you. alternatively you can get the binaries for your system here http://www.un4seen.com/bass.html. extract the bass.h header file and bass.so for your platform. libid3tag is required for bass.
+
+Linux
+------------------
+we provide a script (contrib/installDependencies.sh) to install the required libraries which you will need to run as root.
+
+OSX
+------------------
+you will need to install the required libraries manually.
+
+BSD
+------------------
+no bass support for bsd. installDependencies.sh could be patched to work with bsd flavours, maybe YOU can help :D
+
+Windows
+------------------
+lol
+
+SETUP
+==================
+copy contrib/demosauce.conf.example to demosauce.conf. then edit it. the comments will guide you.  
+
+RUN
+==================
+you can either run demosauce with a full demovibes server (which demosauce was written for) or provide your own script. that script will listen on a certain port for a command (NEXTSONG) upon which it will return information about the next song to be played. the format is a couple of key-value pairs. if you're using demosauce with demovibes, just run the sockulf.py script in the demobibes directory.  
+for a simple custom example script, check contrib/simple-sockulf.py. it will play all playable files in a given directory in a random order. you can use that script as the basis for you own solution. you probably only have to change the djDerp class. 
+to control demosauce while it's running, use contrib/demosauce-control.py. 
+
+LICENSE
+==================
+GPLv3 http://www.gnu.org/licenses/gpl.txt
+
+FAQ
+==================
+if you have a question, contact me (maep) via irc: #nectarine on irc.eu.esper.net
+
+what per-song settings are available?
+    general
+    ------------------
+    gain        : <replay gain value>
+    length      : <force length in seconds, 0 = disabled>
+    fade_out    : false | true
+    mix         : auto  | 0.0 - 0.5
+
+    bass only
+    ------------------
+    bass_inter  : auto | off  | linear | sinc
+    bass_ramp   : auto | off  | normal | sensitive
+    bass_mode   : auto | bass | pt1    | ft2
+
+cheers, maep

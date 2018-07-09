@@ -1,0 +1,40 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display %}
+{% block title %}{{ gettext("New songinfo") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}music.png" alt="" />{{ gettext("Song Information") }}</h2>
+<table>
+<tr>
+    <th>{{ gettext("Song") }}</th>
+    <th>{{ gettext("User") }}</th>
+    <th>{{ gettext("Added") }}</th>
+</tr>
+{% for info in metainfo %}
+    <tr>
+        <td>{{ display.song(info.song) }}</td>
+        <td>{{ display.user(info.user) }}</td>
+        <td>{{ info.added|timesince }} {{ gettext("ago") }}</td>
+        <td><a href="{{ url("dv-songinfo-view", info.id) }}">{{ gettext("View") }}</a></td>
+    </tr>
+{% endfor %}
+</table>
+
+<h2><img class="icon_header" src="{{ STATIC_URL }}link_edit.png" alt="" />{{ gettext("Linkies") }}</h2>
+<table>
+<tr>
+    <th>{{ gettext("Song") }}</th>
+    <th>{{ gettext("Link") }}</th>
+    <th>{{ gettext("User") }}</th>
+</tr>
+{% for info in linkinfo %}
+    <tr>
+        <td>{{ display.song(info.content_object) }}</td>
+        <td><a href="{{ info.get_link() }}" target="nju">{{ info.get_link() }}</a></td>
+        <td>{{ display.user(info.user) }}</td>
+        <td><a href=".?alink={{ info.id }}&amp;status=0">{{ gettext("Accept") }}</a></td>
+        <td><a href=".?alink={{ info.id }}&amp;status=2">{{ gettext("Reject") }}</a></td>
+    </tr>
+{% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,2 @@
+{% import "macro/display.html" as display -%}
+{{ display.song(song) }} {{ gettext("by") }} {% for artist in artists.all() %}{{ display.artist(artist) }}{% if loop.last %} {% else %}, {% endif %} {% endfor %} {{ display.queue_song(song, user) }}

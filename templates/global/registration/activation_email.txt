@@ -1,0 +1,12 @@
+Hi,
+
+This is the automated registration system at {{ site.name }}. A request was made using your email address to request a new account. If this message has been sent in error, or you do not wish to activate an account, ignore this message and the request will automatically expire after 7 days.
+
+To activate your account and access all areas of the site, please click the activation link below. We have also included the activation key seperately in the event your email client doesn't automaticlly include the activation key correctly:
+
+Your activation link is: http://{{ site.domain }}/accounts/activate/{{ activation_key }}/
+Your activation key is : {{ activation_key }}
+
+Thank-you,
+
+The {{ site.name }} Administration Team

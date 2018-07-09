@@ -1,0 +1,33 @@
+{% extends "base/base.html" %}
+{% load dv_extend %}
+{% block title %}Audio Streams{% endblock %}
+
+{% block main %}
+<h2>{% site_name %} Audio Streams</h2>
+{% include "webview/stream_instructions.html" %}
+<br />
+{% for stream in object_list %}
+<div class="bubbleInfo">
+    {{ stream.country_code|flag|safe }} <a href="{{ stream.url }}" class="trigger">{{stream.name}}</a> ({{ stream.bitrate }} kbps {{ stream.get_streamtype_display }})
+<div class="popup">
+    <b>Stream Name:</b> {{ stream.country_code|flag|safe }} {{stream.name}}<br />
+    <b>Direct Stream Link:</b> <a href="{{ stream.url }}">{{stream.name}}</a><br />
+    {% ifnotequal stream.streamtype 'S' %}<b>PlayList File:</b> <a href="{{ stream.url }}.m3u">M3U</a><br />{% endifnotequal %}
+    <b>Stream Info:</b> {{ stream.get_streamtype_display }} - {{ stream.bitrate }} kbps<br />
+    {% if stream.description %}{{ stream.description|linebreaks }}{% endif %}
+    </div>
+</div><br/>
+{% endfor %}
+
+<h2>Recommended Players</h2>
+The audio streams can be played on many different programs and platforms, including:<br />
+<br />
+<a href="http://www.winamp.com" target="_blank">Winamp</a> (Windows Only)<br />
+<a href="http://www.microsoft.com/windows/windowsmedia/player" target="_blank">Windows Media Player</a> (Windows, Windows Mobile, PocketPC)<br />
+<a href="http://www.apple.com/itunes" target="_blank">iTunes</a> (Windows and Mac)<br />
+<a href="http://www.videolan.org/vlc/" target="_blank">VLC</a> (Windows, Mac and Linux)<br />
+<a href="http://www.mplayerhq.hu/" target="_blank">Mplayer</a> (Linux)<br />
+<a href="http://audacious-media-player.org/" target="_blank">Audacious</a> (Linux)<br />
+<a href="http://www.foobar2000.org/" target="_blank">Foobar2k</a> (Windows Only)<br />
+<a href="http://www.un4seen.com/" target="_blank">XMPlay</a> (Windows, Linux &amp; Mac)<br />
+{% endblock %}

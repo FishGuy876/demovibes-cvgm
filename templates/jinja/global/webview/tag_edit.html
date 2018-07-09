@@ -1,0 +1,54 @@
+{% extends "base/base.html" %}
+
+{% import "macro/display.html" as display %}
+
+{% block title %}{{ gettext("Edit tags for") }} {{ song|e }}{% endblock %}
+
+{% block headblock %}
+
+  <link rel="stylesheet" href="{{ STATIC_URL }}js/jquery/autocomplete/jquery.autocomplete.css" type="text/css" />
+  <script type="text/javascript" src="{{ STATIC_URL }}js/jquery/autocomplete/jquery.autocomplete.pack.js"></script>
+  <script>
+  $(document).ready(function(){
+    $("#tagfield").autocomplete("{{ url("dv-ax-taglist") }}",
+    {multiple:true,
+    formatResult: function(data, value) {
+            return value.split(" ")[0];
+        },
+    multipleSeparator:" "});
+  });
+  </script>
+
+{% endblock %}
+
+{% block main %}
+<h2>{{ gettext("Edit tags for") }} {{ song|e }}</h2>
+<p>{{ gettext("Editing tags for") }} {{ display.song(song) }}.</p>
+<p>{{ gettext("Please try to keep the style and words that's already in use.") }}</p>
+
+<span>{{ gettext("Please input tags with space between to seperate them.") }}</span>
+<h2>{{ gettext("Change tags") }}</h2>
+<form method="post" action=".">
+Tags : <input type="text" name="tags" value="{{ tags|e }}"  id="tagfield" />
+<input type="submit" value="Update tags" />
+</form>
+<h3>{{ gettext("Latest changes") }}:</h3>
+{% if changes %}
+<table>
+<tr>
+<th>{{ gettext("User") }}</th>
+<th>{{ gettext("Time") }}</th>
+<th>{{ gettext("Tags") }}</th>
+</tr>
+{% for change in changes %}
+<tr>
+    <td>{{ display.user(change.user) }}</td>
+    <td>{{ display.datetime(change.added) }}</td>
+    <td>{{ change.tags|e }}</td>
+</tr>
+{% endfor %}
+</table>
+{% else %}
+{{ gettext("No tags have been added yet") }}
+{% endif %}
+{% endblock %}

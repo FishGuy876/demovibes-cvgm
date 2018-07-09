@@ -1,0 +1,33 @@
+{% extends "base/base.html" %}
+
+{% block title %}Pending Label Approvals{% endblock %}
+
+{% block main %}
+{% load dv_extend %}<h2><img class="icon_header" src="{{ MEDIA_URL }}transmit_blue.png" alt="" />Pending Label Approvals</h2>
+<p>The following labels have their status as 'Uploaded'. Moderators should verify the information for each entry to make sure it's ok.</p>
+<br />
+{% for label in labels.all %}
+    <table>
+    <tr>
+    <td>
+    {% if label.logo %}<img class="label_logo" src="{{ label.logo.url }}" title="{{ label.name }} alt="{{ label.name }}" />{% else %}<img class="label_logo" src="{{ MEDIA_URL }}no_picture.png" height="100" title="No Picture" alt="No Picture" />{% endif %}
+    </td>
+    <td>
+    Label: {% with label as L %}{% include "webview/t/label.html" %}{% endwith %}<br />
+    {% if label.webpage %}Website: <a href="{{ label.webpage }}" target="_blank">{{ label.webpage }}</a><br />{% endif %}
+    {% if label.wiki_link %}Wiki Link: <a href="{{ label.wiki_link }}" target="_blank">{{ label.wiki_link }}</a><br />{% endif %}
+    {% if label.pouetid %}Pouet Link: <a href="http://www.pouet.net/groups.php?which={{ label.pouetid }}" target="_blank"">Pouet Link</a><br />{% endif %}
+    {% if label.hol_id %}H.O.L. Link: <a href="http://hol.abime.net/hol_search.php?N_ref_developer={{ label.hol_id }}" target="_blank">Hall of Light Developer Entry</a><br />{% endif %}
+    {% if label.found_date %}Founding Date: {{ label.found_date|date:"F j, Y" }}<br />{% endif %}
+    {% if label.created_by %}Created By: {% with label.created_by as U %}{% include "webview/t/user.html" %}{% endwith %}<br />{% endif %}
+   
+    {% if label.info %}<p><i>{{ label.info|urlize|bbcode|linebreaks }}</i></p>{% endif %}
+
+    <a href="{% url dv-newlabels %}?label={{ label.id }}&amp;status=A"><img src="{{ MEDIA_URL }}thumb_up.png" title="Approve" alt="Approve" /> Approve</a> or <a href="{% url dv-newlabels %}?label={{ label.id }}&amp;status=R"><img src="{{ MEDIA_URL }}thumb_down.png" title="Reject" alt="Reject" /> Reject</a>
+    </td>
+    </tr>
+    </table>
+    <br />
+{% endfor %}
+<br />
+{% endblock %}

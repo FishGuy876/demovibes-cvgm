@@ -1,0 +1,21 @@
+{% extends "base/base.html" %}
+
+{% block title %}Platform {{ object.title }}{% endblock %}
+
+{% block main %}{% spaceless %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}script.png" alt="" />Song Source - {{ object.title }}</h2>
+{% if object.image %}<img src="{{ object.image.url }}" title="Screenshot For {{ object.title }}" alt="Screenshot For {{ object.title }}" />{% endif %}
+{{object.description|linebreaks}}
+
+<h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />Songs</h2>
+
+{% include "webview/t/songheader.html" %}
+{% for song in object.song_set.all %}
+ <tr class="{% cycle 'row1' 'row2' %}">
+ {% include "webview/t/songlist.html" %}
+ </tr>
+{% endfor %}
+</table>
+
+{% endspaceless %}
+{% endblock %}

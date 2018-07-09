@@ -1,0 +1,50 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block title %}{{ gettext("Recent Song Approvals") }}{% endblock %}
+
+{% block main %}
+ <h2><img class="icon_header" src="{{ STATIC_URL }}music.png" alt="" />Recently Approved Songs</h2>
+<p>{{ gettext("Displaying the latest %(num)d uploaded songs", num=settings.UPLOADED_SONG_COUNT) }}:</p>
+
+ <table class="recent-approvals">
+ <tr>
+  <th>{{ gettext("Song Title") }}</th>
+  <th>{{ gettext("Artist") }}</th>
+  <th>{{ gettext("Added") }}</th>
+  <th>{{ gettext("Length") }}</th>
+  <th>{{ gettext("Uploader") }}</th>
+  <th>{{ gettext("Status") }}</th>
+</tr>
+{% if songs %}
+    {% for songr in songs %}
+        <tr>
+            <td>
+                {{ display.song(songr.song) }}
+            </td>
+            <td>
+                {{ display.artists(songr.song) }}
+                {% for group in songr.song.get_metadata().groups.all() %} {{ display.group(group) }} {% if loop.last %} {% else %}, {% endif %}{% endfor %}
+            </td>
+            <td>
+                {{ display.date(songr.approved) }}
+            </td>
+            <td>
+                {{ songr.song.length() }}
+            </td>
+        <td>
+            {{ display.user(songr.uploaded_by) }}
+        </td>
+            <td>
+                {{ display.queue_song(songr.song, user) }}
+                {{ display.favorite(songr.song, user) }}
+            </td>
+        </tr>
+    {% endfor %}
+{% else %}
+   <tr><td>{{ gettext("No Entries!!") }}</td><td></td><td></td><td></td><td></td><td></td></tr>
+{% endif %}
+ </table>
+
+{% endblock %}
+
+

@@ -1,0 +1,9 @@
+{% load dv_extend %}There {{ userlist.count|pluralize:"is,are" }} a total of {{ userlist.count }} user{{ userlist.count|pluralize }} online now:<br /><br />
+
+{% ifnotequal userlist.count 0 %}
+ <div id="whosonline">
+    {% for U in userlist.all %}
+     {{ U.user.get_profile.country|flag|safe }}<a href="/demovibes/user/{{ U.user.username }}/" title="{{ U.user.get_profile.get_stat }}">{{ U.user.username }}</a>{% if forloop.last %} {% else %}, {% endif %}
+    {% endfor %}
+ </div>
+{% endifnotequal %}

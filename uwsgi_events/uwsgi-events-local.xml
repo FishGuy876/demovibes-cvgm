@@ -1,0 +1,23 @@
+<uwsgi>
+  <socket>127.0.0.1:3032</socket>
+  <home>/home/cvgm/cvgm_virt</home>
+  <pythonpath>/home/cvgm/cvgm.net/uwsgi_events</pythonpath>
+  <bin-path>/usr/bin/uwsgi</bin-path>
+  <module>uwsgi_eventhandler</module>
+  <master/>
+  <async>800</async>
+  <ugreen/>
+  <enable-logging/>
+  <daemonize>/tmp/demovibes-events-uwsgi.log</daemonize>
+  <pidfile>/tmp/demovibes-events-uwsgi.pid</pidfile>
+  <harakiri>600</harakiri>
+  <reload-mercy>8</reload-mercy>
+  <cpu-affinity>3</cpu-affinity>
+  <max-requests>2000</max-requests>
+  <reload-on-as>256</reload-on-as>
+  <reload-on-rss>192</reload-on-rss>
+  <socket-timeout>300</socket-timeout>
+  <no-orphans/>
+  <vacuum/>
+</uwsgi>
+

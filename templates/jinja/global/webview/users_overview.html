@@ -1,0 +1,139 @@
+{% extends "base/base.html" %}
+{% block title %}User Statistics, Top Uploaders, Top Voters & Other User Data {% endblock %}
+
+{% macro avg_rounded(stat) %}
+    {%- if stat['avg'] -%}
+        {{ stat['avg']|round(1) }}
+    {%- endif -%}
+{% endmacro %}
+
+{# =============== list_stats macro =============== #}
+{% macro list_stats(stats_list, heading, user_path = [], extra_headings = [], extra_f = []) %}
+    {% set username_field = "__".join (user_path + ["username"]) %}
+    {% set country_field = "__".join (user_path + ["userprofile__country"]) %}
+
+    <table class="userstatlist statistics">
+        <tr>
+            <th>{{ gettext("User") }}</th>
+            <th>{{ gettext(heading) }}</th>
+            {%- for h in extra_headings -%}
+                <th>{{ gettext(h) }}</th>
+            {%- endfor -%}
+        </tr>
+
+        {% for stat in stats_list if stat['count'] != 0 %}
+            <tr class="{{ loop.cycle('row1', 'row2') }}">
+                <td>
+                    <span>
+                        {{ dv.flag(stat[country_field]) }}
+                        <a href="/demovibes/user/{{ stat[username_field]|e }}/">{{ stat[username_field]|e }}</a>
+                    </span>
+                </td>
+                <td>{{ stat['count'] }}</td>
+                {%- for f in extra_f -%}
+                    <td>{{ f(stat) }}</td>
+                {%- endfor -%}
+            </tr>
+        {% endfor %}
+    </table>
+{% endmacro %}
+
+{% block main %}
+    {% cache 86400 "users_overview_html" %}
+        <div id="users_overview">
+            {# =============== Top voters =============== #}
+            <div id="top_voters">
+                <h2>
+                    <img class="icon_header" src="{{ STATIC_URL }}statistics.png" alt="" />
+                    {{ gettext("Top voters") }}
+                </h2>
+                {{ list_stats(by_votes_q, 'Votes', extra_headings = ["Average vote"], extra_f = [avg_rounded]) }}
+            </div>
+
+            {# =============== Top uploaders =============== #}
+            <div id="top_uploaders">
+                <h2>
+                    <img class="icon_header" src="{{ STATIC_URL }}statistics.png" alt="" />
+                    {{ gettext("Top uploaders") }}
+                </h2>
+                {{ list_stats(by_uploads_q, 'Uploads', user_path = ['uploaded_by']) }}
+            </div>
+
+            {# =============== Top oneliners =============== #}
+            <div id="top_oneliners">
+                <h2>
+                    <img class="icon_header" src="{{ STATIC_URL }}statistics.png" alt="" />
+                    {{ gettext("Top oneliners") }}
+                </h2>
+                {{ list_stats(by_oneliner_q, 'Spoken') }}
+            </div>
+
+            {# =============== Top tag setters =============== #}
+            <div id="top_taggers">
+                <h2>
+                    <img class="icon_header" src="{{ STATIC_URL }}statistics.png" alt="" />
+                    {{ gettext("Top taggers") }}
+                </h2>
+                {{ list_stats(by_tagging_q, 'Changes', user_path = ['user']) }}
+            </div>
+
+            {# =============== Top requester =============== #}
+            <div id="top_requesters">
+                <h2>
+                    <img class="icon_header" src="{{ STATIC_URL }}statistics.png" alt="" />
+                    {{ gettext("Top requesters") }}
+                </h2>
+                {{ list_stats(by_requester_q, 'Requests',
+                              user_path = ['requested_by'],
+                              extra_headings = ["Average vote"],
+                              extra_f = [avg_rounded]) }}
+            </div>
+
+            {# =============== Top posters =============== #}
+            <div id="top_posters">
+                <h2>
+                    <img class="icon_header" src="{{ STATIC_URL }}statistics.png" alt="" />
+                    {{ gettext("Top forum posters") }}
+                </h2>
+                {{ list_stats(by_posts_q, 'Posts', user_path = ['author']) }}
+            </div>
+
+            {# =============== Top commentators =============== #}
+            <div id="top_commentators">
+                <h2>
+                    <img class="icon_header" src="{{ STATIC_URL }}statistics.png" alt="" />
+                    {{ gettext("Top song commentators") }}
+                </h2>
+                {{ list_stats(by_comments_q, 'Comments', user_path = ['user']) }}
+            </div>
+
+            {# =============== Top country =============== #}
+            <div id="top_user_country">
+                <h2>
+                    <img class="icon_header" src="{{ STATIC_URL }}statistics.png" alt="" />
+                    {{ gettext("Users by country") }}
+                </h2>
+                <table class="usercountrystatlist statistics">
+                    <tr>
+                        <th>{{ gettext("Country") }}</th>
+                        <th>{{ gettext("Users") }}</th>
+                    </tr>
+
+                    {% for stat in country_stats_q if stat['count'] != 0 %}
+                        <tr class="{{ loop.cycle('row1', 'row2') }}">
+                            <td>
+                                <span>
+                                    {{ dv.flag(stat['userprofile__country']) }}
+                                    {{ dv.countryname (stat['userprofile__country']) }}
+                                </span>
+                            </td>
+                            <td>{{ stat['count'] }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    {% endcache %}
+{% endblock %}
+
+

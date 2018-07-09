@@ -1,0 +1,20 @@
+<!-- queue                    -->
+{% set row_class = cycler('row1', 'row2') -%}
+{% if queue %}
+<table class="songlist">
+ <tr>
+  <th>Song Title</th>
+  <th>Artist</th>
+  <th>Song Length</th>
+  <th>Req Time</th>
+  <th>Play Time</th>
+  <th>Requested By</th>
+  <th></th>
+ </tr>
+ {% for req in queue %}
+  {% include "webview/t/queue.html" %}
+ {% endfor %}
+</table>
+{% else %}
+ There is no queue at the moment. DJ Random has the floor until new song requests are made!
+{% endif %}

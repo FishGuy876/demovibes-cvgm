@@ -1,0 +1,48 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block title %}{{ gettext("Uploaded Songs") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}script.png" alt="" />{{ gettext("Uploaded Songs") }}</h2>
+<p>{{ gettext("The following songs are currently pending review and approval") }}:</p>
+<br />
+
+<table>
+<tr>
+ <th>{{ gettext("Song Title") }}</th>
+ <th>{{ gettext("Length") }}</th>
+ <th>{{ gettext("Artist") }}</th>
+ <th>{{ gettext("Uploader") }}</th>
+ <th>{{ gettext("Uploaded") }}</th>
+</tr>
+{% for song in songs %}
+<tr>
+ <td>
+  {{ display.song(song) }}
+ </td>
+ <td>
+  {{ song.length() }}
+ </td>
+ <td>
+  {{ display.artists(song) }}
+ </td>
+ <td>
+  {{ display.user(song.uploader) }}
+ </td>
+ <td>
+  {{ display.datetime(song.added) }}
+ </td>
+ <td>
+  <a href="{{ url("dv-uploads") }}?song={{song.id}}&amp;status=A"><img src="{{ STATIC_URL }}thumb_up.png" title="Approve" alt="Approve" /></a>
+ </td>
+ <td>
+  {% include "webview/t/flash_playsong.html" %}
+ </td>
+ <td>
+  <a href="{{ url("dv-uploads") }}?song={{song.id}}&amp;status=R"><img src="{{ STATIC_URL }}thumb_down.png" title="Reject" alt="Reject" /></a>
+ </td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}
+

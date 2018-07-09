@@ -1,0 +1,62 @@
+{% extends "base/base.html" %}
+{% block title %}Compilation: {{ comp.name }}{% if comp.label %} from {{ comp.label }}{% endif %}{% endblock %}
+
+{% block main %}
+{% load dv_extend %}<h2><img class="icon_header" {% if comp.comp_icon %}src="{{ comp.comp_icon.url }}"{% else %}src="{{ MEDIA_URL }}recplay_ico.png"{% endif %} alt="Compilation" />Compilation: {{ comp.name }}{% if user.is_staff %} [<a href="/admin/webview/compilation/{{ comp.id }}/">Edit Info</a>]{% endif %}</h2>
+
+<table>
+<tr>
+<td class="compilation_summary">
+{% if comp.cover_art %}
+ <img class="compilation_screenshot" src="{{ comp.cover_art.url }}" alt="[Cover Art]" /><br />
+{% else %}
+ <img class="compilation_screenshot" src="{{ MEDIA_URL }}no_picture.png" alt="[No Cover Art]" /><br />
+{% endif %}
+<p class="compilation_details_small">
+<b><i>Compilation Summary:</i></b><br />
+Name: {{ comp.name }}<br />
+{% if comp.label %}Label: {{ comp.label }}<br />{% endif %}
+{% if comp.rel_date %}Release Date: {{ comp.rel_date|date:"F j, Y" }}<br />{% endif %}
+{% if comp.running_time %}Running Time: {{ comp.length }}<br />{% endif %}
+{% if comp.num_discs %}Num. Disks: {{ comp.num_discs }}<br />{% endif %}
+{% if comp.youtube_link %}Video Clip: <a href="{{ comp.youtube_link }}" target="_blank">Video Link</a><br />{% endif %}
+{% if comp.media_format %}Media Type: {{ comp.media_format }}<br />{% endif %}
+{% if comp.details_page %}Additional Info: <a href="{{ comp.details_page }}" target="_blank">Details Page</a><br />{% endif %}
+{% if comp.purchase_page %}Purchase Info: <a href="{{ comp.purchase_page }}" target="_blank">Purchase Info</a><br />{% endif %}
+{% if comp.download_link %}Download Link: <a href="{{ comp.download_link }}" target="_blank">Download Info</a><br />{% endif %}
+{% if comp.bar_code %}UPC: {{ comp.bar_code }}<br />{% endif %}
+{% if comp.pouet %}Pouet Info: <a href="http://www.pouet.net/prod.php?which={{ comp.pouet }}" target="_blank">Pouet Link</a><br />{% endif %}
+{% if comp.date_added %}<br />Added On: {{ comp.date_added|date:"F j, Y" }} <br />By: {% if comp.created_by %}{% with comp.created_by as U %}{% include "webview/t/user.html" %}{% endwith %}{% endif %}<br />{% endif %}
+</p>
+</td>
+<td class="compilation_description">
+<b><i>Compilation Details For {{ comp.name }}:</i></b><br />
+{% if comp.info %}<p><i>{{ comp.info|force_escape|bbcode|linebreaks|smileys }}</i></p><br />{% endif %}
+{% ifnotequal comp.prod_artists.count 0 %}
+ <b><i>Compilation Artists: </i></b>
+ {% for artist in comp.prod_artists.all %}
+  {% with artist as A %}{% include "webview/t/artist.html" %}{% endwith %}
+ {% endfor %}
+ <br /><br />
+{% endifnotequal %}
+
+{% ifnotequal comp.prod_groups.count 0 %}
+ <b><i>Compilation Groups: </i></b>
+ {% for group in comp.prod_groups.all %}
+  {% with group as G %}{% include "webview/t/group.html" %}{% endwith %}
+ {% endfor %}
+ <br /><br />
+{% endifnotequal %}
+
+{% ifnotequal comp.songs.count 0 %}
+ <b><i>Songs In This Production ({{ comp.songs.count }} Total):</i></b><br /><br />
+ {% for song in comp.songs.all %}
+  {% include "webview/t/songname.html" %} by {% for artist in song.artists.all %}{% with artist as A%}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %} {% endfor %}
+  <span data-name="a_queue_{{ song.id }}">{% include "webview/t/songlist_span_noauth.html" %}</span><br />
+ {% endfor %}
+{% endifnotequal %}<br />
+{% if comp.prod_notes %}<i><b>Production Notes: </b>{{ comp.prod_notes|force_escape|bbcode|linebreaks|smileys }}</i><br />{% endif %}
+</td>
+</tr>
+</table>
+{% endblock %}

@@ -1,0 +1,5 @@
+<p>{% if license.icon %}<img src="{{ license.icon.url }}" alt="icon"/>{% endif %} {{ license.name }}</p>
+
+<p>{{ license.description|urlize|bbcode|linebreaks }}</p>
+
+{% if license.url %}<a href="{{ license.url }}" target="_blank">More information</a>{% endif %}

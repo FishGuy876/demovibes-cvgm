@@ -1,0 +1,75 @@
+{% extends "forum_base.html" %}{% load i18n %}
+{% block title %}{{ thread.title|escape }} ({{ forum.title }}){% endblock %}
+
+{% block pagetitle %}{{ forum.title }} &raquo; {{ thread.title|escape }}{% endblock %}
+
+
+{% block breadcrumbs %}{% for title, url in thread.forum.get_url_name %} &raquo; <a href='{{ url }}'>{{ title }}</a>{% endfor %} &raquo; <a href='{{ thread.get_absolute_url }}'>{{ thread.title|escape }}</a> ({{ thread.posts }} post{{ thread.posts|pluralize }}){% endblock %}
+
+{% block forumcontent %}
+{% load dv_extend %}
+<div class="pages">Pages: {% for p in page_range %}
+{% ifequal page p %}<b>{{ p }}</b>{% else %}<a href="/forum/thread/{{ thread.id }}/?page={{ p }}">{{ p }}</a> {% endifequal %}
+{% endfor %}
+</div>
+
+<table id='djangoForumThreadPosts'>
+<tr>
+	<th>Author</th>
+	<th>Thread</th>
+</tr>
+{% load cache %}
+{% for post in posts %}
+<tr class='postmain'>
+	<td class='djangoForumThreadPostDetail' id='post{{ post.id }}'>
+		{% with post.author as U%}{% include "webview/t/user.html" %}{% endwith %}<br />
+		{% if post.author.get_profile.avatar %}
+		<img src="{{ post.author.get_profile.avatar.url }}" alt="avatar"/><br />
+		{% endif %}
+		{{ post.author.get_profile.infoline }}<br />
+		{% with post.author as U %}{% include "webview/t/user-icons.html" %}{% endwith %}<br />
+		{% get_post_count post.author %} Posts<br />
+        <a href="{{ post.get_absolute_url }}">#{{ post.id }}</a> <span>({{ post.time|timesince }} ago)</span><br />
+	</td>
+	<td class="post">{% cache 600 "forumpost" post.id post.edited %}
+		{{ post.body|force_escape|linebreaks|bbcode|wordwrap:"100"|smileys }}
+	{% endcache %}</td>
+</tr>
+<tr class='postfooter'>
+    <td></td>
+	<td>
+		{% ifequal user post.author %}<a href="/forum/edit/{{ post.id }}/"><i>Edit Post</i></a>{% endifequal %}
+		<span>Quote</span>
+	</td>
+</tr>
+{% endfor %}
+
+</table>
+
+<div class="pagesBottom">Pages: {% for p in page_range %}
+{% ifequal page p %}<b>{{ p }}</b>{% else %}<a href="/forum/thread/{{ thread.id }}/?page={{ p }}">{{ p }}</a> {% endifequal %}
+{% endfor %}
+</div>
+
+{% if user.is_authenticated %}<h2><a href="{% url forum_subscriptions %}">Manage Your Subscriptions</a></h2>{% endif %}
+<h2>Post a Reply</h2>
+{% if thread.closed %}
+<p>Sorry, this thread is closed. No further comments are permitted.</p>
+{% else %}
+{% if user.is_authenticated %}
+<form method='post' action='.'>
+<p><label>Posting As</label> <span>{{ user.username }}</span></p>
+<p> {{ reply_form.body.label_tag }}
+{{ reply_form.body }}
+{{ reply_form.body.errors }}</p>
+<p>{{ reply_form.subscribe.label_tag }}
+{{ reply_form.subscribe }}
+{{ reply_form.subscribe.errors }}</p>
+<input type='submit' value='Submit' />
+</form>
+{% else %}
+<p>Please log in to post a reply.</p>
+{% endif %}
+{% endif %}
+
+{% endblock %}

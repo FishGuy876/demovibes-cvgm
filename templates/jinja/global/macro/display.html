@@ -1,0 +1,410 @@
+{% macro song_vote(song, myvote) %}
+<div class="starview">
+    <form data-vote="{{ myvote }}" method="post" action="{{ url ("dv-formvote") }}" class="ajaxify">
+        <input type="hidden" value="{{ song.id }}" name="songid" />
+        <input type="hidden" value="{{ song.id }}" name="ajaxvote" class="ajaxhax"/>
+        {% for v in range(1,6) -%}
+            <button type="submit" value="{{ v }}" name="vote" class="starbutton {% if v <= myvote %}star-selected{% endif %}">
+                {{ v }}
+            </button>
+        {% endfor -%}
+    </form>
+</div>
+{% endmacro %}
+
+{% macro format_oneliner(text, user) %}
+    {{ text|mksafe|bbcode_oneliner|smileys_oneliner|restricted_smileys(user)|oneliner_mediaparse|bbcode_oneliner|dv_urlize }}
+{% endmacro %}
+
+{% macro onelinerlink(tag, value, user) %}
+  {% if user.is_authenticated() %}
+    <script>add_pagelink("[{{tag}}]{{value}}[/{{tag}}]");</script>
+  {% endif %}
+{% endmacro %}
+
+{% macro onelinerlinko(tag, value, user) %}
+  {% if user.is_authenticated() %}
+    <span id="onelinerlinkholder">
+        <span class="onelinerlink" data-tag="[{{tag}}]{{value}}[/{{tag}}]">Link this in oneliner</span>
+    </span>
+  {% endif %}
+{% endmacro %}
+
+{% macro time(dt) %}
+ <span class="tzinfo">{{ dt|time("H:i") }}</span>
+{% endmacro %}
+
+{% macro date(dt) %}
+ {{ dt|date("j N Y") }}
+{% endmacro %}
+
+{% macro text(s) %}
+    {{ s|urlize|linebreaksbr|bbcode }}
+{% endmacro %}
+
+{% macro datetime(dt) %}
+ {{ date(dt) }} {{ time(dt) }}
+{% endmacro %}
+
+{% macro favorite(song, user, addfavtext="", removefavtext="") %}
+    <div id="formvote">
+    {% if user.is_authenticated() %}
+    <form name="changefavorite" method="post" action="{{ url ("dv-change_fav") }}" class="ajaxify linkform">
+        <input type="hidden" value="{{ song.id }}" name="songid" />
+        {% if song.is_favorite(user) %}
+            <input type="hidden" name="change" value="remove"/>
+            <input type="image" name="img" src="{{ STATIC_URL }}heart_delete.png" title="Remove favorite"/>
+            {{ removefavtext }}
+        {% else %}
+            <input type="hidden" name="change" value="add"/>
+            <input type="image" name="img" src="{{ STATIC_URL }}heart_add.png" title="Add favorite"/>
+            {{ addfavtext }}
+       {% endif %}
+
+       </form>
+    {% endif %}
+    </div>
+{% endmacro %}
+
+{% macro queue_song(song, user = None, locktext="", addtext="") %}
+<span data-name="a_queue_{{ song.id }}">
+  {% if song.is_locked() %}
+        <span style="display:none">l</span>
+        <img class="song_tail" src="{{ STATIC_URL }}lock.png" title="Locked" alt="Locked"/> {{ locktext }}
+    {% else %}
+      {% if not user or user.is_authenticated() %}
+         <form name="queue_song" method="post" action="{{ url ("dv-queue-song") }}" class="ajaxify linkform">
+            <span style="display:none">u</span>
+            <input type="hidden" value="{{ song.id }}" name="songid" />
+            {% if addtext %}
+             <input type="submit" value="{{ addtext }}" class="queuesongbutton"/>
+            {% else %}
+             <input type="image" name="img" src="{{ STATIC_URL }}add.png" title="Queue song" class="queuesongimage" />
+            {% endif %}
+       </form>
+    {% else %}
+        <a href="/account/signin/">
+        {% if addtext %}
+            Log in to queue
+        {% else %}
+            <img src="{{ STATIC_URL }}door_in.png" alt="Log in to queue" title="Log in to queue"/>
+        {% endif %}
+        </a>
+    {% endif %}
+  {% endif %}
+</span>
+{% endmacro %}
+
+{% macro artists(song) -%}
+    {{ artists_meta(song.get_metadata()) }}
+{%- endmacro %}
+
+{% macro yesno(bool) -%}
+    {%- if bool -%}
+        <b>Yes</b>
+    {%- else -%}
+        No
+    {%- endif -%}
+{% endmacro %}
+        
+{% macro screenshot(scr, extra_info = "") %}
+    <div class="screenshot">
+        <a href="{{ url ('dv-screenshot', scr.id) }}">
+            {%- if scr.thumbnail -%}
+                <img src="{{ scr.thumbnail.url }}" alt="{{ scr.name|e }}" />
+            {%- else -%}
+                (No Thumbnail!)
+            {%- endif -%}
+        </a>
+        <br />
+        
+        <span class="screenshotname">{{ scr.name|e }}</span>
+        {%- if extra_info -%}
+            <BR/>
+            <span class="screenshotextainfo">{{ extra_info|e }}</span>
+        {%- endif -%}
+    </div>
+{% endmacro %}
+    
+{% macro license(lic) %}
+        <a href="{{ lic.get_absolute_url() }}">
+            {% if lic.icon %}
+                <img src="{{ lic.icon.url }}" title="{{ lic.name }}"/>
+            {% else %}
+                {{ lic.name }}
+            {% endif %}
+        </a>
+{% endmacro %}
+
+{% macro songlicense(song) %}
+    {% if song.license %}
+       {{ license(song.license) }}
+    {% else %}
+        Not set
+    {% endif %}
+{% endmacro %}
+
+{% macro artists_meta(meta) %}
+    {% for tartist in meta.artists.all() %}
+    {{ artist(tartist) }}{% if loop.last %} {% else %}, {% endif %}
+    {% endfor %}
+{% endmacro %}
+
+{% macro artist(A) -%}
+    <span class="artistname">{% if A.home_country %}
+         {{ dv.flag(A.home_country, extra_title=A.home_location) }}
+        {% else %}
+         <img src="{{ STATIC_URL }}user_green.png" alt="User" title="{{ A.home_location|e }}" />
+        {% endif %}
+        <a href="{{ A.get_absolute_url() }}"
+         {% if A.alias_of -%}
+           title="Alias of {{A.alias_of|e}}"
+         {%- else -%}
+           {% if A.aliases.all() -%}
+             title="Aliases : {% for alias in A.aliases.all() %}{{ alias.handle|e }} {% endfor %}"
+           {%- endif -%}
+         {% endif %}>
+         {{ A.handle|e }}
+         {%- if A.name %} ({{ A.name|e }}){% endif -%}
+         </a>
+         {%- if A.is_deceased -%}
+            <img src="{{ STATIC_URL }}deceased.png" class="countryflag" alt="Deceased" title="Deceased {% if A.deceased_date %}[On {{ A.deceased_date }}]{% endif %}" />
+         {%- endif %}
+    </span>
+{% endmacro %}
+
+{% macro compilation(C) -%}
+    <img alt="Compilation" class="compilation_icon" {% if C.comp_icon %}src="{{ C.comp_icon.url }}"{% else %}src="{{ STATIC_URL }}recplay_ico.png"{% endif %} /> <a href="{{ C.get_absolute_url() }}">{{ C.name|e }}</a>
+{%- endmacro %}
+
+{% macro user(U) -%}
+    {% if U %}
+        <span class="username">
+            {{ dv.flag(U.get_profile().country, extra_title=U.get_profile().location) }}
+            <a href="/demovibes/user/{{ U.username|e }}/" title="{{ U.get_profile().get_stat() }}" >{{ U.username|e }}</a>
+        </span>
+    {% else %}
+        None
+    {% endif %}
+{%- endmacro %}
+
+{% macro label(L) -%}
+    {% if L %}<img alt="Label" class="label_icon" {% if L.label_icon %}src="{{ L.label_icon.url }}"{% else %}src="{{ STATIC_URL }}transmit_blue.png"{% endif %} /><a href="{{ L.get_absolute_url() }}">{{ L.name|e }}</a>{% endif %}
+{%- endmacro %}
+
+{% macro group(G) -%}
+    {% if G %}<img alt="Group" class="group_icon" {% if G.group_icon %}src="{{ G.group_icon.url }}"{% else %}src="{{ STATIC_URL }}group.png"{% endif %} /><a href="{{ G.get_absolute_url() }}">{{ G.name|e }}</a>{% endif %}
+{% endmacro %}
+
+{% macro platform(P) -%}
+    {% if P %}
+    {% if P.symbol -%}
+        <a href="{{ P.get_absolute_url() }}"><img alt="Platform" src="{{ P.symbol.url }}" title="{{ P.title|e }}" /></a>
+    {%- endif -%}
+    <a href="{{ P.get_absolute_url() }}">{{P.title|e}}</a>
+    {% endif %}
+{%- endmacro %}
+
+{% macro linksform(lo) %}
+    {% if lo.links %}
+        <h2>External resources</h2>
+        {% if errors %}
+            <p class="errorinfo">There was an error with the following entries<br /><ul class="errors">
+                {% for x in errors %}
+
+                 <li>{{ x.l.name }} - value "{{ x.v }}"</li>
+                {% endfor %}</ul>
+                Please fix or remove them, and try again.
+            </p>
+        {% endif %}
+        <table>
+        {% for ll in lo.links %}
+            <tr>
+             <th>{% if ll.link.icon %}<label for="id_LL_{{ ll.link.id }}"><img alt="Icon" src="{{ ll.link.icon.url }}" />{% endif %}{{ ll.link.name }} link</label></th>
+             <td>
+                <input name="LL_{{ ll.link.id }}" id="id_LL_{{ ll.link.id }}" value="{{ ll.value }}"/>
+                {% if ll.error %}
+                    <p class="errorinfo">{{ ll.error }}</p>
+                {% endif %}
+            </td>
+             {% if ll.link.inputinfo %}
+                <td title="{{ ll.link.inputinfo }}">
+                    <span class="formq">
+                        <img src="{{ STATIC_URL }}question.png" alt="?"/>
+                    </span>
+                </td>
+            {% endif %}
+            </tr>
+        {% endfor %}
+        </table>
+    {% endif %}
+{% endmacro %}
+
+{% macro links(Obj) -%}
+    {% for L in Obj.get_active_links() %}
+        <a href="{{ L.get_link() }}" target="_blank">
+            {%- if L.link.icon -%}
+                <img class="song-resource" alt="Icon" src="{{ L.link.icon.url }}" title="[{{ L.link.name }}]{% if L.comment %} - {{ L.comment }}{% endif %}" />
+            {%- else -%}
+                <span title="{% if L.comment %}{{ L.comment }}{% endif %}">[{{ L.link.name }}]</span>
+            {%- endif -%}
+        </a>
+    {% endfor %}
+{%- endmacro %}
+
+{% macro songicons(S) -%}
+    {% if S.get_metadata().pouetid -%}
+        <a href="http://www.pouet.net/prod.php?which={{ S.get_metadata().pouetid }}" target="_blank"><img alt="Pouet" class="song-resource" src="{{ STATIC_URL }}pouet-icon.gif" title="[Pouet Link]" /></a>
+    {%- endif %}
+{%- endmacro %}
+
+{% macro songicons_old(S) -%}
+    {% if S.pouetid -%}
+        <a href="http://www.pouet.net/prod.php?which={{S.pouetid}}" target="_blank"><img class="song-resource" src="{{ STATIC_URL }}pouet-icon.gif" title="[Pouet Link]" /></a>
+    {%- endif %}
+    {% if S.dtv_id -%}
+        <a href="http://www.demoscene.tv/prod.php?id_prod={{ S.dtv_id }}" target="_blank"><img class="song-resource" src="{{ STATIC_URL }}television.png" title="[Demoscene.TV Link]" /></a>
+    {% endif %}
+    {% if S.hol_id %}
+        <a href="http://hol.abime.net/{{ S.hol_id }}" target="_blank"><img class="song-resource" src="{{ STATIC_URL }}hol-icon.png" title="[Hall Of Light Link]" /></a>
+    {% endif %}
+    {% if S.al_id %}
+        <a href="http://www.atarilegend.com/games/games_detail.php?game_id={{ S.al_id }}" target="_blank">
+            <img class="song-resource" src="{{ STATIC_URL }}atari-icon.png" title="[Atari Legends Link]" />
+        </a>
+    {% endif %}
+    {% if S.wos_id %} <a href="http://www.worldofspectrum.org/infoseekid.cgi?id={{S.wos_id}}" target="_blank"><img class="song-resource" src="{{ STATIC_URL }}wos-icon.png" title="[World of Spectrum Link]" /></a>{% endif %}
+    {% if S.zxdemo_id %} <a href="http://zxdemo.org/item.php?id={{S.zxdemo_id}}" target="_blank"><img class="song-resource" src="{{ STATIC_URL }}zxdemo-icon.gif" title="[ZXDemo Link]" /></a>{% endif %}
+    {% if S.lemon_id %} <a href="http://www.lemon64.com/games/details.php?ID={{S.lemon_id}}" target="_blank"><img class="song-resource" src="{{ STATIC_URL }}lemon64-icon.gif" title="[Lemon64 Link]" /></a>{% endif %}
+    {% if S.projecttwosix_id %} <a href="http://project2612.org/details.php?id={{S.projecttwosix_id}}" target="_blank"><img class="song-resource" src="{{ STATIC_URL }}project2612-icon.png" title="[Project2612 Link]" /></a>{% endif %}
+    {% if S.hvsc_url %} <a href="{{ S.hvsc_url }}"><img class="song-resource" src="{{ STATIC_URL }}sid-icon.gif" title="[SID File]" /></a>{% endif %}
+{%- endmacro %}
+
+{% macro labels(song) %}
+ {% if song and song.get_metadata().labels.count() %}
+  Production Labels: {% for zlabel in song.get_metadata().labels.all() %}{{ label(zlabel) }} {% endfor %}<br />
+ {% endif %}
+{% endmacro %}
+
+{% macro song(song) -%}
+    {%- if song -%}
+        <span class="songname">
+        {%- set meta = song.get_metadata() -%}
+        {%- if meta.platform.symbol -%}
+            <a href="{{ meta.platform.get_absolute_url() }}"><img alt="{{ meta.platform.title|e }}" class="platform_icon" src="{{ meta.platform.symbol.url }}" title="{{ meta.platform.title|e }}" /></a>
+        {%- endif -%}
+        <a href="{{ song.get_absolute_url() }}">{{ song.title|e }}</a>
+        {%- if song.explicit %}
+            <img class="text-link" alt="Explicit content" src="{{ STATIC_URL }}explicit.gif" title="Contains Explicit Content!" />
+        {%- endif -%}
+        {%- if song.has_video() %}
+            <img class="text-link" src="{{ STATIC_URL }}MiniIcon-Video.jpg" alt="Have video" title="Video!" />
+        {%- endif -%}
+        </span>
+    {%- endif -%}
+{%- endmacro %}
+
+
+{% macro tag(tag) -%}
+    <a href="{{ url("dv-tagdetail", tag|e) }}">{{ tag|e }}</a>
+{% endmacro %}
+
+{% macro clicklesstag(tag) -%}
+    {{ tag|e }}
+{% endmacro %}
+
+{% macro songslist(objs, user, desc_function = None) %}
+    {% include "webview/t/songheader.html" %}
+
+    {% for songy in objs %}
+        <tr class="{{ loop.cycle ('row1','row2') }}">
+            {% import "macro/display.html" as display -%}
+
+            {% cache 172800 mkstr("song_row", songy.id, songy.last_changed) %}
+                <td>
+                    {{ display.song(songy) }}
+                </td>
+
+                <td>
+                    {% set meta = songy.get_metadata() %}
+
+                    {% for artisty in meta.artists.all() %}
+                        {{ display.artist(artisty) }}
+                        {% if loop.last %}{% else %}, {% endif %}
+                    {% endfor %}
+
+                    {% for groupy in meta.groups.all() %}
+                        {{ display.group(groupy) }}
+
+                        {% if loop.last %} {% else %}, {% endif %}
+                    {% endfor %}
+                </td>
+
+                <td>
+                    {{ songy.length() }}
+                </td>
+
+                <td>
+                    {{ songy.get_status_display() }}
+                </td>
+
+                <td>
+                    {{ songy.rating|floatformat(1) }}
+                </td>
+            {% endcache %}
+
+            <td>
+                {{ queue_song(songy, user) }}
+            </td>
+
+            <td>
+                <span class="lastreqdate">
+                    {% if songy.last_queued != "Never" %}
+                        {{ songy.last_queued()|date("Y-m-d") }}
+                    {% else %}
+                        Never!
+                    {% endif %}
+                </span>
+            </td>
+
+            {% if desc_function %}
+                <td class="song_desc_by_f">
+                    {{ desc_function(songy)|e }}
+                </td>
+            {% endif %}
+        </tr>
+    {% endfor %}
+
+    </table>
+{% endmacro %}
+
+{% macro screenshotslist(objs, user) %}
+  {% include "webview/t/screenheader.html" %}
+  {% for scr in objs %}
+    <tr class="{{ loop.cycle ('row1','row2') }}">
+  {% import "macro/display.html" as display -%}
+  {% cache 172800 mkstr("screenshot_row", scr.id, scr.last_updated) %}
+    <td>
+      <a href="{{ url ("dv-screenshot", scr.id) }}">{{ scr.name }}</a>
+    </td>
+    <td>
+      {{ display.user(scr.added_by) }}
+    </td>
+    <td>
+      {% if scr.last_updated %}{{scr.last_updated|date("Y-m-d") }}{% else %}Never{% endif %}
+    </td>{% endcache %}
+    <td>
+      {{ scr.get_status_display() }}
+    </td>
+    </tr>
+  {% endfor %}
+  </table>
+{% endmacro %}
+
+{% macro showobject(o) %}
+    {% if o.obj|attr("display") is defined %}
+        {{ o.obj.display() }}
+     {% else %}
+        <a href="{{o.obj.get_absolute_url()}}">{{ o.obj }}</a>
+    {% endif %}
+{% endmacro  %}

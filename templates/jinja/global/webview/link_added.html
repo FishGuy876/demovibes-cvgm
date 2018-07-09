@@ -1,0 +1,9 @@
+{% extends "base/base.html" %}
+
+{% block title %}{{ gettext("Link Suggestion Processed") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}link_add.png" alt="" />{{ gettext("Link Suggestion Accepted") }}</h2>
+<span>{{ gettext("Thanks for sending us your link suggestion. It will appear on the site page once approved by a moderator!") }}</span>
+{% endblock %}
+

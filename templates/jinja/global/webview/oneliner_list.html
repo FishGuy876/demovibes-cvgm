@@ -1,0 +1,32 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block title %}{{ gettext("Oneliner") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}user_green.png" alt="" />{{ gettext("Oneliner History") }}</h2>
+
+<div class="olh_wrapper">
+
+{% for line in object_list %}{% cache 86400 mkstr(olhistory, line.id) %}
+<div class="olh_item">
+<div class="olh_user">
+    <p>{{ display.user(line.user) }}<br />
+    {{ display.datetime(line.added) }}</p>
+</div>
+
+<div class="olh_message">
+    <p>{{ display.format_oneliner(line.message, line.user) }}</p>
+</div>
+</div>{% endcache %}
+{% endfor %}
+
+</div>
+
+<div class="olh_pages">
+<p>{{ gettext("Pages") }}:
+{% for p in page_range[:20] %}
+{% if page == p %}<b>{{ p }}</b>{% else %}<a href="{{ url("dv-oneliner") }}?page={{ p }}">{{ p }}</a> {% endif %}
+{% endfor %}</p>
+</div>
+{% endblock %}
+

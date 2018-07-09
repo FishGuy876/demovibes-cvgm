@@ -1,0 +1,42 @@
+{% extends "forum_base.html" %}{% load i18n %}
+
+{% block title %}{% trans "Forums" %}{% endblock %}
+
+{% block forumcontent %}
+<table id='djangoForumList'>
+<tr>
+<th>{% trans "Forum" %}</th>
+<th>{% trans "Last Post" %}</th>
+</tr>
+
+{% for forum in object_list %}
+{% if not forum.is_private %}
+  <tr>
+ <td class='djangoForumListDetails'>
+ 	<a class="forumName" href='{{ forum.get_absolute_url }}'>{{ forum.title }}</a>
+ 	<span class='djangoForumStats'>{% blocktrans with forum.threads as thread_count and forum.posts as post_count %}{{ thread_count }} threads, {{ post_count }} posts{% endblocktrans %}</span>
+ 	<p class="forumDescription">{{ forum.description }}</p>
+ </td>
+ {% with forum.forum_latest_post as latest_post %}
+ <td class='djangoForumListLastPost'>{% if latest_post %}{{ latest_post.time|timesince }} ago by {% with latest_post.author as U%}{% include "webview/t/user.html" %}{% endwith %} (<a href='{{ latest_post.get_absolute_url }}'>{% trans "view" %}</a>){% else %}{% trans "No posts" %}{% endif %}</td>
+ {% endwith %}
+ </tr>
+{% else %}
+ {% if user.is_staff %}
+  <tr>
+  <td class='djangoForumListDetails'>
+ 	 <a class="forumName" href='{{ forum.get_absolute_url }}'>{{ forum.title }}</a>
+ 	 <span class='djangoForumStats'>{% blocktrans with forum.threads as thread_count and forum.posts as post_count %}{{ thread_count }} threads, {{ post_count }} posts{% endblocktrans %}</span>
+ 	 <p class="forumDescription">{{ forum.description }}</p>
+  </td>
+  {% with forum.forum_latest_post as latest_post %}
+  <td class='djangoForumListLastPost'>{% if latest_post %}{{ latest_post.time|timesince }} ago by {% with latest_post.author as U%}{% include "webview/t/user.html" %}{% endwith %} (<a href='{{ latest_post.get_absolute_url }}'>{% trans "view" %}</a>){% else %}{% trans "No posts" %}{% endif %}</td>
+  {% endwith %}
+  </tr>
+ {% endif %}
+{% endif %}
+{% endfor %}
+</table>
+{% if user.is_authenticated %}<p><a href="{% url forum_subscriptions %}">{% trans "Manage Your Subscriptions" %}</a></p>{% endif %}
+{% endblock %}
+

@@ -1,0 +1,3 @@
+<img src="[MEDIA_URL]music.png" alt="Song" title="Song"/>
+    <a href="{{ object.get_absolute_url }}">{{ object.title }}</a> ({{ object.length }}) by {% for artist in object.get_metadata.artists.all %}<a href="{{ artist.get_absolute_url }}">{{ artist }}</a> {% endfor %}
+    - Status {{ object.get_status_display }}{% if object.rating %} - Vote : {{ object.rating|floatformat }} {% endif %}

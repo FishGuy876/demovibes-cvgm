@@ -1,0 +1,18 @@
+{% extends "base/base.html" %}
+
+{% block main %}
+<h2>Smiley list!</h2>
+
+<table>
+    <tr>
+        <th>Code</th>
+        <th>Smiley</th>
+    </tr>
+    {% for code, path in smileys %}
+    <tr>
+        <td>{{ code }}</td>
+        <td><img src="{{ STATIC_URL }}{{ path }}" /></td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

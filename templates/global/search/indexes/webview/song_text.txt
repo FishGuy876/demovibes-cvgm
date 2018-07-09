@@ -1,0 +1,66 @@
+{{ object.title }}
+{{ object.title }}
+{{ object.title }}
+{{ object.title }}
+{{ object.title }}
+{{ object.title }}
+{{ object.title }}
+{{ object.title }}
+{{ object.title }}
+{{ object.title }}
+{{ object.title }}
+{{ object.title }}
+{{ object.title }}
+{{ object.title }}
+
+{% for artist in object.get_metadata.artists.all %}
+ {{ artist.handle }}
+ {{ artist.handle }}
+ {{ artist.handle }}
+ {{ artist.handle }}
+
+ {{ artist.name }}
+ {{ artist.name }}
+{% endfor %}
+
+{% for group in object.get_metadata.groups.all %}
+ {{ group.name }}
+ {{ group.name }}
+{% endfor %}
+
+{% for label in labels %}
+    {{ label.name }}
+    {{ label.name }}
+    {{ label.pouetid }}
+{% endfor %}
+
+{% for tag in object.tags %}
+ {{ tag.name }}
+{% endfor %}
+
+{{ object.get_metadata.platform.title }}
+{{ object.get_metadata.release_year }}
+{{ object.get_metadata.type.title }}
+{{ object.uploader.username }}
+{{ object.get_metadata.info }}
+{{ object.get_metadata.pouetid }}
+
+{% for link in object.get_active_links.all %}
+ {{ link.value }}
+{% endfor %}
+
+{% load dv_extend %}
+
+{% for comment in object.songcomment_set.all %}
+    {% if not comment.staff_comment %}
+        {{ comment.comment|removesmileys }}
+    {% endif %}
+{% endfor %}
+
+{% for compilation in object.compilation_set.all %}
+    {{ compilation.name }}
+    {{ compilation.name }}
+    {{ compilation.hol_id }}
+    {{ compilation.info }}
+    {{ compilation.prod_notes }}
+{% endfor %}

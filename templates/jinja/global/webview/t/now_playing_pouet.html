@@ -1,0 +1,7 @@
+{% import "macro/display.html" as display -%}
+{% set meta = song.get_metadata() %}
+{% if now_playing.song %}
+{% if meta.pouetid %}<div id="pouetscreenview">
+ <a href="http://www.pouet.net/prod.php?which={{ meta.pouetid }}" target="_blank"><img src="{{ meta.song.get_pouet_screenshot_img() }}" alt="Pouet ScreenShot For {{ meta.pouetid }}" width="{{ scrwidth }}"></a><br />
+</div>{% endif %}
+{% endif %}

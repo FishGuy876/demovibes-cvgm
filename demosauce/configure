@@ -1,0 +1,119 @@
+#!/bin/sh -eu
+CC='gcc'
+MAKE='make'
+INPUT=
+LIBS=
+CFLAGS=
+CPPFLAGS=
+LDFLAGS=
+
+# remove old output files
+rm -f makefile.conf config.mk
+
+have_lib() {
+    printf "checking for $1 ... "
+    pkg-config "--exists" $1 2>/dev/null
+    test $? -ne 0 && echo "no" && return 1
+    echo "yes" && return 0
+}
+
+have_header() {
+    printf "checking for $1 ... "
+    echo "#include <$1>" | $CC $CFLAGS -E -xc -o /dev/null - 2>/dev/null
+    test $? -ne 0 && echo "no" && return 1
+    echo "yes" && return 0
+}
+
+assert_header() {
+    have_header "$1" && return 0
+    echo "missing header: $1" && exit 1
+}
+
+assert_lib() {
+    have_lib "$1" && return 0
+    echo "missing lib: $1" && exit 1
+}
+
+assert_version() {
+    pkg-config "--atleast-version=$2" "$1" && return 0
+    echo "need $1 $2, have `pkg-config --modversion $1`" && exit 1
+}
+
+have_file() {
+    printf "checking for $1 ... "
+    test -e "$1" && echo "yes" && return 0
+    echo "no" && return 1
+}
+
+have_exe() {
+    printf "checking for $1 ... "
+    which $1 >/dev/null 2>/dev/null
+    test $? -ne 0 && echo "no" && return 1
+    echo "yes" && return 0
+}
+
+assert_exe() {
+   have_exe $1 && return 0
+   echo "missing: $1" && exit 1
+}
+
+have_cpuflag() {
+    printf "checking for $1 ... "
+    grep -q $1 "/proc/cpuinfo" 2>/dev/null
+    test $? -ne 0 && echo "no" && return 1
+    echo "yes" && return 0
+}
+
+ask() {
+    while true; do
+        read -p "$1 [y/n] " reply
+        case "$reply" in
+            Y|y) return 0;;
+            N|n) return 1;;
+        esac
+    done
+}
+
+# in case there is local stuff
+test -d "/usr/local/include" && CPPFLAGS="$CPPFLAGS -I/usr/local/include"
+test -d '/usr/local/lib' && LDFLAGS="$LDFLAGS -L/usr/local/lib"
+
+# build environment
+assert_exe 'make'
+assert_exe "$CC"
+assert_exe "pkg-config"
+assert_lib 'shout'
+assert_version 'shout' '2.2.2'
+assert_header 'lame/lame.h'
+assert_lib 'libchromaprint'
+assert_lib 'libavcodec'
+assert_lib 'libavformat'
+assert_lib 'libavutil'
+assert_lib 'libswresample'
+
+# bass
+if test $(uname -s) = 'Linux' && (have_file 'libs/libbass.so' || ask '==> use BASS for module playback?'); then
+    assert_exe 'wget'
+    assert_exe 'unzip'
+    CPPFLAGS="-DENABLE_BASS $CPPFLAGS"
+    LDFLAGS="-lbass $LDFLAGS"
+    INPUT="bassdecoder.c $INPUT"
+    LIBS="libbass.so $LIBS"
+fi
+
+# git version
+have_exe "git" && have_file ".git" && CPPFLAGS="$CPPFLAGS -DBUILD_ID=\$(shell git describe --always)"
+
+# generate makefile
+cat <<EOF >makefile.conf
+CC            = $CC
+CFLAGS        = -ffast-math -O2
+CPPFLAGS      = $CPPFLAGS
+LDFLAGS       = $LDFLAGS
+DEMOSAUCE_SRC = $INPUT
+DSCAN_SRC     = $INPUT
+LIBS          = $LIBS
+EOF
+
+echo "done."
+echo "run 'make clobber' to rebuild libraries."

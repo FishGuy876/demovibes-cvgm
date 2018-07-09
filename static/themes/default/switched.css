@@ -1,0 +1,741 @@
+*
+{
+	position: static;
+	font-family: Georgia, serif; /* "Segoe UI", "Trebuchet MS", "Helvetica", "Arial", sans-serif; */
+}
+
+.olh_wrapper 	{
+		width: 604px;
+		min-height: 800px;
+		margin: 15px;
+		}
+.olh_user	{
+		width: 150px;
+		float: left;
+		margin: 0;
+		padding: 0;
+		min-height: 50px;
+		}
+
+.olh_message	{
+		width: 450px;
+		float: right;
+		margin: 0;
+		padding: 0;
+		min-height: 50px;
+		}
+
+.olh_pages	{
+		text-align: justify;
+		font-size: 8px;
+		font-family: courier, sans-serif, monospace;
+		}
+
+.bbquote	{
+		font-style: italic;
+		}
+
+.bbcode		{
+		font-family: monospace;
+		display: block;
+		border: 1px dotted #000;
+		padding: 10px;
+		margin-left: 25px;
+		margin-right: 25px;
+		font-size: 10px;
+		line-height: 12px;
+		font-style: italic;
+		background: #e2e2e2;
+		}
+
+pre
+{
+	font-family: "rez ascii", "Lucida Console", monospace;
+}
+
+html
+{
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	border: none;
+	position: absolute;
+	left: 0;
+	top: 0;
+	background-color: #fff;
+	font-size: 9pt;
+}
+
+html#transparent
+{
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	border: none;
+	position: absolute;
+	left: 0;
+	top: 0;
+	background: transparent;
+    font-size: 9pt;
+}
+
+body#site
+{
+	width: 100%;
+	height: 350px;
+	margin: 0;
+	padding: 0;
+	border: none;
+	position: absolute;
+	left: 0;	
+	top: 0;
+	overflow: visible;
+	background-color: #fc3 !important;
+	background-color: #fff;
+	background-image: url("flamboyant.png");
+	background-repeat: repeat-x;
+}
+
+h1, h2, h3
+{
+	border-width: 1px;
+	border-top-color: #fda;
+	border-left-color: #fda;
+	border-right-color: #961;
+	border-bottom-color: #961;
+	border-style: solid;
+	background-color: #e90;
+	background-image: url("shine.png");
+	background-position: center center;
+	background-repeat: repeat-x;
+	color: #210;
+}
+
+.headline
+{
+	vertical-align: middle;
+}
+
+.date
+{
+	position: absolute;
+	right: 8px;
+	bottom: .25ex;
+	font-size: 9pt;	
+}
+
+h1
+{
+	font-size: 15pt;
+}
+
+h2
+{
+	font-size: 12pt;
+	position: relative;
+	vertical-align: middle;
+}
+
+div.pmview {
+	vertical-align: top;
+	border: 1px solid #aaa;
+	background-color:#fff;
+	width: 85%;
+}
+
+p
+{
+	margin: 0;
+	margin-top: 1em;
+}
+
+a
+{
+	text-decoration: none;
+    font-weight: bold;
+}
+
+a:link
+{
+	color: #a60;
+}
+
+a:visited
+{
+	color: #850;
+}
+
+a:hover
+{
+	text-decoration: underline;
+}
+
+img
+{
+	border: 0;
+	vertical-align: bottom;
+}
+
+#rightside
+{
+	float: left;
+	display: inline;
+	position: relative;
+	width: 200px;
+	margin: 8px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #ccc;
+	border-top-color: #fda; /* stupid ie */
+	border-right-color: #444;
+	border-bottom-color: #444;
+	background-color: transparent;
+	background-image: url("bland.png");
+	text-align: center;
+	display: inline;
+}
+
+#sidebar
+{
+	float: right;
+	display: inline;
+	position: relative;
+	width: 200px;
+	margin: 8px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #ccc;
+	border-top-color: #fda; /* stupid ie */
+	border-right-color: #444;
+	border-bottom-color: #444;
+	background-color: transparent;
+	background-image: url("bland.png");
+	text-align: center;
+	display: inline;
+}
+
+h3
+{
+	margin: -1px;
+	font-size: 9pt;
+	text-align: center;
+	margin-bottom: 1ex;
+}
+
+#rightside ul
+{
+	padding: 0;
+	margin-top: 1ex;
+	margin-bottom: 2ex;
+	display: inline-block;
+	list-style-type: none;
+	text-align: left;
+}
+
+#rightside ul li
+{
+	background-position: 0px 50%;
+	background-repeat: no-repeat;
+	min-height: 16px;
+	padding-left: 16px;
+	display: block;
+}
+
+#sidebar ul
+{
+	padding: 0;
+	margin-top: 1ex;
+	margin-bottom: 2ex;
+	display: inline-block;
+	list-style-type: none;
+	text-align: left;
+}
+
+#sidebar ul li
+{
+	background-position: 0px 50%;
+	background-repeat: no-repeat;
+	min-height: 16px;
+	padding-left: 16px;
+	display: block;
+}
+
+#home 		{background-image: url("/static/house.png");}
+#songs		{background-image: url("/static/music.png");}
+#artists	{background-image: url("/static/user_green.png");}
+#recent	        {background-image: url("/static/new.png");}
+#menuqueue	{background-image: url("/static/script.png");}
+#search		{background-image: url("/static/find.png");}
+#forum		{background-image: url("/static/user_comment.png");}
+#profile	{background-image: url("/static/user.png");}
+#favorites	{background-image: url("/static/heart.png");}
+#logout		{background-image: url("/static/door_out.png");}
+#login		{background-image: url("/static/door_in.png");}
+#admin		{background-image: url("/static/door.png");}
+#inbox		{background-image: url("/static/email.png");}
+
+
+#forum, #favorites, #logout
+{
+	margin-bottom: 1em;
+}
+
+p.pmtitle {
+    font-weight: bold;
+}
+
+#sidebar li a
+{
+	margin-left: 1ex;
+	color: #a60;
+}
+#rightside li a
+{
+	margin-left: 1ex;
+	color: #a60;
+}
+
+
+#sidebar form
+{
+	display: block;
+	padding: 0;
+	padding-top: 1ex;
+	margin: 0;
+	border: none;
+	white-space: nowrap;
+}
+
+#blah
+{
+	display: inline-block;
+	width: 176px;
+	padding: 0;
+	margin: 0;
+	padding-right: 11px;
+	border: 1px #000 solid;
+	height: 16px;
+	background-color: transparent;
+	background-image: url("hilight.png");
+	background-position: center;
+}
+
+#makeitso
+{
+	border: none;
+	width: 16px;
+	margin-left: -16px;
+	background-color: transparent;
+	background-image: url("/static/comment.png");
+	background-repeat: no-repeat;
+	background-position: center center;
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+#oneliner
+{
+	margin: 8px;
+	margin-top: 0;
+	margin-bottom: 2ex;
+	text-align: left;
+	overflow: hidden;
+}
+
+#main
+{
+	position: relative;
+	margin: 8px;
+	margin-left: 215px;
+	margin-right: 215px;
+	padding: 0;
+	padding-left: 8px;
+	padding-right: 8px;
+	padding-bottom: 1ex;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #ccc;
+	border-top-color: #fda; /* stupid ie */
+	border-right-color: #444;
+	border-bottom-color: #444;
+	border-bottom-style: double;
+	border-bottom-width: 3px;
+	background-image: url("hilight.png");
+	background-position: center;
+}
+
+#main h1, #main h2
+{
+	margin-left: -9px;
+	margin-right: -9px;
+	margin-bottom: 1ex;
+}
+
+#main h1
+{
+	margin-top: -1px;
+	padding: 0;
+	padding-left: 1ex;
+	padding-right: 1ex;
+}
+
+#main h2
+{
+	margin-top: 2em;
+}
+
+#logo
+{
+	/*width: 376px;
+	height: 72px;*/
+	display: block;
+	margin-top: 2em;
+	margin-left: auto;
+	margin-right: auto;
+	color: #210;
+	overflow: hidden;
+}
+
+.countryflag
+{
+    vertical-align: baseline;
+}
+
+.icon_header
+{
+	padding: 1ex;
+	padding-top: 4px;
+	padding-bottom: 4px;
+	vertical-align: middle;
+	margin: 0;
+	border: 0;
+	background-image: url("glow.png");
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+#main ul
+{
+	margin: 0;
+	padding: 0;
+	margin-left: 3em;
+	list-style-type: disc;
+	list-style-position: outside;
+	display: block;
+}
+
+#main ul.imgbull li
+{
+	list-style-type: none;
+	background-position: 0px 50%;
+	background-repeat: no-repeat;
+	min-height: 16px;
+	margin-left: -3.5ex;
+	padding-left: 3.5ex;
+}
+
+#copyleft, #copyright
+{
+	display: block;
+	font-size: 7pt;
+	position: relative;
+	bottom: -3ex;
+	margin: 0;
+}
+
+#copyleft
+{
+	float: left;
+}
+
+#copyright
+{
+	float: right;
+}
+
+#copyleft a, #copyright a
+{
+	color: #210;
+}
+
+#validator
+{
+	position: absolute;
+	right: 1px;
+	top: 1px;
+}
+
+/* froumzz */
+
+#djangoForumBreadcrumbs, .pages
+{
+    margin-bottom: 1em;
+}
+
+.pagesBottom
+{
+    margin-top: 1em;
+	text-align: right;
+}
+
+#djangoForumList,
+#djangoForumThreadList
+{
+	width: 99%;
+	margin: auto;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #ccc;
+	border-top-color: #fda; /* stupid ie */
+	border-right-color: #444;
+	border-bottom-color: #444;
+	border-collapse: collapse;
+	background-color: transparent;
+	background-image: url("hilight.png");
+	background-position: center;
+}
+
+#djangoForumList th,
+#djangoForumThreadList th,
+#djangoForumThreadPosts th
+{
+	padding: 0;
+	padding-left: 8px;
+	padding-right: 8px;
+	border-width: 1px;
+	border-style: solid;
+	border-top-color: #fda;
+	border-left-color: #fda;
+	border-right-color: #961;
+	border-bottom-color: #961;
+	background-color: #e90;
+	background-image: url("shine.png");
+	background-position: center center;
+	background-repeat: repeat-x;
+    text-align: left;
+	color: #210;
+}
+
+#djangoForumList td,
+#djangoForumThreadList td
+{
+	padding: 0;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #ddd;
+	border-top-color: #961; /* stupid ie */
+	border-right-color: #aaa;
+	border-bottom-color: #aaa;
+}
+
+.djangoForumListDetails,
+.post
+{
+	background: #fff;
+}
+
+.djangoForumListDetails p
+{
+	margin: 0;
+}
+
+#djangoForumList .djangoForumListDetails .djangoForumStats
+{
+	position: relative !important;
+	position: static; /* ha! lost stupid ie6 again! */
+	z-index: 5;
+	float: right;
+	margin-top: -12pt;
+	padding-right: 8px;
+	font-size: 7pt;
+}
+
+.forumName
+{
+	display: block;
+	position: relative !important;
+	position: static; /* ha! */
+	z-index: 10;
+	padding-left: 8px;
+	padding-right: 8px;
+	padding-bottom: 12pt;
+	font-size: 12pt;
+}
+
+.djangoForumListDetails .forumDescription
+{
+	display: block;
+	position: relative !important;
+	position: static; /* ha! */
+	z-index: 5;
+	margin-top: -12pt;
+	padding: 0;
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+#djangoForumList .djangoForumListDetails
+{
+	width: 70%;
+	padding: 0;
+}
+
+#djangoForumList td,
+#djangoForumThreadList td
+{
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+.djangoForumListDetails
+{
+	padding: 0;
+}
+
+#djangoForumThreadList td
+{
+	width: 5%;
+	text-align: center;
+}
+
+#djangoForumThreadList .djangoForumThreadListName
+{
+	width: 60%;
+	text-align: left;
+	background: #fff;
+}
+
+#djangoForumList .djangoForumListLastPost,
+#djangoForumThreadList .djangoForumThreadLastPost
+{
+	width: 30%;
+	text-align: left;
+}
+
+#djangoForumThreadList .djangoForumThreadListName
+{
+	padding: 0;
+	background: #fff;
+}
+
+.threadName
+{
+	display: block;
+	line-height: 2em;
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+#djangoForumThreadPosts
+{
+	width: 99%;
+	margin: auto;
+	border: 0;
+	border-collapse: collapse;
+	background-color: transparent;
+	background-image: url("hilight.png");
+	background-position: center;
+}
+
+#djangoForumThreadPosts td
+{
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+
+#djangoForumThreadPosts .djangoForumThreadPostDetail
+{
+	vertical-align: top;
+	border-left: 1px solid #ddd;
+	padding-top: 1em;
+}
+
+#djangoForumThreadPosts
+{
+}
+
+#djangoForumThreadPosts .postfooter
+{
+	border-left: 1px solid #ddd;
+	border-right: 1px solid #aaa;
+	border-bottom: 1px solid #aaa;
+	text-align: right;
+}
+
+#djangoForumThreadPosts .postfooter td:first-child
+{
+	text-align: left;
+	font-size: 7pt;
+}
+
+
+#djangoForumThreadPosts .post
+{
+	vertical-align: top;
+	padding-top: 1em;
+	border: 0;
+	border-left: 1px solid #aaa;
+	border-right: 1px solid #aaa;
+	border-bottom: 1px solid #aaa;
+	width: 85%;
+}
+
+.post p
+{
+	margin: 0;
+	margin-bottom: 1em;
+}
+
+
+#newThread
+{
+	width: 99%;
+	margin: auto;
+}
+
+#newThread .label
+{
+	text-align: right;
+	vertical-align: top;
+}
+
+#newThread #postThread
+{
+	text-align: center;
+}
+
+
+#newThread #postThread
+{
+	text-align: center;
+}
+
+table.songlist {
+	border-collapse: collapse;
+	border-spacing: 0px;
+}
+
+table.songlist td {
+	padding: 0px;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+table.songlist th {
+	padding: 3px;
+}
+
+table.songlist tr.row1 td {
+/*	background-color: #FCfcfc;*/
+	background-color: #fefef2;
+}
+
+table.songlist tr.row2 td {
+/*	background-color: #e1e1e1; */
+	background-color: #ffe4ba;
+
+}
+

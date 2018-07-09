@@ -1,0 +1,105 @@
+{% extends "forum_base.html" %}
+
+{% block title %}{{ forum.title }}{% endblock %}
+
+{% block extrahead %}
+<link rel="alternate" type="application/rss+xml" title="{{ forum.title }} Posts via RSS" href="{% url forum_index %}rss/{{ forum.slug }}/" />
+<link rel="alternate" type="application/atom+xml" title="{{ forum.title }} Posts via ATOM" href="{% url forum_index %}atom/{{ forum.slug }}/" />
+{% endblock %}
+
+{% block pagetitle %}{{ forum.title }}{% endblock %}
+
+{% block breadcrumbs %} {% for title, url in forum.get_url_name %} &raquo; <a href='{{ url }}'>{{ title }}</a> {% endfor %} ({{ forum.threads }} thread{{ forum.threads|pluralize }}, {{ forum.posts }} post{{ forum.posts|pluralize }}){% endblock %}
+
+
+{% block forumcontent %}
+
+{% if forum.child.all %}
+<table id='djangoForumList'>
+<tr>
+<th>Subforum</th>
+<th>Last Post</th>
+</tr>
+
+{% for subforum in forum.child.all %}
+<tr>
+<td class='djangoForumListDetails'><p><strong><a href='{{ subforum.get_absolute_url }}'>{{ subforum.title }}</a></strong><br /><span class='djangoForumStats'>{{ subforum.threads }} thread{{ subforum.threads|pluralize }}, {{ subforum.posts }} post{{ subforum.posts|pluralize }}</span></p>
+<p>{{ subforum.description }}</p></td>
+{% with subforum.forum_latest_post as latest_post %}
+<td class='djangoForumListLastPost'>{% if latest_post %}{{ latest_post.time|timesince }} ago by {% with latest_post.author as U%}{% include "webview/t/user.html" %}{% endwith %} (<a href='{{ latest_post.get_absolute_url }}'>view</a>){% else %}No Posts{% endif %}</td>
+{% endwith %}
+</tr>
+{% endfor %}
+</table>
+<br />
+{% endif %}
+
+<table id='djangoForumThreadList'>
+<tr>
+<th>Thread</th>
+<th>Posts</th>
+<th>Views</th>
+<th>Last Post</th>
+</tr>
+
+{% for t in threads %}
+<tr>
+	<td class='djangoForumThreadListName'>{% if t.sticky %}Sticky {% endif %}
+		<a class="threadName" href='{{ t.get_absolute_url }}'>{{ t.title|escape }}</a>{% if t.closed %} (Closed){% endif %}
+	</td>
+	<td>{{ t.posts }}</td>
+	<td>{{ t.views }}</td>
+{% with t.thread_latest_post as latest_post %}
+<td class='djangoForumThreadLastPost'>{{ latest_post.time|timesince }} ago by {% with latest_post.author as U%}{% include "webview/t/user.html" %}{% endwith %} (<a href='{{ latest_post.get_absolute_url }}'>View Thread</a>)</td>
+{% endwith %}
+</tr>
+{% endfor %}
+</table>
+
+Pages : {% for p in page_range %}
+{% ifequal page p %}<b>{{ p }}</b>{% else %}<a href="{{ forum.get_absolute_url }}/?page={{ p }}">{{ p }}</a> {% endifequal %}
+{% endfor %}
+
+<h2><img class="icon_header" src="{{ MEDIA_URL }}page_white_edit.png" alt="" />Start A New Forum Topic</h2>
+{% if user.is_authenticated %}
+<form method='post' action='.'>
+	<table id="newThread">
+		<tr>
+			<td class="label">
+				{{ thread_form.title.label_tag }}
+			</td>
+			<td>
+				{{ thread_form.title }}
+                {{ thread_form.title.errors }}
+			</td>
+		</tr>
+		<tr>
+			<td class="label">
+				{{ thread_from.body.label_tag }}
+			</td>
+			<td>
+				{{ thread_form.body }}
+                {{ thread_form.body.errors }}
+			</td class="label">
+		</tr>
+		<tr>
+			<td class="label">
+				{{ thread_form.subscribe.label_tag }}
+			</td>
+			<td>
+				{{ thread_form.subscribe }}
+                {{ thread_form.subscribe.errors }}
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2" id="postThread">
+				<input type='submit' value='Post' />
+			</td>
+		</tr>
+	<table>
+</form>
+{% else %}
+<p>Please log in to create a new thread.</p>
+{% endif %}
+
+{% endblock %}

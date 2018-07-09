@@ -1,0 +1,6 @@
+{% with entry.song.get_metadata as sd %}<entry request_time="{{ entry.requested|date:"r" }}">
+   {% for artist in sd.artists.all %}<artist id="{{ artist.id }}" flag="{{ artist.home_country|safe }}">{{ artist.handle }}</artist>{% endfor %}
+   <song id="{{ entry.song.id }}" length="{{ entry.song.length }}">{{ entry.song.title }}</song>
+   <requester flag="{{ entry.requested_by.get_profile.country|safe }}">{{ entry.requested_by }}</requester>
+   {% if entry.time_played %}<playstart>{{ entry.time_played|date:"r" }}</playstart>{% else %}<playstart>{{ entry.eta|date:"r" }}</playstart>{% endif %}
+  </entry>{% endwith %}

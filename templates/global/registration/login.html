@@ -1,0 +1,13 @@
+{% extends "base/base.html" %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}door_in.png" alt="" />Log In</h2>
+<form action="." method="post">
+	<table>
+	{{ form.as_table }}
+	</table>
+	<input type="submit" value="Log In" />
+	{% csrf_token %}
+</form><br />
+<a href="/accounts/register">Create Account</a> - <a href="/accounts/password/reset/">Reset Password</a>
+{% endblock %}

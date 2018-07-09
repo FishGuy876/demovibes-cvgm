@@ -1,0 +1,181 @@
+#!/bin/sh
+CC='gcc'
+
+# remove old output files
+rm -f config.mk
+
+have_lib() {
+    echo -n "checking for $1 ... "
+    if ! pkg-config "--exists" $1 2>/dev/null; then
+        echo "no"
+        return 1
+    fi
+    echo "yes"
+    return 0
+}
+
+have_header() {
+    echo -n "checking for $1 ... "
+    echo "#include <$1>" | $CC $CPPFLAGS -E -xc -o /dev/null - 2>/dev/null
+    if test $? -ne 0; then 
+        echo 'no'
+        return 1
+    fi
+    echo 'yes'
+    return 0
+}
+
+assert_header() {
+    if ! have_header "$1"; then
+        echo "missing header: $1"
+        exit 1
+    fi
+}
+
+assert_lib() {
+    if ! have_lib "$1"; then 
+        echo "missing lib: $1"
+        exit 1
+    fi
+}
+
+assert_version() {
+    if ! pkg-config "--atleast-version=$2" "$1"; then
+        echo "need $1 $2, have `pkg-config --modversion $1`"
+        exit 1
+    fi
+    return 0
+}
+
+have_file() {
+    echo -n "checking for $1 ... "
+    if test -e "$1"; then
+        echo "yes"
+        return 0
+    fi
+    echo "no"
+    return 1
+}
+
+have_exe() {
+    echo -n "checking for $1 ... "
+    which $1 >/dev/null 2>/dev/null
+    if test $? -ne 0; then
+        echo "no"
+        return 1
+    fi
+    echo "yes"
+    return 0
+}
+
+assert_exe() {
+   if ! have_exe $1; then
+       echo "missing: $1"
+       exit 1
+   fi
+}
+
+ask() {
+    while true; do
+        read -p "$1 [y/n] " reply
+        case "$reply" in 
+            Y|y) return 0;;
+            N|n) return 1;;
+        esac
+    done
+}
+
+run_script() {
+    old_dir=`pwd`
+    if test -n "$2"; then cd $2; fi     
+    ./$1
+    result=$?
+    cd $old_dir
+    return $result
+}
+
+# in case there is local stuff
+if test -d "/usr/local/include"; then CPPFLAGS="$CPPFLAGS -I/usr/local/include"; fi
+if test -d '/usr/local/lib'; then LDFLAGS="$LDFLAGS -L/usr/local/lib"; fi
+
+# build environment
+assert_exe 'make'
+assert_exe "$CC"
+assert_exe "pkg-config"
+assert_lib 'shout'
+assert_version 'shout' '2.2.2'
+assert_header 'lame/lame.h'
+assert_lib 'samplerate'
+
+# bass
+check_bass() {
+    if have_file 'bass/bass.h' && have_file 'bass/libbass.so'; then
+        assert_lib 'id3tag'
+        CPPFLAGS="$CPPFLAGS -DENABLE_BASS -Ibass"
+        LINK_BASS='$(shell pkg-config --libs id3tag) -ldl'
+        BASSSOURCE='libbass.o bassdecoder.o'
+        return 0
+    fi
+    return 1
+}
+
+# only for linux
+if test `uname -s` = 'Linux' && ! check_bass; then
+    if ask '==> download BASS for module playback?'; then
+        assert_exe 'wget'
+        assert_exe 'unzip'
+        run_script getbass.sh bass
+        if ! check_bass; then 
+            exit 1; 
+        fi        
+    fi 
+fi
+
+# ffmpeg
+echo "==> you can build a custom ffmpeg library if you have problems with the one provided by your distro"
+if ask "==> build custom ffmpeg?"; then
+    assert_exe 'yasm'
+    assert_exe 'make'
+    run_script build.sh ffmpeg
+    if test $? -ne 0; then 
+        echo 'error while building libavcodec'; 
+        exit 1; 
+    fi
+    LINK_FFMPEG="-Lffmpeg -pthread -lavformat -lavcodec -lavutil"
+    CPPFLAGS="$CPPFLAGS -Iffmpeg"
+else
+    assert_lib 'libavcodec'
+    assert_lib 'libavformat'
+    assert_lib 'libavutil'
+    CPPFLAGS="$CPPFLAGS `pkg-config --cflags libavformat libavcodec libavutil`"
+    LINK_FFMPEG='$(shell pkg-config --libs libavformat libavcodec libavutil)'
+    if ! have_header 'libavcodec/avcodec.h'; then
+        CPPFLAGS="$CPPFLAGS -DFFMPEG_OLD_HEADER"
+    fi
+fi
+
+# replaygain
+if ! have_file 'replaygain/libreplaygain.a'; then
+    run_script build.sh replaygain
+fi
+
+if have_exe "ccache"; then
+    CC="ccache $CC"
+fi
+
+if have_exe "git"; then
+    CPPFLAGS="$CPPFLAGS -DBUILD_ID=\$(shell git describe --always)"
+fi
+
+# generate makefile
+cat <<EOF >config.mk
+CC          = $CC
+CFLAGS      = -std=c99 -O2 -ffast-math -pthread
+CPPFLAGS    = $CPPFLAGS -Ireplaygain 
+BASSOURCE   = $BASSSOURCE
+LINK_BASS   = $LINK_BASS -pthread
+LINK_FFMPEG = $LINK_FFMPEG
+LDFLAGS     = $LDFLAGS -lm
+EOF
+
+echo "smooth operator"

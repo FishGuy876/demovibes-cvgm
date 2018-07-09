@@ -1,0 +1,11 @@
+{% spaceless %}
+{% if S.pouetid %} <a href="http://www.pouet.net/prod.php?which={{S.pouetid}}" target="_blank"><img class="song-resource" src="{{ MEDIA_URL }}pouet-icon.gif" title="[Pouet Link]" /></a>{% endif %}
+{% if S.dtv_id %} <a href="http://www.demoscene.tv/prod.php?id_prod={{ S.dtv_id }}" target="_blank"><img class="song-resource" src="{{ MEDIA_URL }}television.png" title="[Demoscene.TV Link]" /></a>{% endif %}
+{% if S.hol_id %} <a href="http://hol.abime.net/{{ S.hol_id }}" target="_blank"><img class="song-resource" src="{{ MEDIA_URL }}hol-icon.png" title="[Hall Of Light Link]" /></a>{% endif %}
+{% if S.al_id %} <a href="http://www.atarilegend.com/games/games_detail.php?game_id={{ S.al_id }}" target="_blank"><img class="song-resource" src="{{ MEDIA_URL }}atari-icon.png" title="[Atari Legends Link]" /></a>{% endif %}
+{% if S.wos_id %} <a href="http://www.worldofspectrum.org/infoseekid.cgi?id={{S.wos_id}}" target="_blank"><img class="song-resource" src="{{ MEDIA_URL }}wos-icon.png" title="[World of Spectrum Link]" /></a>{% endif %}
+{% if S.zxdemo_id %} <a href="http://zxdemo.org/item.php?id={{S.zxdemo_id}}" target="_blank"><img class="song-resource" src="{{ MEDIA_URL }}zxdemo-icon.gif" title="[ZXDemo Link]" /></a>{% endif %}
+{% if S.lemon_id %} <a href="http://www.lemon64.com/games/details.php?ID={{S.lemon_id}}" target="_blank"><img class="song-resource" src="{{ MEDIA_URL }}lemon64-icon.gif" title="[Lemon64 Link]" /></a>{% endif %}
+{% if S.projecttwosix_id %} <a href="http://project2612.org/details.php?id={{S.projecttwosix_id}}" target="_blank"><img class="song-resource" src="{{ MEDIA_URL }}project2612-icon.png" title="[Project2612 Link]" /></a>{% endif %}
+{% if S.hvsc_url %} <a href="{{ S.hvsc_url }}"><img class="song-resource" src="{{ MEDIA_URL }}sid-icon.gif" title="[SID File]" /></a>{% endif %}
+{% endspaceless %}

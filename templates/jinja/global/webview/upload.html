@@ -1,0 +1,40 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display %}
+{% block title %}{{ gettext("Upload New Song") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}sound.png" alt="" />{{ gettext("Upload A New Song") }}</h2>
+<p>{{ gettext("Use this form to upload a new song to the database. All uploads are checked by a moderator before being approved. Please try to fill in as much information as you can about the entry to make the job easier on the moderators.") }}</p>
+
+{% include "webview/upload_instructions.html" %}
+
+{% if artist.alias_of %}<h2>{{ gettext("Warning!") }}</h2> {{ gettext("This artist is an alias of") }}<a href="{{ artist.alias_of.get_absolute_url() }}">{{ artist.alias_of|e }}</a>!<br />
+{{ gettext("We recommend that you upload your song to the main artist entry.") }}<h2>{{ gettext("/Warning") }}</h2>{% endif %}
+
+<br />
+
+<form action="." method="post" enctype="multipart/form-data">
+<table>
+<tr><th>{{ gettext("Artist") }}:</th><td>{{ display.artist(artist) }} [<a href="{{ url("dv-artists") }}">{{ gettext("Change Artist") }}</a>]</td></tr>
+
+{{ form.as_table() }}
+</table>
+
+<h2><img class="icon_header" src="{{ STATIC_URL }}script.png" alt="" />{{ gettext("Optional Information") }}</h2>
+
+<table>
+    {{ infoform.as_table() }}
+</table>
+
+{{ links }}
+
+<input type="submit" value="Upload" />
+
+</form>
+
+<p>* <strong>{{ gettext("Song ID Of Original Mix") }}</strong>: <span>{{ gettext("If you are uploading a remix, you can specify the song number of the original here. When someone views the page of the remix, it will provide a clickable link back to the original.") }}</span></p>
+
+<script src="{{ STATIC_URL }}js/upload.js" type="text/javascript"></script>
+
+<div id="uploadinfo"></div>
+{% endblock %}

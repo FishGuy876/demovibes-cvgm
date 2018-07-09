@@ -1,0 +1,28 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block title %}{{ gettext("Pending Image Approvals") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}icon_screenshot.png" alt="" />{{ gettext("Pending Image Approvals") }}</h2>
+<p>{{ gettext("The following labels have their status as 'Uploaded'. Moderators should verify the information for each entry to make sure it's ok.") }}</p>
+<br />
+{% for screen in screenshots.all() %}
+    <table>
+    <tr>
+    <td>
+    {% if screen.image %}<img class="screenshot_logo" src="{{ screen.image.url }}" title="{{ screen.name|e }} alt="{{ screen.name|e }}" />{% else %}(No Image!){% endif %}
+    </td>
+    <td>
+    {{ gettext("Screenshot") }}: {{ screen.name|e }}<br />
+    {% if screen.added_by %}{{ gettext("Created By") }}: {{ display.user(screen.added_by) }}<br />{% endif %}
+
+    {% if screen.description %}<p><i>{{ screen.description|urlize|bbcode|linebreaks }}</i></p>{% endif %}
+
+    <a href="{{ url("dv-newscreenshots") }}?screenshot={{ screen.id }}&amp;status=A"><img src="{{ STATIC_URL }}thumb_up.png" title="Approve" alt="Approve" /> {{ gettext("Approve") }}</a> {{ gettext("or") }} <a href="{{ url("dv-newscreenshots") }}?screenshot={{ screen.id }}&amp;status=R"><img src="{{ STATIC_URL }}thumb_down.png" title="Reject" alt="Reject" /> {{ gettext("Reject") }}</a>
+    </td>
+    </tr>
+    </table>
+    <br />
+{% endfor %}
+<br />
+{% endblock %}

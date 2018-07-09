@@ -1,0 +1,26 @@
+{% extends "base/base.html" %} {% import "macro/display.html" as display -%}
+
+{% block title %}{{ gettext("Platform") }} {{ object.title }}{% endblock %}
+
+{% block main %}
+<h2>{% if object.symbol %}<img class="icon_header" src="{{ object.symbol.url }}" alt="[{{ object.title|e }}]" />{% else %}<img class="icon_header" src="{{ STATIC_URL }}script.png" alt="" />{% endif %}Platform - {{ object.title|e }}</h2>
+{% if object.image %}<img src="{{ object.image.url }}" title="Screenshot For {{ object.title|e }}" alt="Screenshot For {{ object.title|e }}" />{% endif %}
+{{object.description|urlize|linebreaks}}
+
+{{ display.onelinerlink("platform", object.id, user) }}
+
+<h2><img class="icon_header" src="{{ STATIC_URL }}music.png" alt="" />{{ gettext("Songs") }}</h2>
+
+{% set objs, paging = dv.paginate(object.get_songs().all(), 500) %}
+
+{% include "webview/t/songheader.html" %}
+{% for song in objs %}
+ <tr class="{{ loop.cycle('row1', 'row2') }}">
+ {% include "webview/t/songlist.html" %}
+ </tr>
+{% endfor %}
+</table>
+
+{{ paging }}
+
+{% endblock %}

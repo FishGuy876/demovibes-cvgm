@@ -1,0 +1,25 @@
+{% extends "base/base.html" %}
+{% block title %}Statistics For This Station{% endblock %}
+
+{% block main %}
+  {# ================================= Statistics ============================ #}
+  <h2>
+    <img class="icon_header" src="{{ STATIC_URL }}statistics.png" alt="" />{{ gettext("Avaliable Statistics") }}
+  </h2>
+  
+  <p><a href="{{ url("dv-radio-overview") }}">{{ gettext("Overview") }}</a> - {{ gettext("An overview of the music uploaded to the station.") }}</p>
+  <p><a href="{{ url("dv-users-overview") }}">{{ gettext("Users") }}</a> - {{ gettext("An overview of user statistics (top uploaders, talkers etc.)") }}</p>
+  
+  {% for word, vals in keys.items() %}
+    <p><a href="{{ url("dv-stats", word) }}">{{ word|capitalize }}</a> - {{ vals[0] }}</p>
+  {% endfor %}
+    
+  {# ================================= Help us ============================ #}
+  <h2>
+    <img class="icon_header" src="{{ STATIC_URL }}statistics.png" alt="" />{{ gettext("Help Us") }}
+  </h2>
+  <p><a href="{{ url("dv-helpus-artist") }}">{{ gettext("Artists") }}</a> - {{ gettext("Artists with missing or incorrect information.") }}</p>
+  <p><a href="{{ url("dv-helpus-comp") }}">{{ gettext("Compilations") }}</a> - {{ gettext("Compilations without songs, or without a cover image.") }}</p>
+  <p><a href="{{ url("dv-helpus-song") }}">{{ gettext("Songs") }}</a> - {{ gettext("Songs with missing or incorrect information, or other problems.") }}</p>
+  <p><a href="{{ url("dv-helpus-screenshot") }}">{{ gettext("Images") }}</a> - {{ gettext("Broken images") }}</p>
+{% endblock %}

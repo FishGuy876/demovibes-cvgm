@@ -1,0 +1,21 @@
+{% extends "base/base.html" %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}door_in.png" alt="" />Log In</h2>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<form action="." method="post">
+    <table>
+    <tr>
+        <th><label for="id_username">Username:</label></th>
+        <td><input id="id_username" name="username" value="{{ username }}"/></td>
+    </tr>
+    <tr>
+        <th><label for="id_password">Password:</label></th>
+        <td><input id="id_password" type="password" name="password" /></td>
+    </tr>
+    </table>
+    <input type="submit" value="Log In" />
+    <input type="hidden" name="next" value="{{ next }}" />
+</form><br />
+<a href="/accounts/register">Create Account</a> - <a href="/accounts/password/reset/">Reset Password</a>
+{% endblock %}

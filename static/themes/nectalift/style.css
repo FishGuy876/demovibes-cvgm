@@ -1,0 +1,900 @@
+/**
+ ** Author: Art McBain
+ ** This stylesheet is PUBLIC DOMAIN.
+ **
+ ** All referenced images subject to the license of the demovibes project:
+ ** http://code.google.com/p/demovibes/
+ **
+ **/
+
+* {
+    font-family: sans-serif;
+    font-size: 9pt;
+}
+
+html {
+    background-color: #fff;
+}
+
+h2, #maincontent h1 {
+    position: relative;
+    margin-top: 1em;
+    margin-bottom: 1ex;
+    padding-right: 24px;
+    font-size: 10pt;
+    font-weight: bold;
+    text-align: right;
+    border-bottom: 1px solid #444;
+    background-position: 100% 0;
+    background-repeat: no-repeat;
+}
+
+h1, h2 img {
+    position: absolute;
+    top: 0;
+    right: 2px;
+}
+
+div[name=nowplaying] {
+    text-align: center;
+    padding-bottom: 1em;
+}
+
+/* Hide the platform icon when it would normally display the "platform not set" icon */
+div[name=nowplaying] img[src*=empty] {
+    display: none;
+}
+
+/* Forces the "by {artist}" part onto the next line by inserting a block element after the song title link */
+div[name=nowplaying] a[href*=song]:after {
+    display: block;
+    content: "";
+}
+
+/* The previous style will also include the voting star links. This undoes that just in case it matters */
+div[name=nowplaying] a[href*=vote]:after {
+    display: inline;
+}
+
+/*
+   Centers the "explicit content" image, which appears after the song title, and thus on the next line
+   after the line-break inserted above ... best fix for the moment for this, as they re-used a CSS class
+   (something you really shouldn't do like this, makes things hard to style)
+ */
+div[name="nowplaying"] .text-link {
+    display: block;
+    margin: 0 auto !important;
+}
+
+/*
+   Allows us to make items inside table as large as possible (tables on demovibes appear "full width"
+   even if they're not declared that way, so this doesn't hurt anything)
+ */
+form table {
+    width: 100%;
+}
+
+form table ul {
+    list-style-type: none;
+}
+
+/*
+   Centers the submit buttons at the bottom of the PM, Edit Profile forms, and adding new threads on
+   the forum. It also moves them down a bit further to prevent them from being easily overlooked
+ */
+input[value="Send"], input[value="Update"], input[value="Post"], input[value="Submit"] {
+    display: block;
+    margin: 1ex auto 0 auto;
+}
+
+input[value="Search"] {
+    margin-left: .25em;
+}
+
+input[value^="Log In"] {
+    display: block;
+    margin: 0 auto;
+}
+
+input[value^="Log Me Out"] {
+    display: block;
+    margin: 0 auto;
+}
+
+/* Textarea for adding new song comments. Make it as wide as possible */
+textarea[name="Comment"] {
+    width: 99%;
+    margin-bottom: .5em;
+}
+
+/* The little green guys don't like text encroaching on their personal space bubble */
+img[src*="user_green"] {
+    margin-right: 5px;
+}
+
+img[id^="vote-"] {
+    width: 18px;
+    height: 18px;
+}
+
+a {
+    font-weight: bold;
+    text-decoration: none;
+    color: #a60;
+}
+
+a img {
+    vertical-align: top;
+    border: none;
+}
+
+/* I only changed the background-color, but I pulled all the styles in here. It's harder to override inline styles */
+hr {
+    width: 80% !important;
+    height: 1px !important;
+    border: 0px none !important;
+    background-color: #444 !important;
+}
+
+/*
+   This is one reason I dislike browser prefixes wrt "experimental" support for CSS styles. Also, what happens to
+   those developers that forgot to put in the standard declaration when the browser deprecates (and removes) the
+   experimental style? Interestingly enough, I'm with IE on this one, as they don't follow this trend. Thank you IE!
+
+   Don't worry, I won't write this rant each time :P
+ */
+#sidebar, #rightside, #main {
+    margin-bottom: 10px;
+    padding-left: 1em;
+    padding-right: 1em;
+    border-radius: 60px 10px 30px 10px;
+    -moz-border-radius: 60px 10px 30px 10px;
+    -webkit-border-radius: 60px 10px 30px 10px;
+    border: 1px solid #888a85;
+    background-color: rgba(221, 221, 221, .498);
+}
+
+#sidebar, #rightside {
+    width: 230px;
+    text-align: center;
+}
+
+/*
+   The bottom of the #rightside (right sidebar) has a <br> at the bottom. This one doesn't, so the "Who's Online?"
+   section is too close to the bottom otherwise.
+ */
+#sidebar {
+    float: left;
+    padding-bottom: 1em;
+}
+
+/* This is what makes all the website's section headings appear as a right-aligned, underlined title */
+#sidebar h3, #rightside h3 {
+    margin-top: 0;
+    margin-bottom: 1ex;
+    padding-right: 2px;
+    font-size: 10pt;
+    font-weight: bold;
+    text-align: right;
+    border-bottom: 1px solid #444;
+    background-position: 100% 0;
+    background-repeat: no-repeat;
+}
+
+/* Since the tops of our sidebars are curved, the underlines we defined above don't work so well here */
+#sidebar h3:first-child, #rightside h3:first-child {
+    margin-top: .5em;
+    border-bottom: none;
+}
+
+#sidebar ul, #rightside ul {
+    display: inline-block;
+    margin-top: 1em;
+    padding-left: 0;
+}
+
+#sidebar ul li, #rightside ul li {
+    display: block;
+    min-height: 16px;
+    padding-left: 22px;
+    text-align: left;
+    background-repeat: no-repeat;
+}
+
+#sidebar form , #rightside form {
+    position: relative;
+    width: 100%;
+    margin-bottom: .5em;
+    text-align: center;
+}
+
+/* Center the "Oneliner History" link. I wish this had an id on it, so it didn't rely on the value of the href */
+#sidebar a[href="/demovibes/oneliner/"] {
+    display: block;
+    width: 50%;
+    margin: 0 auto;
+}
+
+#rightside {
+    float: right;
+}
+
+/*
+   Center the "Disclaimer" section text. The disclaimer div doesn't have any identifiable attributes so we must
+   target all paragraph tags in the right sidebar, and make exceptions for non-centered identifiable paragraphs
+ */
+#rightside p {
+    text-align: center;
+}
+
+/* Uncenter the "The Team" section text */
+#rightside div[align=left] p {
+    text-align: left;
+}
+
+#rightside form input[type=button] {
+    border: 1px solid #444;
+    cursor: pointer;
+}
+
+#rightside form input[value="Listen"] {
+    background-image: -webkit-gradient(linear, center top, center bottom, from(#e2e2e2), to(gray), color-stop(45%, lightgray));
+    background-image: -moz-linear-gradient(center top, #e2e2e2, lightgray 45%, gray);
+    background-image: linear-gradient(center top, #e2e2e2, lightgray 45%, gray);
+}
+
+#rightside form hr {
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+/*
+   Sometimes text in the oneliner is too long and has no spaces, so rather than hide the overflow, or let it
+   overflow into the main content area, let the browser provide a scrollbar until that oneliner message is
+   pushed out of the view. Even if you don't use the scrollbar, the oneliner should appear the same. Total win
+ */
+#oneliner {
+    overflow: auto;
+    text-align: left;
+}
+
+/* All the top right and left menu images */
+#home       {background-image: url("/static/house.png");}
+#songs      {background-image: url("/static/music.png");}
+#song-platform  {background-image: url("theme-images/joystick.png");}
+#artists    {background-image: url("/static/user_green.png");}
+#compilations   {background-image: url("/static/recplay_ico.png");}
+#tagcloud        {background-image: url("theme-images/tag_yellow.png");}
+#recent         {background-image: url("/static/new.png");}
+#menuqueue  {background-image: url("/static/script.png");}
+#search     {background-image: url("/static/find.png");}
+#forum      {background-image: url("/static/user_comment.png");}
+#profile    {background-image: url("theme-images/vcard_edit.png");}
+#favorites  {background-image: url("/static/heart.png");}
+#register   {background-image: url("/static/page_white_edit.png");}
+#logout     {background-image: url("/static/door_out.png");}
+#login      {background-image: url("/static/door_in.png");}
+#admin      {background-image: url("/static/door.png");}
+#inbox      {background-image: url("/static/email.png");}
+#unap-artists   {background-image: url("/static/user_green.png");}
+#unap-groups    {background-image: url("/static/group.png");}
+#unap-compilations    {background-image: url("/static/recplay_ico.png");}
+#unap-labels    {background-image: url("/static/transmit_blue.png");}
+#unap-links     {background-image: url("/static/link.png");}
+#groups         {background-image: url("/static/group.png");}
+#labels     {background-image: url("/static/transmit_blue.png");}
+#links      {background-image: url("/static/link.png");}
+#faq        {background-image: url("theme-images/help.png");}
+#song-source        {background-image: url("theme-images/server_connect.png");}
+
+#main {
+    margin-left: 265px;
+    margin-right: 265px;
+    padding-top: 1em;
+    padding-bottom: 1em;
+    border-top-left-radius: 30px;
+    -moz-border-radius-topleft: 30px;
+    -webkit-border-top-left-radius: 30px;
+}
+
+/*
+   Major "hack". The "Nectarine Demoscene Radio" header looks a bit odd above the logo, as we already know
+   where we are (and we have the logo to identify the site :). So we might as well [ab]use it for something
+   else. The text-indent hides the text content. The rest absolutely positions the tag behind all the content
+   and turns it into the background image for the page. The background image, being transparent and striped,
+   requires a background color behind it to show up. Since we don't want to use that same color for the rest
+   of the page, we can't put this on the HTML tag. The body tag could work, since we could make the HTML
+   have the page background color. However, putting it on the body tag causes problems with the layout created
+   by this stylesheet. Since we don't control the output HTML, we'll just borrow this element for our purposes.
+
+   The > selector ensures we only select the header that's a direct child of #main (there's only one) and not all
+ */
+#main > h1 {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 350px;
+    z-index: -1;
+    margin: 0;
+    overflow: visible;
+    text-indent: -999999px;
+    background-color: #fc3;
+    background-image: url("/static/themes/default/flamboyant.png");
+    background-repeat: repeat-x;
+}
+
+#main h3 {
+    margin: 4px 0 .5em 1em;
+    font-size: 10pt;
+    font-weight: bold;
+    text-align: right;
+}
+
+/*
+   Right align the form labels on the "Edit My Profile" page and line up the labels with their fields instead
+   of letting them be vertically centered (as having both the field and description in the same table cell
+   makes the row taller, which paired with table cells centering their contents by default ...) This also
+   applies to the PM send/reply message page form
+ */
+#main form table th:first-child {
+    vertical-align: top;
+    padding-top: .25em;
+    padding-right: 1ex;
+    text-align: right;
+}
+
+/*
+   At smaller screen resolutions, there isn't enough room in the middle for a 600px wide logo. This overrides
+   the inline style to hide the overflow and adds a scrollbar when needed
+ */
+#main > div[style^="overflow"] {
+    overflow: auto !important;
+    padding-bottom: 1px;
+}
+
+#logo {
+    display: block;
+    /*width: 600px;*/
+    margin: 0 auto;
+}
+
+/* On the "My Favorites" page, reduce the space between the end of the song list table and the page navigation */
+#maincontent > br:last-of-type {
+    margin-top: -1em;
+}
+
+/*
+   Most page navigations on Demovibes print each page number on a separate line in the source which, for inline
+   elements, means browsers should turn the newlines into a space and display it on the same line as the previous
+   element. On the favorites page, they're all printed on the same line in the source, so no spaces. I liked the
+   spaces, and even more, interface consistency. So this adds the spaces back in.
+ */
+#maincontent a[href*="favorites/?page"]:after {
+    content: " ";
+}
+
+/* See previous. The active page is a bold tag, not a link. */
+#maincontent b:last-of-type:after {
+    content: " ";
+}
+
+/* Oneliner input */
+#blah {
+    display: inline-block;
+    width: 159px;
+    height: 15px;
+    padding: 0;
+    padding-right: 17px;
+    font-size: 12px;
+}
+
+/* Oneliner input */
+#makeitso {
+    position: absolute;
+    top: 2px;
+    right: 27px;
+    width: 16px;
+    border: none;
+    padding-left: 8px;
+    padding-right: 8px;
+    background-color: transparent;
+    background-image: url("/static/comment.png");
+}
+
+#whosonline {
+    text-align: center;
+}
+
+#whosonline span {
+    white-space: nowrap;
+}
+
+#whosonline .countryflag {
+    margin-left: 5px;
+}
+
+/* Textarea for editing forum posts. Make it as wide as possible */
+#id_body {
+    width: 99%;
+    margin-bottom: .5em;
+}
+
+/* Textarea for creating PMs. See previous */
+#id_message {
+    width: 99%;
+}
+
+#djangoForumBreadcrumbs {
+    margin-bottom: .5em;
+}
+
+/* I only changed the color, but I pulled all the styles in here. It's harder to override inline styles */
+.onelinerpre span:last-child {
+    float: right !important;
+    margin: 0 !important;
+    text-align: right !important;
+    color: rgb(153, 153, 153) !important;
+}
+
+.countryflag, .artist, .label_icon, .platform_icon, .group_icon, .compilation_icon, .text-link, img[src*=platform] {
+    margin-right: 5px;
+}
+
+/* Oneliner content first line text indent */
+.onelinertext {
+    padding-left: .5em;
+}
+
+.onelinertext, .onelinertext * {
+    font-size: 10pt;
+}
+
+.nowplaying p {
+    margin: 0;
+}
+
+.vote {
+    margin: 0 auto;
+}
+
+/* Aligns the platform icon (ic chip image)  better with text on the same line */
+.platform_icon {
+    vertical-align: bottom;
+}
+
+.group_icon {
+    margin-left: 5px;
+}
+
+/* Expands the (+) button link tag so we can center the inner image. See next CSS block */
+.songlist span[name^=a_queue] a {
+    display: block;
+}
+
+/* Horizontally centers the (+) button image in song lists */
+.songlist span[name^=a_queue] img {
+    display: block;
+    margin: 0 auto;
+}
+
+.songlist .artist {
+    margin-right: 1ex;
+}
+
+.songlist .text-link {
+    margin-left: 3px;
+    margin-right: 0;
+}
+
+/* Limits the size of cover images on compilations for browsers supporting max-width */
+.compilation_screenshot {
+    max-width: 400px;
+}
+
+/* Tag block shown on a song's info page */
+.taglist {
+    overflow: auto;
+}
+
+.taglist p {
+    font-weight: bold;
+}
+
+.tagview_1 a {
+    font-size: x-small;
+}
+
+.tagview_2 a {
+    font-size: medium;
+}
+
+.tagview_3 a {
+    font-size: x-large;
+}
+
+.tagview_4 a {
+    font-size: xx-large;
+}
+
+/* Stuff related to pagination displays */
+.paging .active a {
+    text-decoration: underline;
+}
+
+/* Search related */
+.searchpostpreview {
+    margin-left: 2em;
+}
+
+.searchpostpreview:first-of-type {
+    border-top-left-radius: 10px;
+    -moz-border-radius-topleft: 10px;
+    -webkit-border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    -moz-border-radius-topright: 10px;
+    -webkit-border-top-right-radius: 10px;
+}
+
+.searchpostpreview:last-of-type {
+    margin-bottom: 1em;
+    border-bottom-left-radius: 10px;
+    -moz-border-radius-bottomleft: 10px;
+    -webkit-border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    -moz-border-radius-bottomright: 10px;
+    -webkit-border-bottom-right-radius: 10px;
+}
+
+.searchpostpreview p {
+    padding-left: .25ex;
+}
+
+.searchpostpreview p:first-child {
+    padding-left: 0;
+}
+
+.searchpostpreview p:last-child {
+    margin-bottom: 0;
+}
+
+.searchinfo a {
+    padding-right: .25ex;
+}
+
+/* Make the labels for adding a new thread on the forums right aligned and bold, to match other forms */
+.label {
+    vertical-align: top;
+    padding-right: 3px;
+    padding-top: 4px;
+    font-weight: bold;
+    text-align: right;
+}
+
+/*
+   The following is all for the song list tables (queue, history, recent approvals, and the PM list)
+   Why the PM list is classed as a songlist, I'll probably never know.
+ */
+
+table.songlist, table.recent-approvals {
+    width: 100%;
+    border-spacing: 0px;
+}
+
+table.songlist td, table.recent-approvals td {
+    padding: 1px 5px 1px 5px;
+}
+
+table.songlist th, table.recent-approvals th {
+    padding: 3px;
+}
+
+/* Centers the text of the 3rd, 4th, and 5th columns of the table */
+table.songlist td:nth-of-type(3), table.songlist td:nth-of-type(4), table.songlist td:nth-of-type(5),
+table.recent-approvals td:nth-of-type(3), table.recent-approvals td:nth-of-type(4), table.recent-approvals td:nth-of-type(5) {
+    text-align: center;
+}
+
+/* Style all even rows with a light color. Use the .row1 class for row styling not using CSS3 */
+table.songlist tr:nth-of-type(even) td, table.recent-approvals tr:nth-of-type(even) td {
+    background-color: #fefef2;
+}
+
+/* Style all odd rows with a dark color. Use the .row2 class for non-CSS3 row styling */
+table.songlist tr:nth-of-type(odd) td, table.recent-approvals tr:nth-of-type(odd) td {
+    background-color: #e6ddcf;
+}
+
+/* The next 5 blocks add borders to the sides of the table */
+table.songlist tr td:first-of-type, table.recent-approvals tr td:first-of-type {
+    border-left: 1px solid #e6cea8;
+}
+
+table.songlist tr td:last-of-type, table.recent-approvals tr td:last-of-type {
+    border-right: 1px solid #e6cea8;
+}
+
+table.songlist tr:hover td, table.recent-approvals tr:hover td {
+    background-color: #e6cea8;
+}
+
+/*
+   Demovibes doesn't explicitly put the table row with the table headers inside a table header tag (<thead>)
+   so when the browser implicitly creates the thead and tbody tag, the table headers are included in the
+   table body. So we must style the second table row instead
+ */
+table.songlist tr:nth-child(2) td, table.recent-approvals tr:nth-child(2) td {
+    border-top: 1px solid #e6cea8;
+}
+
+table.songlist tr:last-of-type td, table.recent-approvals tr:last-of-type td {
+    border-bottom: 1px solid #e6cea8;
+}
+
+/* The next 5 blocks round the corners of the table border */
+table.songlist tr:nth-child(2) td:first-of-type, table.recent-approvals tr:nth-child(2) td:first-of-type {
+    border-top-left-radius: 10px;
+    -moz-border-radius-topleft: 10px;
+    -webkit-border-top-left-radius: 10px;
+}
+
+table.songlist tr:nth-child(2) td:last-of-type, table.recent-approvals tr:nth-child(2) td:last-of-type {
+    border-top-right-radius: 10px;
+    -moz-border-radius-topright: 10px;
+    -webkit-border-top-right-radius: 10px;
+}
+
+table.songlist tr:last-of-type td:first-of-type, table.recent-approvals tr:last-of-type td:first-of-type {
+    border-bottom-left-radius: 10px;
+    -moz-border-radius-bottomleft: 10px;
+    -webkit-border-bottom-left-radius: 10px;
+}
+
+table.songlist tr:last-of-type td:last-of-type, table.recent-approvals tr:last-of-type td:last-of-type {
+    border-bottom-right-radius: 10px;
+    -moz-border-radius-bottomright: 10px;
+    -webkit-border-bottom-right-radius: 10px;
+}
+
+/* This gives the history table's bottom right corner more curve, to match the outer edge of the #main box */
+div[name=history] table.songlist tr:last-of-type td:last-of-type, table.recent-approvals tr:last-of-type td:last-of-type, table#fd-table-1.songlist tr:last-of-type td:last-of-type {
+    border-bottom-right-radius: 30px;
+    -moz-border-radius-bottomright: 30px;
+    -webkit-border-bottom-right-radius: 30px;
+}
+
+/* This following is all stuff to style the various tables used in the forums and song comments */
+
+table#djangoForumList, table#djangoForumThreadList, table#djangoForumThreadPosts {
+    width: 100%;
+    border-spacing: 0px;
+}
+
+table#djangoForumList th, table#djangoForumThreadList th, #djangoForumThreadPosts th {
+    padding: 3px;
+}
+
+table#djangoForumList td, table#djangoForumThreadList td {
+    padding: 0px;
+    padding-left: 5px;
+    padding-right: 5px;
+    border-bottom: 1px solid #aaa;
+    border-right: 1px solid #aaa;
+}
+
+table#djangoForumList td.djangoForumListDetails .djangoForumStats {
+    float: right;
+}
+
+table#djangoForumList td.djangoForumListDetails p {
+    position: relative;
+}
+
+table#djangoForumList td.djangoForumListDetails p .djangoForumStats {
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
+table#djangoForumList td.djangoForumListDetails p {
+    margin-top: .25em;
+    margin-bottom: .125em;
+}
+
+/* Bumps the thread name to the next line when there's text like "Sticky" in front of it */
+table#djangoForumThreadList td.djangoForumThreadListName a {
+    display: block;
+    margin-top: .5em;
+    margin-bottom: .5em;
+}
+
+table#djangoForumList tr td:first-of-type, table#djangoForumThreadList tr td:first-of-type {
+    border-left: 1px solid #aaa;
+}
+
+/*
+   Same as before, we have to deal with the table headers being inside the table body.
+   I'll stop mentioning it, but if you see (:nth-child(2), this is probaby why
+ */
+table#djangoForumList tr:nth-child(2) td, table#djangoForumThreadList tr:nth-child(2) td {
+    border-top: 1px solid #aaa;
+}
+
+/* Give all the form and thread lists rounded corners (next 4 blocks) */
+table#djangoForumList tr:nth-child(2) td:first-of-type, table#djangoForumThreadList tr:nth-child(2) td:first-of-type {
+    border-top-left-radius: 10px;
+    -moz-border-radius-topleft: 10px;
+    -webkit-border-top-left-radius: 10px;
+}
+
+table#djangoForumList tr:nth-child(2) td:last-of-type, table#djangoForumThreadList tr:nth-child(2) td:last-of-type {
+    border-top-right-radius: 10px;
+    -moz-border-radius-topright: 10px;
+    -webkit-border-top-right-radius: 10px;
+}
+
+table#djangoForumList tr:last-of-type td:first-of-type, table#djangoForumThreadList tr:last-of-type td:first-of-type {
+    border-bottom-left-radius: 10px;
+    -moz-border-radius-bottomleft: 10px;
+    -webkit-border-bottom-left-radius: 10px;
+}
+
+table#djangoForumList tr:last-of-type td:last-of-type, table#djangoForumThreadList tr:last-of-type td:last-of-type {
+    border-bottom-right-radius: 10px;
+    -moz-border-radius-bottomright: 10px;
+    -webkit-border-bottom-right-radius: 10px;
+}
+
+/* Turn all columns grayish, make the first one white (next block) */
+table#djangoForumList tr td:nth-of-type(n), table#djangoForumThreadList tr td:nth-of-type(n) {
+    background-color: #f7f7f7;
+}
+
+table#djangoForumList tr td:nth-of-type(1), table#djangoForumThreadList tr td:nth-of-type(1) {
+    background-color: #ffffff;
+}
+
+table#djangoForumThreadPosts {
+    margin-top: .5em;
+    margin-bottom: 1em;
+}
+
+/*
+   I would love to make this scroll, but scroll: auto doesn't work with table cells, and
+   all solutions involve a div that wraps the cell contents (the div can then be styled
+   to get a scrollbar)
+*/
+table#djangoForumThreadPosts .djangoForumThreadPostDetail {
+    width: 112px;
+    max-width: 112px;
+    vertical-align: top;
+    overflow: hidden;
+    padding: 1em 0 0 1em;
+}
+
+table#djangoForumThreadPosts .djangoForumThreadPostDetail span {
+    padding-right: .5em;
+}
+
+/*
+   Hides the table header row on post lists, because it didn't really provide any
+   useful information like other table headers did
+ */
+table#djangoForumThreadPosts tr:first-child {
+    display: none;
+}
+
+/* The following blocks style lists of posts (rounded corners, etc) */
+table#djangoForumThreadPosts tr.postmain td:first-child {
+    border-top: 1px solid #aaa;
+    background-color: #e7e6e6;
+}
+
+table#djangoForumThreadPosts tr.postmain td:first-child, table#djangoForumThreadPosts tr.postfooter td:first-child {
+    border-left: 1px solid #aaa;
+}
+
+table#djangoForumThreadPosts tr:nth-of-type(2) td:first-child {
+    border-top-left-radius: 10px;
+    -moz-border-radius-topleft: 10px;
+    -webkit-border-top-left-radius: 10px;
+}
+
+table#djangoForumThreadPosts tr:nth-of-type(2) td:last-child {
+    border-top-right-radius: 10px;
+    -moz-border-radius-topright: 10px;
+    -webkit-border-top-right-radius: 10px;
+}
+
+table#djangoForumThreadPosts tr:last-child td {
+    border-bottom: 1px solid #aaa;
+}
+
+table#djangoForumThreadPosts tr:last-child td:first-child {
+    border-bottom-left-radius: 10px;
+    -moz-border-radius-bottomleft: 10px;
+    -webkit-border-bottom-left-radius: 10px;
+}
+
+table#djangoForumThreadPosts tr:last-child td:last-child {
+    border-bottom-right-radius: 10px;
+    -moz-border-radius-bottomright: 10px;
+    -webkit-border-bottom-right-radius: 10px;
+}
+
+table#djangoForumThreadPosts tr.postfooter td {
+    background-color: #e7e6e6;
+}
+
+table#djangoForumThreadPosts tr.postfooter td:first-child {
+    padding-top: .25em;
+    padding-left: .5em;
+}
+
+/* Right align text in the second post footer column ("Quote", "Edit Post" text) */
+table#djangoForumThreadPosts tr.postfooter td:last-child {
+    padding-right: .5em;
+    text-align: right;
+    border-right: 1px solid #aaa;
+}
+
+table#djangoForumThreadPosts tr.postfooter td:only-child {
+    text-align: left;
+}
+
+/* Post content area padding, border, and alignment (to counter the table cell content centering) */
+table#djangoForumThreadPosts .post {
+    vertical-align: top;
+    padding-left: .5em;
+    padding-right: .75em;
+    border: 1px solid #aaa;
+    background-color: #fff;
+}
+
+#footer {
+    width: 100%;
+}
+
+#copyleft {
+    float: left;
+}
+
+#copyright {
+    float: right;
+}
+
+/* The top margin pops these out of the #maincontent element visually, as they're actually inside of it */
+#copyleft, #copyright {
+    margin-top: 1.5em;
+    margin-bottom: .5em;
+    font-size: 7pt;
+    font-weight: normal;
+}
+
+#copyleft *, #copyright * {
+    font-size: 7pt;
+    font-weight: normal;
+}
+
+#copyleft a, #copyright a {
+    color: #210;
+}
+
+
+/* Not sure what this is for */
+.bubbleInfo {
+        position: relative;
+}
+
+.popup {
+        position: absolute;
+        background-color: #fff;
+        border-color: #1f60d6;
+        border-style: solid;
+        padding: 5px;
+        z-index:10;
+        -webkit-border-radius: 10px;    /* for Safari */
+        -moz-border-radius: 10px;       /* for Firefox */
+        display: none; /* keeps the popup hidden if no JS available */
+}
+

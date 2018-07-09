@@ -1,0 +1,15 @@
+{{ object.name }}
+{{ object.name }}
+{{ object.info }}
+{{ object.pouetid }}
+{{ object.webpage }}
+{% for artist in object.artist_set.all %}
+{{ artist.handle }}
+{{ artist.name }}
+{{ artist.alias_of.handle }}
+{{ artist.alias_of.name }}
+{% for alias in artist.aliases.all %}
+{{ alias.handle }}
+{{ alias.name }}
+{% endfor %}
+{% endfor %}

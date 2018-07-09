@@ -1,0 +1,19 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display %}
+{% block title %}{{ gettext("Votes for") }} {{ song.title|e }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}song.png" alt="" />{{ gettext("Song Voting History for") }} {{ song.title|e }}</h2>
+<p>{{ gettext("List over votes for the song") }} {{ display.song(song) }}</p>
+
+{% set objs, paging = dv.paginate(votelist) %}
+
+{% for vote in objs %}
+ <img src="{{ STATIC_URL }}rating_{{ vote.vote }}.gif" title="Rated {{ vote.vote }} Stars" alt="Rated {{ vote.vote }} Stars" /> - {{ gettext("Voted By") }}: {% set U = vote.user %}{% include "webview/t/user.html" %} ({{ vote.added|timesince }} {{ gettext("ago") }})
+<br />
+{% endfor %}
+
+{{ paging }}
+
+{% endblock %}
+

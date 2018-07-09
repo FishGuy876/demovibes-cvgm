@@ -1,0 +1,17 @@
+{% extends "base/base.html" %}
+
+{% block title %}{{ gettext("Create New Link") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}link_add.png" alt="" />{{ gettext("Suggest A New Link") }}</h2>
+<p>{{ gettext("You may use this form to suggest new links to us. Please fill out as much information as you can! Links need to be approved by a moderator before they will appear on the links page.") }}</p>
+<br />
+<form action="." method="post" enctype="multipart/form-data">
+<table>
+{{ form.as_table() }}
+</table>
+<input type="submit" value="{{ gettext("Send Link Request") }}" />
+</form>
+<br />
+{% endblock %}
+

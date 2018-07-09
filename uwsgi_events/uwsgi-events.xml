@@ -1,0 +1,10 @@
+<uwsgi>
+  <socket>127.0.0.1:3032</socket>
+  <module>uwsgi_eventhandler</module>
+  <master/>
+  <async>1500</async>
+  <ugreen/>
+  <disable-logging/>
+  <daemonize>/tmp/demovibes-events-uwsgi.log</daemonize>
+  <pidfile>/tmp/demovibes-events-uwsgi.pid</pidfile>
+</uwsgi>

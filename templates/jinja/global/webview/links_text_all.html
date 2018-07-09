@@ -1,0 +1,3 @@
+{% for link in text_links.all() %}
+ {% set L = link %}{% include "webview/t/link_text.html" %}{% if loop.last %}{% else %}<br />{% endif %}
+{% endfor %}

@@ -1,0 +1,18 @@
+{% extends "base/base.html" %}
+
+{% block title %}{{ gettext("Song sources") }}{% endblock %}
+
+{% block main %}
+
+{% set objs, paging = dv.paginate(object_list, 300) %}
+
+<h2><img class="icon_header" src="{{ STATIC_URL }}sound.png" alt="" />{{ gettext("Song Sources/Types") }}</h2>
+{% for p in objs %}
+ {% if p.get_songs().count() != 0 %}
+  {% set P = p %}{% include "webview/t/songtypename.html" %} ({{ p.get_songs().count() }} {{ gettext("Songs") }})<br />
+ {% endif %}
+{% endfor%}
+
+{{ paging }}
+
+{% endblock %}

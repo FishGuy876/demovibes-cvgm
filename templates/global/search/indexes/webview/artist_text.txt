@@ -1,0 +1,12 @@
+{{ object.handle }}
+{{ object.handle }}
+{{ object.name }}
+{{ object.info }}
+{{ object.webpage }}
+{{ object.alias_of.handle }}
+{% for alias in object.aliases.all %}
+    {{ alias.handle }}
+{% endfor %}
+{% for group in object.groups.all %}
+    {{ group.name }}
+{% endfor %}

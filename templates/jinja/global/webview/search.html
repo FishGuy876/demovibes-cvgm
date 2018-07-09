@@ -1,0 +1,60 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block title %}{{ gettext("Search Site") }}{% endblock %}
+
+{% block main %}
+ <h2><img class="icon_header" src="{{ STATIC_URL }}find.png" alt="" />{{ gettext("Search For Users / Songs / Groups / Compilations / Labels / Artists") }}</h2>
+ <form action='.' method="post">
+ <input name="Search" /><input type="submit" value="{{ gettext("Search") }}" />
+ </form>
+
+<p><a href="/search/">{{ gettext("Try new BETA search!") }}</a></p>
+
+{% if users %}
+  <h2><img class="icon_header" src="{{ STATIC_URL }}user.png" alt="" />{{ gettext("Users Found") }}</h2>
+  {% for u in users %}
+  {{ display.user(u) }}<br/>
+  {% endfor %}
+{% endif %}
+
+ {% if artists %}
+  <h2><img class="icon_header" src="{{ STATIC_URL }}user_green.png" alt="" />{{ gettext("Artists Found") }}</h2>
+  {% for artist in artists %}
+   {{ display.artist(artist) }}<br/>
+  {% endfor %}
+ {% endif %}
+
+ {% if groups %}
+  <h2><img class="icon_header" src="{{ STATIC_URL }}group.png" alt="" />{{ gettext("Groups Found") }}</h2>
+  {% for group in groups %}
+    {{ display.group(group) }}<br />
+  {% endfor %}
+ {% endif %}
+
+{% if compilations %}
+ <h2><img class="icon_header" src="{{ STATIC_URL }}recplay_ico.png" alt="" />{{ gettext("Compilations Found") }}</h2>
+  {% for comp in compilations %}
+   {{ display.compilation(comp) }}<br/>
+  {% endfor %}
+{% endif %}
+
+{% if labels %}
+ <h2><img class="icon_header" src="{{ STATIC_URL }}transmit_blue.png" alt="" />{{ gettext("Labels Found") }}</h2>
+ {% for lab in labels %}
+  {{ display.label(lab) }}<br/>
+ {% endfor %}
+{% endif %}
+
+ {% if songs %}
+  <h2><img class="icon_header" src="{{ STATIC_URL }}music.png" alt="" />{{ gettext("Songs Found") }}</h2>
+{% include "webview/t/songheader.html" %}
+  {% for song in songs %}
+   <tr>{% include "webview/t/songlist.html" %}</tr>
+  {% endfor %}
+  </table>
+ {% endif %}
+
+
+
+{% endblock %}
+

@@ -1,0 +1,19 @@
+{% import "macro/display.html" as display -%}
+{% if now_playing.song %}
+ {{ display.song(now_playing.song) }} by {{ display.artists(now_playing.song) }}<br />
+
+ Requested By: {{ display.user(now_playing.requested_by) }}<br />
+
+ {{ display.labels(now_playing.song) }}
+
+ {% if comps.count() %}
+  In Compilations: {% for comp in comps.all() %}{{ display.compilation(comp) }}{% if loop.last %} {% else %}, {% endif %}{% endfor %}<br />
+ {% endif %}
+ {{ display.songicons(now_playing.song) }} {{ display.links(now_playing.song) }}
+ <br />
+
+ <p>Time Left: <span data-name="counter" data-sec="((%timeleft%))" data-inc="-1">{{ now_playing.song.length() }}</span></p>
+
+{% else %}
+ No Song Playing!!
+{% endif %}

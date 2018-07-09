@@ -1,0 +1,34 @@
+{% extends "base/base.html" %}
+
+{% block title %}{{ gettext("About This Site") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}email.png" alt="" />{{ gettext("About This Site") }}</h2>
+<p>{{ gettext("The Demovibes project is the result of a lot of people's hard work. We give extended thanks to the following people for their hard work on the project") }}:</p>
+
+<b>{{ gettext("Code") }}</b><br />
+Mikael 'Terrasque' Turoy - Programmer, Project Founder<br />
+Andy 'FishGuy876' Kellett - Programmer, hehe [<a href="mailto:andy@f1-software.com">{{ gettext("email") }}</a>]<br />
+<br />
+<b>{{ gettext("Extra Coding") }}</b><br />
+BombmanDK - Javascript/Ajax Coding<br />
+<br />
+<b>{{ gettext("Visuals and Appearence") }}</b><br />
+Raina - Original templates &amp; CSS<br />
+Fam Fam Fam - Site icons<br />
+AMcBain - Redesigned CSS (NectaLift interface)<br />
+Mark 'sark76' Huther - Icons &amp; custom graphics<br />
+<br />
+<b>{{ gettext("Betatesting") }}</b><br />
+Seppjo - Chief breaker of things<br />
+BitArts - Great :coffee: drinker and feature guinea pig<br />
+<br />
+<b>{{ gettext("Other Thanks") }}</b><br />
+We would like to extend our thanks to everyone at <a href="http://www.scenemusic.eu" target="_blank">Nectarine</a> for their patience and understanding. We also thank them for their continued input for new features and requests.<br />
+<br />
+Demovibes is part of the <a href="http://www.demovibes.org/" target="_blank">Demovibes Collective</a>, and the project website is located on <a href="http://code.google.com/p/demovibes" target="_blank">Google Code</a>. This source code is open source for anyone to use and modify freely as long as you link back to us.<br />
+<br />
+WARNING!! This site contains traces of NUTS!
+<br />
+{% endblock %}
+

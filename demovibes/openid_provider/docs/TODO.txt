@@ -1,0 +1,5 @@
+- "one time" access decision (without storing trust_root in database),
+- trusted_roots management,
+- sreg support,
+- automate openid generation if user is trying to use it for first time
+  (option in settings maybe)

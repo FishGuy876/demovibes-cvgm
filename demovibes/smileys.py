@@ -1,0 +1,26 @@
+SMILEYS = (
+	(':love:', 'heart.png'),
+    (':lol:', 'emoticons/lol.gif'),
+    (':mypony:', 'emoticons/pony.gif'),
+    (':clap:', 'emoticons/clap.gif'),
+	(':)', 'emoticons/smile.gif'),
+        ('(:', 'emoticons/smile.gif'),
+	(';)', 'emoticons/wink.gif'),
+	('(;', 'emoticons/wink.gif'),
+	('((:', 'emoticons/oldsmile.gif'),
+	(':))', 'emoticons/oldsmile.gif'),
+	(':-)', 'emoticons/smile.gif'),
+	(':o', 'emoticons/surprised.png'),
+	(':O', 'emoticons/surprised.png'),
+        (':p', 'emoticons/tongue.gif'),
+        (':P', 'emoticons/tongue.gif'),
+	(':(', 'emoticons/unhappy.png'),
+	(':-(', 'emoticons/unhappy.png'),
+	(':necta:', 'support-our-fruits.gif'),
+	(':facepalm:', 'emoticons/facepalm.gif'),
+    (':nectawall:', 'emoticons/nectawall.gif'),
+    
+    ('o/', 'emoticons/wave.gif'),
+    (':boobies:', 'emoticons/boobies.png'),
+
+)

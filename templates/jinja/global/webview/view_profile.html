@@ -1,0 +1,50 @@
+{% extends "base/base.html" %}
+{% block title %}{{ gettext("User Profile Of") }} {{profile.user}}{% endblock %}
+{% import "macro/display.html" as display -%}
+
+{% block main %}
+
+<h2><img class="icon_header" src="{{ STATIC_URL }}{{ profile.get_littleman() }}" alt="" />{{ gettext("User Profile For") }} {{ profile.user|e }}{% if profile.web_page %} <a href="{{ profile.web_page|e }}" target="_blank">[Visit User's Website]</a>{% endif %}</h2>
+
+{% if profile.avatar %}
+ <img src="{{ profile.avatar.url }}" title="[{{ profile.user|e }}'s Avatar]" alt="[{{ profile.user|e }}'s Avatar]" /><br />
+{% endif %}
+
+{% if profile.have_artist() %}
+ <a href="{{ profile.user.artist.get_absolute_url() }}">{{ gettext("View User's Artist Page") }}</a><br />
+{% endif %}
+
+{% if profile.location %}
+ {{ dv.flag(profile.user.get_profile().country) }} {{ profile.location|e }}<br />
+ {% if profile.infoline %}<strong>{{ profile.infoline|e }}</strong><br />{% else %}<em>[No Info Line]</em><br />{% endif %}
+{% else %}
+ {{ dv.flag(profile.user.get_profile().country) }} {% if profile.infoline %}<strong>{{ profile.infoline|e }}</strong>{% else %}<em>[No Info Line]</em>{% endif %}<br />
+{% endif %}
+{% set U = profile.user %}{% include "webview/t/user-icons.html" %}<br />
+
+{{ display.onelinerlink("user", profile.user.username, user) }}
+
+
+<br />{% cache 86400 mkstr(profile.user.id, profile.user.last_changed, "userprofilestats") %}
+Member Since: {{ profile.user.date_joined|date("F j, Y") }}<br />
+{{ profile.get_uploadcount() }} Uploads, {{ profile.get_votecount() }} Votes, Spoken {{ profile.get_onelinercount() }} Times.<br />
+Last Login: {{ profile.user.last_login|date("F j, Y") }}<br />{% endcache %}
+
+<a href="{{ url("dv-send_pm") }}?to={{ profile.user|e }}"><img src="{{ STATIC_URL }}email.png" alt="mail" /> {{ gettext("Send A Message") }}</a> | View {{ profile.user|e }}'s <a href="{{ url ("dv-user-favs", profile.user) }}">{{ gettext("Favourites List") }}</a>.<br/>
+
+{% if profile.hol_id %}
+ <a href="http://hol.abime.net/hol_search.php?N_ref_artist={{ profile.hol_id|e }}" target="_blank">{{ gettext("See User's H.O.L. Details") }}</a><br />
+{% endif %}
+
+{{ display.links(profile) }}
+
+{% if profile.fave_id %}
+ <font color="blue">{{ profile.user|e }}'s <em>{{ gettext("Ultimate") }}</em> {{ gettext("Song") }}:</font> {{ dv.get_song_queue_tag(profile.fave_id) }}
+{% endif %}
+
+<h2><img class="icon_header" src="{{ STATIC_URL }}script.png" alt="" />{{ gettext("Public information") }}</h2>
+<p>
+{{ profile.info|mksafe|linebreaks|bbcode|smileys }}
+</p>
+{% endblock %}
+

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<group id="{{ object.id }}">
+    <name>{{object.name }}</name>
+    {% if object.webpage %}<website>{{ object.webpage }}</website>{% endif %}
+    <group_logo>{% if object.group_logo %}{{ object.group_logo.url }}{% else %}{{ MEDIA_URL }}no_picture.png{% endif %}</group_logo>
+    {% if object.pouetid %}<pouet>{{ object.pouetid }}</pouet>{% endif %}
+    {% if object.found_date %}<founding_date>{{ object.found_date|date:"F j, Y" }}</founding_date>{% endif %}
+    {% if object.info %}<info>{{ object.info }}</info>{% endif %}
+
+    {% ifnotequal object.artist_set.count 0 %}<active_group_members>
+        {% for artist in object.artist_set.all %}<artist id="{{ artist.id }}">{{ artist.handle }}</artist>{% endfor %}
+    </active_group_members>{% endifnotequal %}
+
+    {% ifnotequal object.get_songs.count 0 %}<active_group_songs>
+        {% for song in object.get_songs.all %}<song id="{{ song.id }}" locked="{{ song.is_locked }}">{{ song.title }}</song>{% endfor %}
+    </active_group_songs>{% endifnotequal %}
+</group>

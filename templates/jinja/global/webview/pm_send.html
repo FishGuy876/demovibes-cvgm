@@ -1,0 +1,13 @@
+{% extends "base/base.html" %}
+
+{% block title %}{{ gettext("Inbox") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}email.png" alt="" />{{ gettext("Send Private Message") }}</h2>
+<form action="." method="post">
+<table>
+{{ form.as_table() }}
+</table>
+<input type="submit" value="{{ gettext("Send") }}" />
+</form>
+{% endblock %}

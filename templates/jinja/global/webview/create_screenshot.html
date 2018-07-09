@@ -1,0 +1,29 @@
+{% extends "base/base.html" %}
+
+{% block title %}{{ gettext("Create New Screenshot") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}icon_screenshot.png" alt="" />{{ gettext("Create New Screenshot") }}</h2>
+{% if obj %}<p>Add a new screenshot for <a href="{{ obj.get_absolute_url()}}">{{ obj }}</a></p>{% endif %}
+<p>{{ gettext("Use this form to create a new screenshot. All entries are checked by a moderator before being approved. Please try to fill in as much information as you can about the entry to make the job easier on the moderators. If you have any questions, please ask a moderator.") }}</p>
+
+<br />
+
+<form action="{{ url ("dv-createscreenshot") }}" method="post" enctype="multipart/form-data">
+<table>
+{{ form.as_table() }}
+{{ form2.as_table() }}
+</table>
+<input type="submit" value="{{ gettext("Send Screenshot Request") }}" />
+</form>
+<br />
+<strong>*</strong> - {{ gettext("Fields marked with a * are required") }}<br />
+
+<h2>Connect existing screenshot</h2>
+{{error}}
+<form action="{{ url ("dv-createscreenshot") }}" method="post" enctype="multipart/form-data">
+<p>Screenshot ID or title: <input name="connectto" /></p>
+{{ form2.as_table() }}
+<input type="submit" value="{{ gettext("Connect screenshot") }}" />
+</form>
+{% endblock %}

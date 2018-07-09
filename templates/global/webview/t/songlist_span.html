@@ -1,0 +1,10 @@
+{% if song.is_locked %}
+    <span style="display:none">l</span><img class="song_tail" src="{{ MEDIA_URL }}lock.png" alt="Locked" title="Locked" />
+{% else %}
+    <span style="display:none">u</span>
+    {% if user.is_authenticated %}
+        <a href="{% url dv-add_queue song.id %}" onclick="requestsong({{ song.id }});return false;">
+            <img class="song_tail" src="{{ MEDIA_URL }}add.png" alt="Add To Queue" title="Add To Queue" />
+        </a>
+    {% endif %}
+{% endif %}

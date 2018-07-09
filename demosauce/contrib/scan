@@ -1,0 +1,14 @@
+#!/bin/sh -eu
+# new scan tool no longer does replaygain analysis by defadult
+# this script provides drop-in replacement for old behavior
+ARGS=
+RG="-r"
+for ARG in $@; do
+    case "$ARG" in
+        --no-replaygain) RG=;;
+        -r)              RG=;;
+        *)               ARGS="$ARG $ARGS";;
+    esac
+    shift
+done
+exec ./dscan $RG $ARGS

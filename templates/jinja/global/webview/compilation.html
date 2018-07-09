@@ -1,0 +1,93 @@
+{% extends "base/base.html" %}
+{% block title %}{{ gettext("Compilation") }}: {{ comp.name|e }}{% if comp.label %} {{ gettext("from") }} {{ comp.label|e }}{% endif %}{% endblock %}
+{% import "macro/display.html" as display -%}
+{% set su = comp.get_master_screenshot()|random %}
+{% block main %}
+<h2>
+    <img class="icon_header" {% if comp.comp_icon %}src="{{ comp.comp_icon.url }}"{% else %}src="{{ STATIC_URL }}recplay_ico.png"{% endif %} alt="Compilation" />
+    {{ gettext("Compilation") }}: {{ comp.name|e }}
+    {% if user.is_staff %}
+        [<a href="/admin/webview/compilation/{{ comp.id }}/">{{ gettext("Admin Edit Info") }}</a>]
+    {% endif %}
+</h2>
+
+{{ display.onelinerlink("compilation", comp.id, user) }}
+
+<table>
+<tr>
+<td class="compilation_summary">
+<table>
+<tr><td>
+{% if su %}
+    {{ display.screenshot(su.image) }}
+{% endif %}
+</td></tr>
+<tr><td>
+<p class="compilation_details_s">
+<b><i>{{ gettext("Compilation Summary") }}:</i></b><br />
+Name: {{ comp.name|e }}<br />
+{% if comp.label %}{{ gettext("Label") }}: {{ comp.label|e }}<br />{% endif %}
+{% if comp.rel_date %}{{ gettext("Release Date") }}: {{ display.date(comp.rel_date) }}<br />{% endif %}
+{% if comp.running_time %}{{ gettext("Running Time") }}: {{ comp.length() }}<br />{% endif %}
+{% if comp.num_discs %}{{ gettext("Num. Disks") }}: {{ comp.num_discs }}<br />{% endif %}
+{% if comp.youtube_link %}{{ gettext("Video Clip") }}: <a href="{{ comp.youtube_link|e }}" target="_blank">{{ gettext("Video Link") }}</a><br />{% endif %}
+{% if comp.media_format %}{{ gettext("Media Type") }}: {{ comp.media_format }}<br />{% endif %}
+{% if comp.details_page %}{{ gettext("Additional Info") }}: <a href="{{ comp.details_page|e }}" target="_blank">{{ gettext("Details Page") }}</a><br />{% endif %}
+{% if comp.purchase_page %}{{ gettext("Purchase Info") }}: <a href="{{ comp.purchase_page|e }}" target="_blank">{{ gettext("Purchase Info") }}</a><br />{% endif %}
+{% if comp.download_link %}{{ gettext("Download Link") }}: <a href="{{ comp.download_link|e }}" target="_blank">{{ gettext("Download Info") }}</a><br />{% endif %}
+{% if comp.bar_code %}{{ gettext("UPC") }}: {{ comp.bar_code|e }}<br />{% endif %}
+{% if comp.pouet %}{{ gettext("Pouet Info") }}: <a href="http://www.pouet.net/prod.php?which={{ comp.pouet }}" target="_blank">{{ gettext("Pouet Link") }}</a><br />{% endif %}
+{% if comp.date_added %}<br />{{ gettext("Added On") }}: {{ display.date(comp.date_added) }} <br />{{ gettext("By") }}: {% if comp.created_by %} {{ display.user(comp.created_by) }}{% endif %}<br />{% endif %}
+<br /><a href="{{ url('dv-add_comp_screenshot', comp.id) }}">[Add Album Art]</a>
+</p><br />
+{% if sessionform %}
+<h1>{{ gettext("Session making maker!") }}</h1>
+<form method="post" action=".">
+{{ sessionform.as_p() }}
+<input type="submit" value="{{ gettext("Make session") }}"/>
+</form>
+{% endif %}
+</td></tr>
+</table>
+</td>
+<td class="compilation_description">
+<b><i>{{ gettext("Compilation Details For") }} {{ comp.name|e }}:</i></b><br />
+{% if comp.info %}<p><i>{{ comp.info|urlize|linebreaks|bbcode|smileys }}</i></p><br />{% endif %}
+{% if comp.prod_artists.count != 0 %}
+ <b><i>{{ gettext("Compilation Artists") }}: </i></b>
+ {% for artist in comp.prod_artists.all() %}
+  {{ display.artist(artist) }}
+ {% endfor %}
+ <br /><br />
+{% endif %}
+
+{% if comp.prod_groups.count() != 0 %}
+ <b><i>{{ gettext("Compilation Groups") }}: </i></b>
+ {% for group in comp.prod_groups.all() %}
+  {{ display.group(group) }}
+ {% endfor %}
+ <br /><br />
+{% endif %}
+
+{% if comp.songs.count != 0 %}
+ <b><i>{{ gettext("Songs In This Production (%(num)d Total)", num=comp.songs.count()) }} :</i></b><br /><br />
+ {% for song in comp.get_songs() %}
+  {{ display.song(song) }} {{ gettext("by") }} {{ display.artists(song) }} {{ display.queue_song(song, user) }}<br />
+ {% endfor %}
+{% endif %}<br />
+{% if comp.prod_notes %}<i><b>{{ gettext("Production Notes") }}: </b>{{ comp.prod_notes|urlize|linebreaks|bbcode|smileys }}</i><br />{% endif %}
+</td>
+</tr>
+</table>
+{% if user.is_staff %}
+    <h2><img class="icon_header" src="{{ STATIC_URL }}link_edit.png" alt="" />{{ gettext("Compilation Corrections &amp; Updates") }}</h2>
+    <a href="edit">[{{ gettext("Edit compilation") }}]</a>
+{% endif %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}icon_screenshot.png" alt="" />{{ gettext("All Images For This Compilation") }}</h2>
+{% if comp.screenshots %}
+    {% for ss in comp.get_screenshots() %}
+        {{ display.screenshot(ss.image) }}
+    {% endfor %}
+{% endif %}
+{% endblock %}
+

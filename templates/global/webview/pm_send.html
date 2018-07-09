@@ -1,0 +1,13 @@
+{% extends "base/base.html" %}
+
+{% block title %}Inbox{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}email.png" alt="" />Send Private Message</h2>
+<form action="." method="post">
+<table>
+{{ form.as_table }}
+</table>
+<input type="submit" value="Send" />
+</form>
+{% endblock %}

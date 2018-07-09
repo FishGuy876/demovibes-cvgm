@@ -1,0 +1,8 @@
+Hi, 
+
+This is a message from {{ site.name }} to inform you that you have received a new private message from {{ message.sender }}.
+
+Subject: {{ message.subject|striptags }}
+Message Preview: {{ message.message|striptags|truncatewords:75 }}
+
+You may read and respond to the full message here: http://{{ site.domain }}{% url dv-inbox %}

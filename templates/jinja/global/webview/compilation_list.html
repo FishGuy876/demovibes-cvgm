@@ -1,0 +1,38 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
+{% block title %}{{ gettext(list_title) }}{% endblock %}
+
+{% block main %}
+    <h2>
+        <img class="icon_header" src="{{ STATIC_URL }}recplay_ico.png" alt="" />
+        {{ gettext(list_title) }}
+    </h2>
+    
+    {% for l in al %}
+        <a href="{{ url(letter_url_name, l) }}">
+            {{ l|upper }}
+        </a>
+    {% endfor %}
+        
+    [<a href="{{ url(all_url_name) }}">{{ gettext("All Compilations") }}</a>]
+        
+    <br /><br />
+    
+    {% set objs, paging = dv.paginate(object_list) %}
+    
+    {% for comp in objs %}
+        {{ display.compilation(comp) }}
+        {% if desc_function %}
+            {{ desc_function(comp)|e }}
+        {% endif %}
+        <br />
+    {% endfor %}
+    
+    <br />
+    
+    {% include "webview/t/new_compilation_link.html" %}
+    
+    {{ paging }}
+{% endblock %}
+
+

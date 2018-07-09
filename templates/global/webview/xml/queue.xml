@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<playlist>
+
+ <now>
+  {% with now_playing as entry %}{% include "webview/xml/t_queue.xml" %}{% endwith %}
+ </now>
+
+ <queue>
+  {% for entry in queue %}{% include "webview/xml/t_queue.xml" %}{% endfor %}
+ </queue>
+
+ <history>
+  {% for entry in history %}{% include "webview/xml/t_queue.xml" %}{% endfor %}
+ </history>
+
+</playlist>

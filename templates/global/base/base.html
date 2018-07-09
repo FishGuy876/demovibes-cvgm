@@ -1,0 +1,127 @@
+{% extends "base/base_skeleton.html" %}
+
+{% load cache %}
+{% load dv_extend %}
+
+{% block content %}
+    <div id="sidebar">
+        <h3>Welcome, {% if user.is_authenticated %}{{ user }}{% else %}Visitor{% endif %}!</h3>
+        {% block sidebar %}
+        <ul class="menulist">
+            <li id="home"><a href="{% url dv-root %}">Home</a></li>
+            <li id="forum"><a href="{% url forum_index %}">Forum</a></li>
+            <li id="songs"><a href="{% url dv-songs %}">Songs</a></li>
+            <li id="song-source"><a href="{% url dv-sources %}">Song Sources</a></li>
+            <li id="song-platform"><a href="{% url dv-platforms %}">Song Platforms</a></li>
+            <li id="artists"><a href="{% url dv-artists %}">Artists</a></li>
+            <li id="groups"><a href="{% url dv-groups %}">Groups</a></li>
+            <li id="labels"><a href="{% url dv-labels %}">Labels</a></li>
+            <li id="compilations"><a href="{% url dv-compilations %}">Compilations</a></li>
+            <li>&nbsp;</li>
+            <li id="menuqueue"><a href="{% url dv-queue %}">Queue</a></li>
+            <li>&nbsp;</li>
+            <li id="search"><a href="{% url s-all %}">Search</a></li>
+            <li id="recent"><a href="{% url dv-recent %}">New Uploads</a></li>
+            <li>&nbsp;</li>
+            <li id="faq"><a href="{% url dv-faq %}">FAQ</a></li>
+            <li id="links"><a href="{% url dv-links %}">Links</a></li>
+        </ul>
+        {% endblock %}
+        <br />
+        <h3>Infamous OneLiner</h3>
+        {% if user.is_authenticated %}
+        <form action="{% url dv-oneliner_submit %}" method="post" enctype="application/x-www-form-urlencoded"  onsubmit="apf('{% url dv-ax-oneliner_submit %}',this); this.Line.value = ''; return false;" >
+            <input id="blah" name="Line" autocomplete="off" maxlength="256" onkeydown="return tc(this,event.keyCode);" onkeypress="return canceltab(event.keyCode);" value="GURU MEDITATION" onfocus="if (this.value == 'GURU MEDITATION') { this.value=''; }" /><input id="makeitso" type="submit" value="" />
+            <div class="onelinertools"></div>
+        </form>
+        {% endif %}
+        {% get_oneliner %}
+        <a href="{% url dv-oneliner %}">Oneliner History</a>
+    <br /><br />
+        <h3>Who's Online?</h3>
+    {% cache 60 whosonline %}
+        {% get_online_users %}
+    {% endcache %}
+    </div>
+
+    <div id="rightside">
+        <h3>User Menu</h3>
+        <div class="message-display-settings">Notification settings</div>
+        <ul>
+        {% if user.is_authenticated %}
+            <li id="profile"><a href="{% url dv-my_profile %}">Edit My Profile</a></li>
+            <li id="favorites"><a href="{% url dv-favorites %}">My Favourites</a></li>
+            <li id="inbox"><a href="{% url dv-inbox %}">My Inbox {% get_inbox user %}</a></li>
+            <li id="logout"><a href="{% url webview.views.log_out %}">Log Me Out</a></li>
+        {% else %}
+            <li id="login"><a href="/account/signin/">Log In / Register</a></li>
+        {% endif %}
+        {% if user.is_staff %}
+            <li id="admin"><a href="/admin" target="admin">Admin Area</a></li>
+        {% endif %}
+        {% if perms.webview.change_song %}
+            <li id="menuqueue"><a href="{% url dv-uploads %}">Unapproved Uploads</a></li>
+        {% endif %}
+        {% if perms.webview.add_mute_oneliner %}
+            <li id="menumute"><a href="{% url dv-muteoneliner %}">Mute Account</a></li>
+        {% endif %}
+        {% if user.is_staff %}
+        <li></li>
+        {% if perms.webview.change_artist %}
+            <li id="unap-artists"><a href="{% url dv-newartists %}">Pending Artists</a></li>
+        {% endif %}
+        {% if perms.webview.change_group %}
+            <li id="unap-groups"><a href="{% url dv-newgroups %}">Pending Groups</a></li>
+        {% endif %}
+        {% if perms.webview.change_label %}
+            <li id="unap-labels"><a href="{% url dv-newlabels %}">Pending Labels</a></li>
+        {% endif %}
+        {% if perms.webview.change_link %}
+            <li id="unap-links"><a href="{% url dv-newlinks %}">Pending Links</a></li>
+        {% endif %}
+        {% endif %}
+        </ul>
+        <br />
+        <h3>Currently Playing</h3>
+        <div data-name="nowplaying">
+        {#% current_song %#}
+        <div>
+        {# {% get_rating_stars_song_avg user %} #}
+        </div>
+        </div>
+
+    <form>
+        <hr style="width: 80%; background-color: #000; height: 1px; border: 0px;" />
+        <input type="button" style="border: 1px solid; border-color: #333;" value="Listen" onClick="window.open('{% url dv-play_stream %}','player','width=340,height=25,toolbar=no,scrollbars=no,resizable=no,location=no,directories=no,status=no,menubar=no,copyhistory=no')" /> - <a href="{% url dv-streams %}">Streams</a>
+    </form>
+
+    {% get_sidebar_news %}
+        {% for sbnews in sidebarnews %}
+        {% cache 3600 "sidebarnews" sbnews.id sbnews.last_updated %}
+            <br />
+            <h3>{{ sbnews.title }}</h3>
+            {{ sbnews.text|safe }}
+        {% endcache %}
+    {% endfor %}
+
+    </div>
+
+    <div id="main">
+    {% cache 60 logoblock %}<h1>{% site_name %}</h1>
+    <div style="overflow:hidden">{% logo %}</div>{% endcache %}
+    <div style="overflow:auto" id="maincontent">
+        {% block main %}{% endblock %}
+    </div>
+    <div id="footer">
+        <span id="copyleft">
+        Powered by <a href="http://code.google.com/p/demovibes/">Demovibes</a><br />
+        </span>
+        <span id="copyright">
+        layout: <a href="http://raina.daug.net/">raina</a>,
+        icons: <a href="http://www.famfamfam.com/"><span style="color: #f15;">fam</span><span style="color: #1cf;">fam</span><span style="color: #bf3;">fam</span></a>
+        </span>
+    </div>
+    </div>
+
+
+{% endblock %}

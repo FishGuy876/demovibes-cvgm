@@ -1,0 +1,27 @@
+{% extends "base/base.html" %}
+{% import "macro/display.html" as display %}
+{% block title %}{{ gettext("My Favourite Songs") }}{% endblock %}
+
+{% block main %}
+<h2><img class="icon_header" src="{{ STATIC_URL }}heart.png" alt="" />{{ gettext("My Favourite Songs") }}</h2>
+
+{% include "webview/t/songheader.html" %}
+
+{% for fav in songs %}{% set song = fav.song %}
+<tr class="{{ loop.cycle('row1', 'row2') }}">
+ {% include "webview/t/songlist.html" %}
+ <td>
+  {{ display.favorite(song, user) }}
+ </td>
+</tr>
+{% endfor %}
+</table>
+<br />
+
+{% for p in page_range %}
+{% if page == p %}<b>{{ p }}</b>{% else %}<a href="{{ url("dv-favorites") }}?page={{ p }}">{{ p }}</a> {% endif %}
+{% endfor %}
+
+
+{% endblock %}
+

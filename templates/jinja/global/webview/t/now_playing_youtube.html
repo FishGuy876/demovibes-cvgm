@@ -1,0 +1,16 @@
+<div id="ytapiplayer">
+</div>
+
+<script type="text/javascript">
+vidid = "{{now_playing.song.get_metadata().ytvidid|e}}";
+playoffset = "{{ now_playing.yt_timeoffset() }}";
+function onYouTubePlayerReady(ytid) {
+ytplayer = document.getElementById("myytplayer");
+ytplayer.loadVideoById(vidid, playoffset);
+ytplayer.mute();
+ytplayer.playVideo();
+}
+var params = { allowScriptAccess: "always" };
+var atts = { id: "myytplayer" };
+swfobject.embedSWF("http://www.youtube.com/apiplayer?enablejsapi=1&amp;playerapiid=ytplayer", "ytapiplayer", "200", "113" , "8", null, null, params, atts);
+</script><br/>

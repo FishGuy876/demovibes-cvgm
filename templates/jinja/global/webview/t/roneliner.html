@@ -1,0 +1,4 @@
+{% import "macro/display.html" as display -%}
+{%- for line in roneliner -%}
+<p><span class="onelinerpre">{{ display.user(line.user) }}<span style="color: #777; float: right; margin: auto; text-align: right;">({{ line.added|time("H:i:s") }})</span></span><br /><span class="onelinertext">{{ line.message|mksafe|bbcode_oneliner|smileys_oneliner|oneliner_mediaparse|bbcode_oneliner|dv_urlize }}</span></p>
+{%- endfor -%}

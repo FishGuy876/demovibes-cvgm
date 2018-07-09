@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<comp id="{{ object.id }}">
+    <title>{{ object.name }}</title>
+    <status v="{{ object.status }}">{{ object.get_status_display }}</status>
+    {% if object.label %}<label>{{ object.label }}</label>{% endif %}
+    <cover_art>{% if object.cover_art %}{{ object.cover_art.url }}{% else %}{{ MEDIA_URL }}no_picture.png{% endif %}</cover_art>
+    {% if object.details_page %}<details_link>{{ object.details_page }}</details_link>{% endif %}
+    {% if object.purchase_page %} <purchase_link>{{ object.purchase_page }}</purchase_link>{% endif %}
+    {% if object.youtube_link %}<youtube_link>{{ object.youtube_link }}</youtube_link>{% endif %}
+    {% if object.download_link %}<download_link>{{ object.download_link }}</download_link>{% endif %}
+    {% if object.rel_date %}<release_date>{{ object.rel_date|date:"F j, Y" }}</release_date>{% endif %}
+    {% if object.num_discs %}<num_discs>{{ object.num_discs }}</num_discs>{% endif %}
+    {% if object.pouet %}<pouet_id>{{ object.pouet }}</pouet_id>{% endif %}
+    {% if object.running_time %}<running_time>{{ object.running_time }}</running_time>{% endif %}
+    {% if object.bar_code %}<bar_code>{{ object.bar_code }}</bar_code>{% endif %}
+    {% if object.media_format %}<media_format>{{ object.media_format }}</media_format>{% endif %}
+
+    {% ifnotequal object.prod_groups.count 0 %}<prod_groups>{% for group in object.prod_groups.all %}
+     <group id="{{ group.id }}">{{ group.name }}</group>
+    {% endfor %}</prod_groups>{% endifnotequal %}
+
+    {% ifnotequal object.prod_artists.count 0 %}<prod_artists>{% for artist in object.prod_artists.all %}
+     <artist id="{{ artist.id }}" flag="{{ artist.home_country }}|safe }}">{{ artist.handle }}</artist>
+    {% endfor %}</prod_artists>{% endifnotequal %}
+
+    {% ifnotequal object.songs.count 0 %}<prod_songs>{% for song in object.songs.all %}
+     <song id="{{ song.id }}" locked="{{ song.is_locked }}">
+         <title>{{ song.title }}</title>
+         <status v="{{ song.status }}">{{ song.get_status_display }}</status>
+         <rating votes="{{ song.rating_votes }}">{{ song.rating }}</rating>
+         <songlength>{{ song.get_songlength }}</songlength>
+         {% if song.platform %}<platform id="{{ song.platform.id }}">{{ song.platform }}</platform>{% endif %}
+         {% if song.type %}<type id="{{ song.type.id }}">{{ song.type }}</type>{% endif %}
+         {% if song.pouetid %}<pouetid>{{ song.pouetid }}</pouetid>{% endif %}
+
+          <artists>
+          {% for artist in song.artists.all %}<artist id="{{ artist.id }}" flag="{{ artist.home_country }}|safe }}">{{ artist.handle }}</artist>{% endfor %}
+         </artists>
+         <groups>
+          {% for group in song.groups.all %}<group id="{{ group.id }}">{{ group.name }}</group>{% endfor %}
+         </groups>
+     </song>
+    {% endfor %}</prod_songs>{% endifnotequal %}
+
+    {% if object.info %}<info>{{ object.info }}</info>{% endif %}
+    {% if object.prod_notes %}<production_notes>{{ object.prod_notes }}</production_notes>{% endif %}
+
+    {% if object.created_by %}<created_by id="{{ object.created_by.id }}" date="{{ object.date_added|date:"F j, Y" }}">{{ object.created_by }}</created_by>{% endif %}
+</comp>
+

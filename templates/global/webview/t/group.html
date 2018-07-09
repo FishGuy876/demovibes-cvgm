@@ -1,0 +1,1 @@
+<img class="group_icon" {% if G.group_icon %}src="{{ G.group_icon.url }}"{% else %}src="{{ MEDIA_URL }}group.png"{% endif %} /><a href="{{ G.get_absolute_url }}">{{ G.name }}</a>

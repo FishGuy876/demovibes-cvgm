@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<streams>
+    {% for stream in object_list %}{% if stream.active %}<stream id="{{ stream.id }}">
+        <url>{{ stream.url }}</url>
+        <name>{{ stream.name }}</name>
+        <country>{{ stream.country_code }}</country>
+        <bitrate>{{ stream.bitrate }}</bitrate>
+        <type v="{{ stream.streamtype }}">{{ stream.get_streamtype_display }}</type>
+    </stream>{% endif %}{% endfor %}
+</streams>

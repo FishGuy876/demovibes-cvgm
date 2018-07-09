@@ -1,0 +1,31 @@
+ {% load cache %}{% spaceless %}
+ {% cache 43200 "song_row" song.id song.last_changed %}
+ <td>
+  {% include "webview/t/songname.html" %}
+ </td>
+ <td>
+  {% for artist in song.artists.all %}{% with artist as A%}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}
+  {% for group in song.groups.all %}{% with group as G%}{% include "webview/t/group.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}
+ </td>
+ <td>
+  {{ song.length }}
+ </td>
+ <td>
+  {{ song.get_status_display }}
+ </td>
+ <td>
+  {{ song.rating|floatformat:1 }}
+ </td>
+ {% endcache %}
+ <td>
+  <span data-name="a_queue_{{ song.id }}">
+   {% if user.is_authenticated %}
+    {% include "webview/t/songlist_span.html" %}
+   {% else %}
+    <img class="song_head" src="{{ MEDIA_URL }}lock.png" title="Song Locked" />
+   {% endif %}
+  </span>
+ </td>
+ <td>
+   <span class="lastreqdate">{% ifnotequal song.last_queued "Never" %}{{ song.last_queued|date:"Y-m-d"}}{% else %}Never!{% endifnotequal %}</span>
+ </td>{% endspaceless %}
