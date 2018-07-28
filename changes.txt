@@ -1,5 +1,11 @@
 ChangeLog
 
+July 27th, 2018
+* Moved the settings_local.py file to the Contrib folder to prevent accidental overwrites in future commits.
+* Documented some of the settings in the same file a little bit more.
+* Added some notes to the install document. Added a fix for uwsgi compilation. Thanks Greg!
+* Removed a bunch of crap from the repo that didnt need to be there and added a .gitignore file. 
+
 July 9th, 2018
 * Finally took some time to put this repo together and commit it to GitHub for the rest of the world. This initial upload consists of the original GoogleCode tree, with a few tweaks here and there.
 
