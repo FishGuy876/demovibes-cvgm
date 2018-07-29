@@ -1,5 +1,8 @@
 ChangeLog
 
+July 29th, 2018
+* Moved UWSGI local files to contrib and ignored future changes so they dont become overwritten in the future.
+
 July 27th, 2018
 * Moved the settings_local.py file to the Contrib folder to prevent accidental overwrites in future commits.
 * Documented some of the settings in the same file a little bit more.

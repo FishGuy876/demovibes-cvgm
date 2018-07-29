@@ -11,6 +11,8 @@ Thumbs.db
 
 # Demovibes specific ignores
 static/media/ # Ignore all musics & data uploaded to the site since checkout
+uwsgi_events/uwsgi-events-local.xml # Don't upload local UWSGI events file
+demovibes/uwsgi-local.xml # Don't upload local UWSGI changes
 
 # Template Ignores
 templates/local/ # Local templates for base system
