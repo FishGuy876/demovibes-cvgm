@@ -51,7 +51,8 @@
     <td>{{ t.posts }}</td>
     <td>{{ t.views }}</td>
 {% set latest_post = t.thread_latest_post %}
-{% if latest_post %}<td class='djangoForumThreadLastPost'>{{ latest_post.time|timesince }} ago by {% set U = latest_post.author %}{% include "webview/t/user.html" %} (<a href='{{ latest_post.get_absolute_url() }}'>View Thread</a>)</td>{% endif %}
+{% if latest_post %}<td class='djangoForumThreadLastPost'>{{ latest_post.time|timesince }} ago by {% set U = latest_post.author %}{% include "webview/t/user.html" %} (<a href='{{ latest_post.get_absolute_url() }}'>View Thread</a>)
+{% if user.is_staff %}<a href="/admin/forum/thread/{{ t.id }}/delete/" target=_new">(Delete Thread)</a>{% endif %}</td>{% endif %}
 
 </tr>
 {% endfor %}

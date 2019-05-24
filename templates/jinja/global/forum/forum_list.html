@@ -19,6 +19,7 @@
     </td>
     <td class='djangoForumListLastPost'>
         Posted By {% set U = t.author %}{% include "webview/t/user.html" %} <a href='{{ t.get_absolute_url() }}'>(View Post)</a>
+        {% if user.is_staff %}<a href='/admin/forum/thread/{{ t.thread.id }}/delete/' target='_new'> (Delete Thread)</a>{% endif %}
     </td>
     </tr>
     {% endfor %}
