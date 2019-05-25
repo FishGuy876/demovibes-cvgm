@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" {% block html %}id="base"{% endblock %}>
     <head>
         <link rel="stylesheet" href="{{ STATIC_URL }}themes/base.css" type="text/css" />
-	<link rel="stylesheet" href="{{ STATIC_URL }}themes/chat.css" type="text/css" />
+        <link rel="stylesheet" href="{{ STATIC_URL }}themes/chat.css" type="text/css" />
         <link rel="stylesheet" href="{{ dv.user_css(user) }}" type="text/css" />
         <link rel="icon" type="image/vnd.microsoft.icon" href="{{ STATIC_URL }}favicon.ico" />
         <title>{% block title %}{{ gettext("Welcome") }}{% endblock %} - {{ dv.site_name() }}</title>
@@ -17,7 +17,6 @@
         <script src="{{ STATIC_URL }}js/sort/customsort.js" type="text/JavaScript"></script>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"></script>
         <script src="{{ STATIC_URL }}js/jquery/popup.js" type="text/JavaScript"></script>
-        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
     </head>
 
     <body {% block bodyid %}id="site"{% endblock %} onload="ajaxmonitor({{ dv.ajaxevent() }});" onunload="ajaxmonitorabort();">
