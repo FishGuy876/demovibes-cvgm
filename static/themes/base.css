@@ -111,13 +111,15 @@ div.taglist p:first-child {
     width: 60%;
 }
 
+/* Default CVGM Screenshots are 190x190 pixels in size.
+You will need to adjust the below Height/Width values to work with your site screenshot sizes. FishGuy876 */
 div.screenshot {
     padding: 3px;
     text-align: center;
     margin: 4px;
     float: left;
-    height: 150px;
-    width: 128px;
+    height: 200px;
+    width: 200px;
 }
 
 span.screenshotname {
