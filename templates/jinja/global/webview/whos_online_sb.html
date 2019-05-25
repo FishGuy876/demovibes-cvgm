@@ -1,5 +1,5 @@
 {% import "macro/display.html" as display -%}
-{{ ngettext("There is a total of %(num)d user online now:", "There are a total of %(num)d users online now", userlist|count) }}:<br /><br />
+{{ ngettext("There is currently %(num)d user online:", "There are currently %(num)d users online", userlist|count) }}:<br /><br />
 
 {% if userlist.count() != 0 %}
  <div id="whosonline" class="whosonline">
