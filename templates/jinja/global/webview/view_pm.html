@@ -14,6 +14,6 @@
     </div>
 </div>
 
-<a href="{{ url("dv-inbox") }}">{{ gettext("Back To Inbox") }}</a> | <a href="{{ url("dv-send_pm") }}?to={{ pm.sender|e }}&amp;title=RE: {{ pm.subject|e }}">{{ gettext("Send Reply") }}</a>
+<a href="{{ url("dv-inbox") }}">{{ gettext("Back To Inbox") }}</a> | <a href="{{ url("dv-send_pm") }}?to={{ pm.sender|e }}&amp;title={{ dv.get_pm_subject_suggestion(pm.subject|e) }}">{{ gettext("Send Reply") }}</a>
 {% endblock %}
 

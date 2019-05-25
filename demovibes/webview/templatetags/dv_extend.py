@@ -736,6 +736,41 @@ def get_unread_count(user):
         return ""
     return "(%s)" % nr
 
+def get_pm_subject_suggestion(original_subject):
+    original_subject = original_subject.lstrip()
+    s = original_subject.lower()
+
+    # First reply or reply in classic subject format?
+    marker = 're:'
+    if s.startswith(marker):
+        reply_count = 2
+
+        # Condense any "RE: RE: RE: " occurrences from classic subject format
+        marker_with_space = 're: '
+        index = marker_with_space_len = len(marker_with_space)
+        while s.startswith(marker_with_space, index):
+            reply_count += 1
+            index += marker_with_space_len
+
+        index = len(marker) if (reply_count == 2) else index - 1
+
+        return 'Re[{0}]:{1}'.format(reply_count, original_subject[index:])
+
+    # Subsequent replies?
+    begin_marker = 're['
+    end_marker = ']:'
+    index = s.find(end_marker)
+    if index != -1 and s.startswith(begin_marker):
+        reply_count = s[len(begin_marker):index]
+
+        if reply_count.isdigit():
+            return 'Re[{0}]:{1}'.format(
+                int(reply_count) + 1,
+                original_subject[index + len(end_marker):])
+
+    # In all other cases consider this the first reply to a new message.
+    return 'Re: ' + original_subject
+
 class GetInboxNode(template.Node):
     def __init__(self, user):
         self.user = user
