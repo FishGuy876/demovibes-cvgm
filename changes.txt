@@ -1,5 +1,13 @@
 ChangeLog
 
+Changes in V0.9.1:
+* YouTube videos work again in the Now Playing window.
+* Removed some old YouTube references from header files.
+* When replying to a PM, Multiple Re: statements are removed and replaced with an Re[X]: value (Patch by Phlubby_Gnome, https://github.com/demovibes/demovibes/commit/71a3b28897bd8e9ecf2008de46a403f46129c52e )
+
+May 22nd, 2019
+* Added some quick-links to Forum and Forum Posts so that spam threads can be deleted by Staff. The links should only appear to staff, and it will require permissions for them to be able to delete posts.
+
 July 29th, 2018
 * Moved UWSGI local files to contrib and ignored future changes so they dont become overwritten in the future.
 

@@ -15,14 +15,14 @@
                 <li id="groups"><a href="{{ url ("dv-groups") }}">{{ gettext("Groups") }}</a></li>
                 <li id="labels"><a href="{{ url ("dv-labels") }}">{{ gettext("Labels") }}</a></li>
                 <li id="compilations"><a href="{{ url ("dv-compilations") }}">{{ gettext("Compilations") }}</a></li>
-                <li id="screenshots"><a href="{{ url ("dv-screenshots") }}">{{ gettext("Images") }}</a></li>
+                <li id="screenshots"><a href="{{ url ("dv-screenshots") }}">{{ gettext("Compilation Art") }}</a></li>
                 <li id="licenses"><a href="{{ url ("dv-licenses") }}">{{ gettext("Licenses") }}</a></li>
                 {% if not user.is_authenticated() or user.get_profile().use_tags %}<li id="tagcloud"><a href="{{ url('dv-tagcloud') }}">{{ gettext("Tags") }}</a></li>{% endif %}
                 <li id="statistics"><a href="{{ url ("dv-stats-index") }}">{{ gettext("Statistics") }}</a></li>
                 <li id="menuqueue"><a href="{{ url ("dv-queue") }}">{{ gettext("Queue") }}</a></li>
                 <li>&nbsp;</li>
-                <li id="search"><a href="{{ url ("s-all") }}">{{ gettext("Search") }}</a></li>
-                <li id="recent"><a href="{{ url ("dv-recent") }}">{{ gettext("New Uploads") }}</a></li>
+                <li id="search"><a href="{{ url ("s-all") }}">{{ gettext("Search For Something") }}</a></li>
+                <li id="recent"><a href="{{ url ("dv-recent") }}">{{ gettext("Latest Uploads") }}</a></li>
             <li id="recentchanges"><a href="{{ url ("dv-updates") }}">{{ gettext("Recent Updates") }}</a></li>
                 <li>&nbsp;</li>
                 <li id="faq"><a href="{{ url ("dv-faq") }}">{{ gettext("FAQ") }}</a></li>
@@ -41,7 +41,7 @@
         </div>
 
         <div id="menuonline">
-            <h3>{{ gettext("Who's Online?") }}</h3>
+            <h3>{{ gettext("Who's Currently Online?") }}</h3>
             <div id="whosonlinenicks">{{ dv.get_online_users() }}</div>
         </div>
     </div>
@@ -49,11 +49,11 @@
     <div id="rightside">
         <div id="usermenu">
             <h3>{{ gettext("User Menu") }}</h3>
-            <div class="message-display-settings">Notification settings</div>
+            <div class="message-display-settings">Notification Settings</div>
             <ul class="menulist">
             {% if user.is_authenticated() %}
                 <li id="profile"><a href="{{ url ("dv-my_profile") }}">{{ gettext("Edit My Profile") }}</a></li>
-                <li id="favorites"><a href="{{ url ("dv-favorites") }}">{{ gettext("My Favourites") }}</a></li>
+                <li id="favorites"><a href="{{ url ("dv-favorites") }}">{{ gettext("My Favourite Songs") }}</a></li>
                 <li id="inbox"><a href="{{ url ("dv-inbox") }}">{{ gettext("My Inbox") }}</a> {{ dv.get_unread_count(user) }}</li>
                 <li id="logout"><a href="{{ url ("webview.views.log_out") }}">{{ gettext("Log Me Out") }}</a></li>
             {% else %}
@@ -63,7 +63,7 @@
                 <li id="admin"><a href="/admin" target="admin">{{ gettext("Admin Area") }}</a></li>
             {% endif %}
             {% if perms.webview.change_song %}
-                <li id="menuqueue"><a href="{{ url ("dv-uploads") }}">{{ gettext("Unapproved Uploads") }}</a> {{ dv.pending("songs")}}</li>
+                <li id="menuqueue"><a href="{{ url ("dv-uploads") }}">{{ gettext("Pending Uploads") }}</a> {{ dv.pending("songs")}}</li>
             {% endif %}
             {% if perms.webview.add_mute_oneliner %}
                 <li id="menumute"><a href="{{ url ("dv-muteoneliner") }}">{{ gettext("Mute Account") }}</a></li>
@@ -88,13 +88,13 @@
                 {% if perms.webview.change_link %}
                     <li id="unap-links"><a href="{{ url ("dv-newlinks") }}">{{ gettext("Pending Links") }}</a> {{ dv.pending("links")}}</li>
                 {% endif %}
-                    <li id="unap-nju"><a href="{{ url ("dv-new-info") }}">{{ gettext("New info") }}</a> {{ dv.pending("info")}}</li>
+                    <li id="unap-nju"><a href="{{ url ("dv-new-info") }}">{{ gettext("New Info Requests") }}</a> {{ dv.pending("info")}}</li>
             {% endif %}
             </ul>
         </div>
 
         <div id="nowplaying">
-            <h3>{{ gettext("Currently Playing") }}</h3>
+            <h3>{{ gettext("Now Playing") }}</h3>
             <div data-name="nowplaying">
                 {{ dv.current_song(user) }}
             </div>
