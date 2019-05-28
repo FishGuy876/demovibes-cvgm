@@ -28,3 +28,15 @@ Changes:
  * 161212 - Small gfx facelifting in side panels (smoother vertical edges).
  *          Replaced poem of IDs with single select, input, textarea. It sinked 3D effect for submit button,
  *          so it was excluded with specialisation for type=submit.
+
+ * version 1.07
+ * 171212 - Fields on song upload/edit pages are now wider/bigger (filename, info, comments,
+ *          artist, etc.) (thx Falken)
+
+ * version 1.08
+ * 191017 - Artist's photo now scales to 80% of the main column, so we can have larger pictures without affecting
+ *          information column next to the photo for smaller browser windows. Also artist information text panel
+ *          is forced to be 240px wide, so short lines of info should not split. (thx again to Falken)
+
+ * version 1.09
+ * 240519 - Right panel width increased to 230px to accomodate bigger YT embedded videos

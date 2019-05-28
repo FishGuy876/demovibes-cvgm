@@ -23,6 +23,12 @@
  *          Workaround: increased theme container height to 280 pixels.
  * version 1.07
  * 171212 - Fields on song upload/edit pages are now wider/bigger (filename, info, comments, artist, etc.) (thx Falken)
+ * version 1.08
+ * 191017 - Artist's photo now scales to 80% of the main column, so we can have larger pictures without affecting
+            information column next to the photo for smaller browser windows. Also artist information text panel
+            is forced to be 240px wide, so short lines of info should not split. (thx again to Falken)
+ * version 1.09
+ * 240519 - Right panel width increased to 230px to accomodate bigger YT embedded videos
  */
  
  * {
@@ -231,7 +237,7 @@ img
 	float: right;
 	display: inline;
 	position: relative;
-	width: 200px;
+	width: 230px;
 	margin: 8px;
 	border-width: 1px;
 	border-top-width: 0px;
@@ -241,7 +247,7 @@ img
 	border-right-color: #666;
 	border-bottom-color: #666;
 	background-color: transparent;
-	background-image: url("bland_sidepanel.png");
+	background-image: url("bland_sidepanel_230.png");
 	text-align: center;
 	display: inline;
 }
@@ -283,7 +289,7 @@ img
 
 #rightside h3
 {
-	background-image: url("shine_sidepanel_h3.png");
+	background-image: url("shine_sidepanel_h3_230.png");
 }
 
 h3
@@ -504,7 +510,7 @@ p.onelinermsg br {
 	position: relative;
 	margin: 7px;
 	margin-left: 215px;
-	margin-right: 215px;
+	margin-right: 245px;
 	padding: 0;
 	padding-bottom: 1ex;
 	border-width: 1px;
@@ -1224,4 +1230,15 @@ div.taglist
 	border-left: 1px solid #888;
 	border-right: 1px solid #ccc;
 	border-bottom: 1px solid #ccc;
+}
+
+td.artist_details img.artist_logo
+{
+	width: 80%;
+	height: auto;
+}
+
+td.artist_information
+{
+	width: 240px;
 }
