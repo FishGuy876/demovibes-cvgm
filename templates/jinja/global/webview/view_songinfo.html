@@ -73,7 +73,7 @@
     </tr>
     <tr>
         <th>{{ gettext("YouTube link") }}</th>
-        <td>{% if meta.ytvidid %}<a href="http://www.youtube.com/watch?v={{ meta.ytvidid }}" target="_blank">{{ meta.ytvidid }}</a> - {{ gettext("Offset") }}: {{ meta.ytvidoffset }}{% else %}{{ gettext("None") }}{% endif %}</td>
+        <td>{% if meta.ytvidid %}<a href="https://www.youtube.com/watch?v={{ meta.ytvidid }}" target="_blank">{{ meta.ytvidid }}</a> - {{ gettext("Offset") }}: {{ meta.ytvidoffset }}{% else %}{{ gettext("None") }}{% endif %}</td>
     </tr>
 </table>
 <h2><img class="icon_header" src="{{ STATIC_URL }}explicit.gif" alt="" />{{ gettext("Respond To Change") }}</h2>
