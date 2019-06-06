@@ -936,7 +936,10 @@ def bb_song(hit):
     return mu
 
 def countryname (code):
-    flag = code.encode('ascii', 'ignore').lower()
+    try:
+        flag = code.encode('ascii', 'ignore').lower()
+    except:
+        return # Stops wierd errors from happening
 
     if not flag.isalnum():
         flag = ""
@@ -1387,8 +1390,11 @@ def flag(value, extra_title = None):
     Shows a flag instead of 2 letter country code. If the flag is invalid, a nectaflag is
     Used. Flag was created for me by sark76 (Mark Huther). AAK
     """
-    flag = value.lower().encode('ascii', 'ignore')
-    return get_flag_path(flag, extra_title = extra_title)
+    try:
+        flag = value.lower().encode('ascii', 'ignore')
+        return get_flag_path(flag, extra_title = extra_title)
+    except:
+        return # Stop wierd stuff happening in stats
 
 @register.filter
 def getattrs (obj, args):
