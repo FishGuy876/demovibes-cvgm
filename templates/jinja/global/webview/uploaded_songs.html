@@ -36,7 +36,9 @@
   <a href="{{ url("dv-uploads") }}?song={{song.id}}&amp;status=A"><img src="{{ STATIC_URL }}thumb_up.png" title="Approve" alt="Approve" /></a>
  </td>
  <td>
-  {% include "webview/t/flash_playsong.html" %}
+    <audio controls>
+        <source src="{{ song.file.url }}"/>
+      </audio>
  </td>
  <td>
   <a href="{{ url("dv-uploads") }}?song={{song.id}}&amp;status=R"><img src="{{ STATIC_URL }}thumb_down.png" title="Reject" alt="Reject" /></a>
