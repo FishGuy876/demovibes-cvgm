@@ -29,6 +29,8 @@
             is forced to be 240px wide, so short lines of info should not split. (thx again to Falken)
  * version 1.09
  * 240519 - Right panel width increased to 230px to accomodate bigger YT embedded videos
+ * version 1.10
+ * 150619 - Added styling for new stats page (statistics/overview/radio)
  */
  
  * {
@@ -1242,3 +1244,38 @@ td.artist_information
 {
 	width: 240px;
 }
+
+table.songstatlist.statistics
+{
+	padding: 2px;
+	margin: 10px;
+	color: #000;
+	box-shadow: 2px 2px 8px #303030;
+}
+
+table.songstatlist tr th
+{
+	font-size: 12px;
+	font-weight: bold;
+	color: #FFF;
+	text-align: center;
+	background-color: #505050;
+	padding: 3px 8px 3px 8px;
+}
+
+table.songstatlist tr td
+{
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+table.songstatlist tr.row1 td
+{
+	background-color: #00000010;
+}
+
+table.songstatlist tr td:nth-child(n+2)
+{
+	text-align: right;
+}
+
