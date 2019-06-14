@@ -1,15 +1,6 @@
-<html><head><title>CVGM Flash Player</title></head><body>
-
-<!-- BEGINS: AUTO-GENERATED FFMP3 CODE -->
-<object width="329" height="21" bgcolor="#FFFFFF">
-<param name="movie" value="{{ STATIC_URL }}flash/ffmp3.swf" />
-<param name="flashvars" value="url={{ streamurl }}&lang=en&codec=mp3&volume=65&autoplay=true&traking=true&jsevents=false&buffering=2&title=[CVGM.net]&welcome=WELCOME%20TO..." />
-<param name="wmode" value="window" />
-<param name="allowscriptaccess" value="always" />
-<param name="scale" value="noscale" />
-<embed src="{{ STATIC_URL }}flash/ffmp3.swf" flashvars="url={{ streamurl }}&lang=en&codec=mp3&volume=65&autoplay=true&traking=true&jsevents=false&buffering=2&title=Demovibes&welcome=WELCOME%20TO..."
-width="329" scale="noscale" height="21" wmode="window" bgcolor="#FFFFFF" allowscriptaccess="always" type="application/x-shockwave-flash" />
-</object>
-<!-- ENDS: AUTO-GENERATED FFMP3 CODE -->
-
-</body></html>
+<html><head><title>CVGM Mini Stream Player</title></head><body>
+    <audio controls>
+        <source src="{{ streamurl }}"/>
+    </audio>
+</body>
+</html>

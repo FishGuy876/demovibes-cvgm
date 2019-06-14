@@ -936,7 +936,10 @@ def bb_song(hit):
     return mu
 
 def countryname (code):
-    flag = code.encode('ascii', 'ignore').lower()
+    try:
+        flag = code.encode('ascii', 'ignore').lower()
+    except:
+        return # Stops wierd errors from happening
 
     if not flag.isalnum():
         flag = ""
@@ -1182,14 +1185,14 @@ def bb_youtube(hit):
     Tag like so: [youtube]S-T8h0T0SK8[/youtube]
     """
     video = hit.group(1)
-    return '<object width="425" height="350"><param name="movie" value="http://www.youtube.com/v/%s"></param><param name="wmode" value="transparent"></param><embed src="http://www.youtube.com/v/%s" type="application/x-shockwave-flash" wmode="transparent" width="425" height="350"></embed></object>' % (video, video)
+    return '<object width="425" height="350"><param name="movie" value="https://www.youtube.com/v/%s"></param><param name="wmode" value="transparent"></param><embed src="https://www.youtube.com/v/%s" type="application/x-shockwave-flash" wmode="transparent" width="425" height="350"></embed></object>' % (video, video)
 
 def bb_youtube2(hit):
     """
     Simplified YouTube video sharing tab v2.
     """
     video = hit.group(1)
-    return """<a data-ytid="%s" class="ytlink" href="http://www.youtube.com/watch?v=%s" target="_blank">http://www.youtube.com/watch?v=%s</a>""" % (video, video, video)
+    return """<a data-ytid="%s" class="ytlink" href="https://www.youtube.com/watch?v=%s" target="_blank">https://www.youtube.com/watch?v=%s</a>""" % (video, video, video)
 
 def bb_compilation(hit):
     """
@@ -1244,7 +1247,7 @@ def bb_youtube_ol(hit):
     Tag like so: [yt]S-T8h0T0SK8[/yt]. This version is oneliner specific
     """
     video = hit.group(1)
-    return u'<a class="ytlinkol" data-ytid="%s" href="http://www.youtube.com/watch?v=%s" target="_blank"><img src="%syoutube_icon.png" title="YouTube" alt="YouTube" border="0" /> <span class="yttitle">YouTube Link</span></a>' % (video, video, STATIC)
+    return u'<a class="ytlinkol" data-ytid="%s" href="https://www.youtube.com/watch?v=%s" target="_blank"><img src="%syoutube_icon.png" title="YouTube" alt="YouTube" border="0" /> <span class="yttitle">YouTube Link</span></a>' % (video, video, STATIC)
 
 def bb_googlevideo_ol(hit):
     """
@@ -1260,13 +1263,12 @@ def bb_youtube_name_ol(hit):
     """
     video = hit.group(1)
     title = hit.group(2)
-
-    return u'<a href="http://www.youtube.com/watch?v=%s" target="_blank"><img src="%syoutube_icon.png" title="YouTube" alt="YouTube" border="0"> %s</a>' % (title, STATIC, video)
+    return u'<a href="https://www.youtube.com/watch?v=%s" target="_blank"><img src="%syoutube_icon.png" title="YouTube" alt="YouTube" border="0"> %s</a>' % (title, STATIC, video)
 
 def bb_gvideo(hit):
     """
     Google Video isn't as advanced as YouTube for clicps and so forth yet, however
-    We still add the video in pretty mush the same way: [gvideo]1199004375595376444[/gvideo]
+    We still add the video in pretty much the same way: [gvideo]1199004375595376444[/gvideo]
     """
     video = hit.group(1)
     return u'<object width="400" height="326"><param name="movie" value="http://video.google.com/googleplayer.swf?docId=%s"></param><param name="wmode" value="transparent"></param><embed src="http://video.google.com/googleplayer.swf?docId=%s" wmode="transparent" style="width:400px; height:326px;" id="VideoPlayback" type="application/x-shockwave-flash" flashvars=""></embed></object>' % ( video, video )
@@ -1388,8 +1390,11 @@ def flag(value, extra_title = None):
     Shows a flag instead of 2 letter country code. If the flag is invalid, a nectaflag is
     Used. Flag was created for me by sark76 (Mark Huther). AAK
     """
-    flag = value.lower().encode('ascii', 'ignore')
-    return get_flag_path(flag, extra_title = extra_title)
+    try:
+        flag = value.lower().encode('ascii', 'ignore')
+        return get_flag_path(flag, extra_title = extra_title)
+    except:
+        return # Stop wierd stuff happening in stats
 
 @register.filter
 def getattrs (obj, args):
