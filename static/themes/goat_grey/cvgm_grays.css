@@ -29,8 +29,14 @@
             is forced to be 240px wide, so short lines of info should not split. (thx again to Falken)
  * version 1.09
  * 240519 - Right panel width increased to 230px to accomodate bigger YT embedded videos
- * version 1.10
- * 150619 - Added styling for new stats page (statistics/overview/radio)
+ * version 1.10 - 150619
+	    Added styling for new stats page (statistics/overview/radio).
+ * version 1.11 - 150619
+            Added shadows for three main panels for better visual separation.
+	    Added shadow for text in panel header ("Welcome...", "User Menu", newsfeed, etc.) for better contrast.
+	    Links in the side panels (main menu and user menu) are bit darker now (also for better contrast).
+	    Added right/bottom margins in newsfeed images for nicer text flow.
+	    Now Playing panel: song title, "by" and artist name are separated into own text blocks.
  */
  
  * {
@@ -159,6 +165,8 @@ h1, h2, h3
 .headline
 {
 	vertical-align: middle;
+	text-shadow: 1px 1px 2px black;
+	font-size: 14px;
 }
 
 .date
@@ -252,6 +260,7 @@ img
 	background-image: url("bland_sidepanel_230.png");
 	text-align: center;
 	display: inline;
+	box-shadow: 1px 1px 8px 0 #40404080;
 }
 
 #sidebar
@@ -273,6 +282,7 @@ img
 	background-image: url("bland_sidepanel.png");
 	text-align: center;
 	display: inline;
+	box-shadow: 1px 1px 8px 0 #40404080;
 }
 
 #rightside h3, #sidebar h3
@@ -282,6 +292,7 @@ img
 	padding-top: 2px;
 	padding-bottom: 2px;
 	background-position: top left;
+	text-shadow: 1px 1px 2px black;
 }
 
 #sidebar h3
@@ -386,12 +397,12 @@ p.pmtitle {
 #sidebar li a
 {
 	margin-left: 1ex;
-	color: #333;
+	color: #222;
 }
 #rightside li a
 {
 	margin-left: 1ex;
-	color: #333;
+	color: #222;
 }
 
 #rightside a:hover 
@@ -527,6 +538,7 @@ p.onelinermsg br {
 	background-color: transparent;
 	background-image: url("bland.png");
 	background-position: center;
+	box-shadow: 1px 1px 8px 0 #40404080;
 }
 
 .newstext
@@ -535,6 +547,12 @@ p.onelinermsg br {
 	padding-right: 8px;
 }
 	
+div.newstext img
+{
+	margin-right: 8px;
+	margin-bottom: 8px;
+}
+
 #main h1, #main h2
 {
 	margin-left: 6px;
@@ -1232,6 +1250,17 @@ div.taglist
 	border-left: 1px solid #888;
 	border-right: 1px solid #ccc;
 	border-bottom: 1px solid #ccc;
+}
+
+div#nowplaying span.songname
+{
+	display: block;
+}
+
+div#nowplaying span.artistname:before
+{
+	white-space: pre-line;
+	content: "\A";
 }
 
 td.artist_details img.artist_logo
