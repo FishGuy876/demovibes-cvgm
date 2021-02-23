@@ -1705,11 +1705,10 @@ class Song(models.Model):
     def last_queued(self):
         """
         Return either the time the song was last queued, or 'Never'
-
-        Note: This works on when it was queued, not played.
+        Note: This works on when it was requested, not when it played.
         """
         log.debug("Getting last queued time for song %s" % self.id)
-        key = "songlastplayed_%s" % self.id
+        key = "songlastrequested_%s" % self.id
         c = cache.get(key)
         if not c:
             log.debug("No cache for last queued, finding")
@@ -1718,6 +1717,23 @@ class Song(models.Model):
                 c = "Never"
             else:
                 c = Q[0].requested
+            cache.set(key, c, 5)
+        return c
+
+    def last_played(self):
+        """
+        Return the time the song was last played in the system. 
+        """
+        log.debug("Getting last played time for song %s" % self.id)
+        key = "songlastplayed_%s" % self.id
+        c = cache.get(key)
+        if not c:
+            log.debug("No cache for last played, finding")
+            Q = Queue.objects.filter(song=self).order_by('-id')[:1]
+            if not Q:
+                c = "Never"
+            else:
+                c = Q[0].time_played
             cache.set(key, c, 5)
         return c
 
