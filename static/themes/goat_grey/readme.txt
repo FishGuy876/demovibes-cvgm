@@ -40,3 +40,7 @@ Changes:
 
  * version 1.09
  * 240519 - Right panel width increased to 230px to accomodate bigger YT embedded videos
+
+ * Version 1.10
+ * Adapted the theme to work with the SSL changes to the site. FishGuy876
+ 
