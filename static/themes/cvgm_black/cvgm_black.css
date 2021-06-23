@@ -1,0 +1,607 @@
+/* DARK THEME - 25th oct 2011 */
+
+@import url('http://fonts.googleapis.com/css?family=Coda');
+
+body{
+	font-family:sans-serif;
+	font-size:11px; 
+	color:#a6a6a6;
+	background-image:url('/static/themes/cvgm_black/bg.png');
+	
+}
+
+a{
+	text-decoration:none;
+	font-weight:bold;
+	color:#00adee;
+}
+
+#maincontent{
+	padding:5px;
+}
+
+#sidebar img{
+	padding-right:5px;
+}
+
+#main h1{
+	text-align:center;
+}
+
+/* basic color  stuff */
+#main h2{
+	background-color:#1d1d1d;
+	border-radius: 10px 10px 10px 10px;
+	padding:10px;
+	border:1px solid #3c3c3c;
+}
+
+#sidebar h3,#rightside h3{
+	background-image:url('/static/themes/cvgm_black/h3back.png');
+	height:21px;
+	padding-top:5px;
+}
+
+
+#rightside
+{
+	float: right;
+	display: inline;
+	position: relative;
+	width: 200px;
+	margin: 8px;
+	padding:2px;
+	background-color: #171717;
+	text-align: center;
+	display: inline;
+	border:1px solid #000;		
+}
+
+
+
+#sidebar
+{
+	float: left;
+	display: inline;
+	position: relative;
+	width: 200px;
+	margin: 8px;
+	text-align: center;
+	display: inline;
+	background-color:#171717;	
+	color:#a6a6a6;
+	padding:2px;	
+	border:1px solid #000;	
+}
+
+
+
+#footer{
+	background-color:#161616;
+	margin-top:50px;
+	padding:10px;
+	border:1px solid #3c3c3c;	
+	text-align:center;
+	clear:both;
+}
+
+#logo{
+		display: block;
+	margin-left: auto;
+	margin-right: auto;
+	overflow: hidden;
+}
+
+/* navigation stuff */
+img{
+	padding-right:5px;
+}
+
+h1{
+	font-family: 'Coda', cursive;
+	
+}
+
+h1,h2,h3{
+	color:#ffffff;
+}
+
+.queuesongbutton{
+	cursor:pointer;
+}
+
+h3
+{
+	padding-top:10px;
+	margin: -1px;
+	font-size: 11px;
+	text-align: center;
+	margin-bottom: 1ex;
+	
+}
+
+#rightside ul
+{
+	padding: 0;
+	margin-top: 1ex;
+	margin-bottom: 2ex;
+	display: inline-block;
+	list-style-type: none;
+	text-align: left;
+}
+
+#rightside ul li
+{
+	background-position: 0px 50%;
+	background-repeat: no-repeat;
+	min-height: 16px;
+	padding-left: 16px;
+	display: block;
+}
+
+#sidebar ul
+{
+	padding: 0;
+	margin-top: 1ex;
+	margin-bottom: 2ex;
+	display: inline-block;
+	list-style-type: none;
+	text-align: left;
+}
+
+#sidebar ul li
+{
+	background-position: 0px 50%;
+	background-repeat: no-repeat;
+	min-height: 16px;
+	padding-left: 16px;
+	display: block;
+}
+#sidebar li a
+{
+	margin-left: 1ex;
+/*	color: #666; */
+	text-decoration:none;
+	font-weight:bold;
+}
+#rightside li a
+{
+	margin-left: 1ex;
+/*	color: #666; */
+}
+#home 		{background-image: url("/static/house.png");}
+#songs		{background-image: url("/static/music.png");}
+#song-source		{background-image: url("/static/sound.png");}
+#song-platform		{background-image: url("/static/sound.png");}
+#artists	{background-image: url("/static/user_green.png");}
+#compilations	{background-image: url("/static/recplay_ico.png");}
+#recent	        {background-image: url("/static/new.png");}
+#recentchanges  {background-image: url("/static/page_white_edit.png");}
+#menuqueue	{background-image: url("/static/script.png");}
+#search		{background-image: url("/static/find.png");}
+#forum		{background-image: url("/static/user_comment.png");}
+#faq		{background-image: url("/static/comment.png");}
+#profile	{background-image: url("/static/user.png");}
+#favorites	{background-image: url("/static/heart.png");}
+#register	{background-image: url("/static/page_white_edit.png");}
+#logout		{background-image: url("/static/door_out.png");}
+#login		{background-image: url("/static/door_in.png");}
+#admin		{background-image: url("/static/door.png");}
+#inbox		{background-image: url("/static/email.png");}
+#unap-artists		{background-image: url("/static/user_green.png");}
+#unap-groups		{background-image: url("/static/group.png");}
+#unap-compilations    {background-image: url("/static/recplay_ico.png");}
+#unap-labels            {background-image: url("/static/transmit_blue.png");}
+#unap-links     {background-image: url("/static/link.png");}
+#unap-nju     {background-image: url("/static/tick.png");}
+#groups		{background-image: url("/static/group.png");}
+#labels            {background-image: url("/static/transmit_blue.png");}
+#links		{background-image: url("/static/link.png");}
+#screenshots		{background-image: url("/static/icon_screenshot.png");}
+#unap-screenshots     {background-image: url("/static/icon_screenshot.png");}
+#licenses 		{background-image: url("/static/page_white_edit.png");}
+#chat		{background-image: url("/static/lips.png");}
+
+
+#oneliner
+{
+	margin: 8px;
+	margin-top: 0;
+	margin-bottom: 2ex;
+	text-align: left;
+	overflow: hidden;
+}
+
+#blah{
+	position:relative;
+	margin-left:-14px;
+	background-color:#444444;
+	border: 1px solid #111111;
+	border-bottom: 1px solid #3c3c3c;
+	width:170px;	
+	color:#c8c8c8;
+}
+
+select,input,textarea{
+	background-color:#444444;
+	border: 1px solid #111111;
+	border-bottom: 1px solid #3c3c3c;
+/*	color: #00adee; */
+	color:#c8c8c8;
+	border-radius: 10px 10px 10px 10px;
+	padding-left:4px;
+	padding-right:4px;
+	
+}
+textarea{
+	width:100%;
+}
+
+input[type=submit]{
+	padding:10px;	
+	border-radius: 10px 10px 10px 10px;
+	min-width:200px;
+	border:1px solid #1a1a1b;	
+	margin-top:20px;
+	margin-bottom:20px;
+}
+
+
+#makeitso
+{
+	display:none;
+	position:absolute;
+	padding-left:5px;
+	border: none;
+	width: 16px;
+	margin-left: -19px;
+	background-color: transparent;
+	background-image: url("/static/comment.png");
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+#formvote input,.queuesongimage{
+	border:0px;
+	border-radius:0px;
+	background-color:transparent;
+	padding:0px;
+	margin:0px;
+	
+}
+
+
+.onelinerpre {
+	font-family: "snap", "rez ascii", "Lucida Console", monospace;
+}
+
+
+
+/* song view */
+
+table.songlist{
+	width: 100%;
+}
+
+
+table.songlist {
+	border-collapse: collapse;
+	border-spacing: 0px;
+}
+
+table.songlist td {
+	padding: 0px;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+table.songlist th {
+	background-image:url('/static/themes/cvgm_black/h3back.png');
+	background-repeat:repeat-x;
+	height:26px;
+}
+
+table.songlist tr.row1 td {
+/*	background-color: #FCfcfc;*/
+	background-color: #2b2b2b;
+}
+
+table.songlist tr.row2 td {
+/*	background-color: #e1e1e1; */
+	background-color: #1a1a1b;
+
+}
+
+/* FORUM STUFFZ */
+
+#djangoForumBreadcrumbs, .pages
+{
+    margin-bottom: 1em;
+}
+
+.pagesBottom
+{
+    margin-top: 1em;
+	text-align: right;
+}
+
+#djangoForumList,
+#djangoForumThreadList
+{
+	width: 99%;
+	margin: auto;
+	background-color: transparent;
+	background-color:#2b2b2b;
+	border-collapse:collapse;
+	border:0px;
+	background-position: center;
+}
+
+#djangoForumList th,
+#djangoForumThreadList th,
+#djangoForumThreadPosts th
+{
+	background-image:url('/static/themes/cvgm_black/h3back.png');
+	background-repeat:repeat-x;
+	height:26px;
+
+}
+
+#djangoForumList td,
+#djangoForumThreadList td
+{
+	padding: 0;
+	border-width: 1px solid #000000;	
+}
+
+.djangoForumListDetails,
+.post
+{
+}
+
+.djangoForumListDetails p
+{
+	margin: 0;
+}
+
+#djangoForumList .djangoForumListDetails .djangoForumStats
+{
+	position: relative !important;
+	position: static; /* ha! lost stupid ie6 again! */
+	z-index: 5;
+	float: right;
+	margin-top: -12pt;
+	padding-right: 8px;
+	font-size: 7pt;
+}
+
+.forumName
+{
+	display: block;
+	position: relative !important;
+	position: static; /* ha! */
+	z-index: 10;
+	padding-left: 8px;
+	padding-right: 8px;
+	padding-bottom: 12pt;
+	font-size: 12pt;
+}
+
+.djangoForumListDetails .forumDescription
+{
+	display: block;
+	position: relative !important;
+	position: static; /* ha! */
+	z-index: 5;
+	margin-top: -12pt;
+	padding: 0;
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+#djangoForumList .djangoForumListDetails
+{
+	width: 70%;
+	padding: 0;
+}
+
+#djangoForumList td,
+#djangoForumThreadList td
+{
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+.djangoForumListDetails
+{
+	padding: 0;
+}
+
+#djangoForumThreadList td
+{
+	width: 5%;
+	text-align: center;
+}
+
+#djangoForumThreadList .djangoForumThreadListName
+{
+	width: 60%;
+	text-align: left;
+	padding: 0;	
+}
+
+#djangoForumList .djangoForumListLastPost,
+#djangoForumThreadList .djangoForumThreadLastPost
+{
+	width: 30%;
+	text-align: left;
+}
+
+.djangoForumThreadListName{
+	font-weight:bold;
+	font-size:12px;
+}
+
+.postmain{
+	background-color:#2b2b2b;
+}
+.post,.searchpostpreview{
+	background-color:#2b2b2b;
+	border:1px solid #1a1a1b;	
+	padding:10px;
+}
+
+#linksform{
+	border-collapse:collapse;
+	padding-bottom:10px;
+}
+#linksform td{
+		padding-bottom:10px;
+		padding-top:10px;
+}
+#linksform tr:hover {
+    background-color: #2b2b2b;
+}
+
+
+
+div.screenshot:hover {
+    background-color: #2b2b2b;
+    border: 1px solid #1a1a1b;
+    padding: 2px;
+}
+
+
+
+.threadName
+{
+	display: block;
+	line-height: 2em;
+	padding-left: 8px;
+	padding-right: 8px;
+}
+div.taglist{
+	background: none repeat scroll 0 0 #2b2b2b;
+	border: 1px solid #1a1a1b;
+	border-radius: 10px 10px 10px 10px;
+	float: right;
+	margin-left: 6px;
+	overflow: hidden;
+	padding: 6px;
+	width: 40%;
+}
+
+#djangoForumThreadPosts
+{
+	width: 99%;
+	margin: auto;
+	border: 0;
+	border-collapse: collapse;
+	background-color: transparent;
+	/*background-image: url("hilight.png"); */
+	background-position: center;
+}
+
+#djangoForumThreadPosts td
+{
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+
+#djangoForumThreadPosts .djangoForumThreadPostDetail
+{
+	vertical-align: top;
+	border-left: 1px solid #000;
+	padding-top: 1em;
+}
+
+#djangoForumThreadPosts
+{
+}
+
+#djangoForumThreadPosts .postfooter
+{
+	border:1px solid #000000;
+	text-align: right;
+}
+
+#djangoForumThreadPosts .postfooter td:first-child
+{
+	text-align: left;
+	font-size: 7pt;
+}
+
+
+#djangoForumThreadPosts .post
+{
+	vertical-align: top;
+	padding-top: 1em;
+	border: 0;
+	border-left: 1px solid #000;
+	border-right: 1px solid #000;
+	border-bottom: 1px solid #000;
+	width: 85%;
+}
+
+.post p
+{
+	margin: 0;
+	margin-bottom: 1em;
+}
+
+
+#newThread
+{
+	width: 99%;
+	margin: auto;
+}
+
+#newThread .label
+{
+	text-align: right;
+	vertical-align: top;
+}
+
+#newThread #postThread
+{
+	text-align: center;
+}
+
+
+#newThread #postThread
+{
+	text-align: center;
+}
+
+
+
+.messagetitle{
+	background-color:#2b2c2c;
+	color:#fff200;
+	background-image:url('/static/themes/cvgm_black/h3back.png');
+	font-size:11px;
+}
+
+.messageholder,.messageholder:hover{
+	background-image:url('/static/themes/cvgm_black/bg.png'); 
+	color:#fff200;
+/*	background-color:#2b2c2c; */
+	padding-left:15px;
+	border:1px solid #2b2c2c; 
+	font-size:11px;
+	opacity:0.8;
+}
+
+#maincontent .countryflag{
+	background-color:white;
+	padding-right:0px;
+	margin-right:2px;
+}
+#maincontent{
+	/*min-width:600px;*/
+}
+
+.forumDescription{
+	width:75%;
+}
