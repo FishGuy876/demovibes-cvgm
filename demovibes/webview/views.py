@@ -715,7 +715,7 @@ def oneliner_submit(request):
 @login_required
 def list_favorites(request):
     """
-    Display a user's favorites.
+    Displayy the users favorite songs.
     """
     user = request.user
     songs = m.Favorite.objects.filter(user=user)
@@ -763,11 +763,11 @@ class ChangeFavorite(AjaxifyView):
             Q = m.Favorite.objects.filter(user = self.request.user, song = self.song)
             for x in Q:
                 x.delete() # For running Favorite.delete() logic
-            m.send_notification("Song removed from your favorites", self.request.user)
+            m.send_notification("Song has been removed from your favorites", self.request.user)
         if P("change") == "add":
             try:
                 m.Favorite.objects.create(user = self.request.user, song = self.song)
-                m.send_notification("Song added to your favorites", self.request.user)
+                m.send_notification("Song has been added to your favorites", self.request.user)
             except:
                 pass
 

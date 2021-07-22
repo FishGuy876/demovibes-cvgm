@@ -22,5 +22,5 @@
     {{ display.queue_song(song, user) }}
  </td>
  <td>
-   <span class="lastreqdate">{% if song.last_queued != "Never" %}{{ song.last_queued()|date("Y-m-d") }}{% else %}Never!{% endif %}</span>
+   <span class="lastreqdate">{% if song.last_played != "Never" %}{{ song.last_played()|date("Y-m-d") }}{% else %}Never!{% endif %}</span>
  </td>

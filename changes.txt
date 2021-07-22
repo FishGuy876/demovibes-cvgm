@@ -1,5 +1,11 @@
 ChangeLog
 
+As with any changelog, the newest changes will always appear on top!
+
+Changes in V0.9.X (Currently Last changed: February 20th, 2021):
+* Added the CVGM Black theme back into the repo, seeing as it is currently the default theme and presents a visual problem after the database is first initialized.
+* Added the start_demosauce.sh script to demosauce to ease the start & long term running of the streamer.
+
 Changes in V0.9.1:
 * YouTube videos work again in the Now Playing window.
 * Removed some old YouTube references from header files.
