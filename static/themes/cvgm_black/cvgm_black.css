@@ -6,11 +6,7 @@ body{
 	font-family:sans-serif;
 	font-size:11px; 
 	color:#a6a6a6;
-<<<<<<< HEAD
 	background-image:url('/static/themes/cvgm_black/bg.png');
-=======
-	background-image:url('/static/themes/cvgm_black/bg.png');
->>>>>>> Experimental
 	
 }
 
@@ -41,11 +37,7 @@ a{
 }
 
 #sidebar h3,#rightside h3{
-<<<<<<< HEAD
 	background-image:url('/static/themes/cvgm_black/h3back.png');
-=======
-	background-image:url('/static/themes/cvgm_black/h3back.png');
->>>>>>> Experimental
 	height:21px;
 	padding-top:5px;
 }
@@ -177,7 +169,6 @@ h3
 	margin-left: 1ex;
 /*	color: #666; */
 }
-<<<<<<< HEAD
 #home 		{background-image: url("/static/house.png");}
 #songs		{background-image: url("/static/music.png");}
 #song-source		{background-image: url("/static/sound.png");}
@@ -210,40 +201,6 @@ h3
 #unap-screenshots     {background-image: url("/static/icon_screenshot.png");}
 #licenses 		{background-image: url("/static/page_white_edit.png");}
 #chat		{background-image: url("/static/lips.png");}
-=======
-#home 		{background-image: url("/static/house.png");}
-#songs		{background-image: url("/static/music.png");}
-#song-source		{background-image: url("/static/sound.png");}
-#song-platform		{background-image: url("/static/sound.png");}
-#artists	{background-image: url("/static/user_green.png");}
-#compilations	{background-image: url("/static/recplay_ico.png");}
-#recent	        {background-image: url("/static/new.png");}
-#recentchanges  {background-image: url("/static/page_white_edit.png");}
-#menuqueue	{background-image: url("/static/script.png");}
-#search		{background-image: url("/static/find.png");}
-#forum		{background-image: url("/static/user_comment.png");}
-#faq		{background-image: url("/static/comment.png");}
-#profile	{background-image: url("/static/user.png");}
-#favorites	{background-image: url("/static/heart.png");}
-#register	{background-image: url("/static/page_white_edit.png");}
-#logout		{background-image: url("/static/door_out.png");}
-#login		{background-image: url("/static/door_in.png");}
-#admin		{background-image: url("/static/door.png");}
-#inbox		{background-image: url("/static/email.png");}
-#unap-artists		{background-image: url("/static/user_green.png");}
-#unap-groups		{background-image: url("/static/group.png");}
-#unap-compilations    {background-image: url("/static/recplay_ico.png");}
-#unap-labels            {background-image: url("/static/transmit_blue.png");}
-#unap-links     {background-image: url("/static/link.png");}
-#unap-nju     {background-image: url("/static/tick.png");}
-#groups		{background-image: url("/static/group.png");}
-#labels            {background-image: url("/static/transmit_blue.png");}
-#links		{background-image: url("/static/link.png");}
-#screenshots		{background-image: url("/static/icon_screenshot.png");}
-#unap-screenshots     {background-image: url("/static/icon_screenshot.png");}
-#licenses 		{background-image: url("/static/page_white_edit.png");}
-#chat		{background-image: url("/static/lips.png");}
->>>>>>> Experimental
 
 
 #oneliner
@@ -299,11 +256,7 @@ input[type=submit]{
 	width: 16px;
 	margin-left: -19px;
 	background-color: transparent;
-<<<<<<< HEAD
 	background-image: url("/static/comment.png");
-=======
-	background-image: url("/static/comment.png");
->>>>>>> Experimental
 	background-repeat: no-repeat;
 	background-position: center center;
 }
@@ -343,11 +296,7 @@ table.songlist td {
 }
 
 table.songlist th {
-<<<<<<< HEAD
 	background-image:url('/static/themes/cvgm_black/h3back.png');
-=======
-	background-image:url('/static/themes/cvgm_black/h3back.png');
->>>>>>> Experimental
 	background-repeat:repeat-x;
 	height:26px;
 }
@@ -392,11 +341,7 @@ table.songlist tr.row2 td {
 #djangoForumThreadList th,
 #djangoForumThreadPosts th
 {
-<<<<<<< HEAD
 	background-image:url('/static/themes/cvgm_black/h3back.png');
-=======
-	background-image:url('/static/themes/cvgm_black/h3back.png');
->>>>>>> Experimental
 	background-repeat:repeat-x;
 	height:26px;
 
@@ -634,20 +579,12 @@ div.taglist{
 .messagetitle{
 	background-color:#2b2c2c;
 	color:#fff200;
-<<<<<<< HEAD
 	background-image:url('/static/themes/cvgm_black/h3back.png');
-=======
-	background-image:url('/static/themes/cvgm_black/h3back.png');
->>>>>>> Experimental
 	font-size:11px;
 }
 
 .messageholder,.messageholder:hover{
-<<<<<<< HEAD
 	background-image:url('/static/themes/cvgm_black/bg.png'); 
-=======
-	background-image:url('/static/themes/cvgm_black/bg.png'); 
->>>>>>> Experimental
 	color:#fff200;
 /*	background-color:#2b2c2c; */
 	padding-left:15px;
