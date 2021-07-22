@@ -9,7 +9,7 @@ body{
 <<<<<<< HEAD
 	background-image:url('/static/themes/cvgm_black/bg.png');
 =======
-	background-image:url('http://www.cvgm.net/static/themes/cvgm_black/bg.png');
+	background-image:url('/static/themes/cvgm_black/bg.png');
 >>>>>>> Experimental
 	
 }
@@ -44,7 +44,7 @@ a{
 <<<<<<< HEAD
 	background-image:url('/static/themes/cvgm_black/h3back.png');
 =======
-	background-image:url('http://www.cvgm.net/static/themes/cvgm_black/h3back.png');
+	background-image:url('/static/themes/cvgm_black/h3back.png');
 >>>>>>> Experimental
 	height:21px;
 	padding-top:5px;
@@ -211,38 +211,38 @@ h3
 #licenses 		{background-image: url("/static/page_white_edit.png");}
 #chat		{background-image: url("/static/lips.png");}
 =======
-#home 		{background-image: url("http://www.cvgm.net/static/house.png");}
-#songs		{background-image: url("http://www.cvgm.net/static/music.png");}
-#song-source		{background-image: url("http://www.cvgm.net/static/sound.png");}
-#song-platform		{background-image: url("http://www.cvgm.net/static/sound.png");}
-#artists	{background-image: url("http://www.cvgm.net/static/user_green.png");}
-#compilations	{background-image: url("http://www.cvgm.net/static/recplay_ico.png");}
-#recent	        {background-image: url("http://www.cvgm.net/static/new.png");}
-#recentchanges  {background-image: url("http://www.cvgm.net/static/page_white_edit.png");}
-#menuqueue	{background-image: url("http://www.cvgm.net/static/script.png");}
-#search		{background-image: url("http://www.cvgm.net/static/find.png");}
-#forum		{background-image: url("http://www.cvgm.net/static/user_comment.png");}
-#faq		{background-image: url("http://www.cvgm.net/static/comment.png");}
-#profile	{background-image: url("http://www.cvgm.net/static/user.png");}
-#favorites	{background-image: url("http://www.cvgm.net/static/heart.png");}
-#register	{background-image: url("http://www.cvgm.net/static/page_white_edit.png");}
-#logout		{background-image: url("http://www.cvgm.net/static/door_out.png");}
-#login		{background-image: url("http://www.cvgm.net/static/door_in.png");}
-#admin		{background-image: url("http://www.cvgm.net/static/door.png");}
-#inbox		{background-image: url("http://www.cvgm.net/static/email.png");}
-#unap-artists		{background-image: url("http://www.cvgm.net/static/user_green.png");}
-#unap-groups		{background-image: url("http://www.cvgm.net/static/group.png");}
-#unap-compilations    {background-image: url("http://www.cvgm.net/static/recplay_ico.png");}
-#unap-labels            {background-image: url("http://www.cvgm.net/static/transmit_blue.png");}
-#unap-links     {background-image: url("http://www.cvgm.net/static/link.png");}
-#unap-nju     {background-image: url("http://www.cvgm.net/static/tick.png");}
-#groups		{background-image: url("http://www.cvgm.net/static/group.png");}
-#labels            {background-image: url("http://www.cvgm.net/static/transmit_blue.png");}
-#links		{background-image: url("http://www.cvgm.net/static/link.png");}
-#screenshots		{background-image: url("http://www.cvgm.net/static/icon_screenshot.png");}
-#unap-screenshots     {background-image: url("http://www.cvgm.net/static/icon_screenshot.png");}
-#licenses 		{background-image: url("http://www.cvgm.net/static/page_white_edit.png");}
-#chat		{background-image: url("http://www.cvgm.net/static/lips.png");}
+#home 		{background-image: url("/static/house.png");}
+#songs		{background-image: url("/static/music.png");}
+#song-source		{background-image: url("/static/sound.png");}
+#song-platform		{background-image: url("/static/sound.png");}
+#artists	{background-image: url("/static/user_green.png");}
+#compilations	{background-image: url("/static/recplay_ico.png");}
+#recent	        {background-image: url("/static/new.png");}
+#recentchanges  {background-image: url("/static/page_white_edit.png");}
+#menuqueue	{background-image: url("/static/script.png");}
+#search		{background-image: url("/static/find.png");}
+#forum		{background-image: url("/static/user_comment.png");}
+#faq		{background-image: url("/static/comment.png");}
+#profile	{background-image: url("/static/user.png");}
+#favorites	{background-image: url("/static/heart.png");}
+#register	{background-image: url("/static/page_white_edit.png");}
+#logout		{background-image: url("/static/door_out.png");}
+#login		{background-image: url("/static/door_in.png");}
+#admin		{background-image: url("/static/door.png");}
+#inbox		{background-image: url("/static/email.png");}
+#unap-artists		{background-image: url("/static/user_green.png");}
+#unap-groups		{background-image: url("/static/group.png");}
+#unap-compilations    {background-image: url("/static/recplay_ico.png");}
+#unap-labels            {background-image: url("/static/transmit_blue.png");}
+#unap-links     {background-image: url("/static/link.png");}
+#unap-nju     {background-image: url("/static/tick.png");}
+#groups		{background-image: url("/static/group.png");}
+#labels            {background-image: url("/static/transmit_blue.png");}
+#links		{background-image: url("/static/link.png");}
+#screenshots		{background-image: url("/static/icon_screenshot.png");}
+#unap-screenshots     {background-image: url("/static/icon_screenshot.png");}
+#licenses 		{background-image: url("/static/page_white_edit.png");}
+#chat		{background-image: url("/static/lips.png");}
 >>>>>>> Experimental
 
 
@@ -302,7 +302,7 @@ input[type=submit]{
 <<<<<<< HEAD
 	background-image: url("/static/comment.png");
 =======
-	background-image: url("http://www.cvgm.net/static/comment.png");
+	background-image: url("/static/comment.png");
 >>>>>>> Experimental
 	background-repeat: no-repeat;
 	background-position: center center;
@@ -346,7 +346,7 @@ table.songlist th {
 <<<<<<< HEAD
 	background-image:url('/static/themes/cvgm_black/h3back.png');
 =======
-	background-image:url('http://www.cvgm.net/static/themes/cvgm_black/h3back.png');
+	background-image:url('/static/themes/cvgm_black/h3back.png');
 >>>>>>> Experimental
 	background-repeat:repeat-x;
 	height:26px;
@@ -395,7 +395,7 @@ table.songlist tr.row2 td {
 <<<<<<< HEAD
 	background-image:url('/static/themes/cvgm_black/h3back.png');
 =======
-	background-image:url('http://www.cvgm.net/static/themes/cvgm_black/h3back.png');
+	background-image:url('/static/themes/cvgm_black/h3back.png');
 >>>>>>> Experimental
 	background-repeat:repeat-x;
 	height:26px;
@@ -637,7 +637,7 @@ div.taglist{
 <<<<<<< HEAD
 	background-image:url('/static/themes/cvgm_black/h3back.png');
 =======
-	background-image:url('http://www.cvgm.net/static/themes/cvgm_black/h3back.png');
+	background-image:url('/static/themes/cvgm_black/h3back.png');
 >>>>>>> Experimental
 	font-size:11px;
 }
@@ -646,7 +646,7 @@ div.taglist{
 <<<<<<< HEAD
 	background-image:url('/static/themes/cvgm_black/bg.png'); 
 =======
-	background-image:url('http://www.cvgm.net/static/themes/cvgm_black/bg.png'); 
+	background-image:url('/static/themes/cvgm_black/bg.png'); 
 >>>>>>> Experimental
 	color:#fff200;
 /*	background-color:#2b2c2c; */
