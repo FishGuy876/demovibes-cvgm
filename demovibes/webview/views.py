@@ -387,7 +387,18 @@ def list_year(request, year_id):
     }
     
     return j2shim.r2r ('webview/year_list.html', params, request)
+
+# This will display all songs, sorted by their overall length (larger songs will be displayed first)
+def list_length(request):
+    songs = m.Song.active.filter (songmetadata__active = True).order_by('-song_length')
     
+    params = {
+        'object_list' : songs,
+        'letter_url_name' : "dv-song-length"
+    }
+    
+    return j2shim.r2r ('webview/song_length.html', params, request)
+
 def list_song(request, song_id):
     song = get_object_or_404 (m.Song, id = song_id)
 
