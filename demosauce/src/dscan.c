@@ -12,6 +12,9 @@
 // TODO replcae info flags with control calls?
 // TODO print length seems to depend on samplerate
 
+// 07-26-2021 - Changed length of MAX_LENGTH to something very very high to prevent sticking on long upload scans.
+//              Ideally, this should be re-coded to pull the value from the settings file.
+
 #include <libavcodec/avcodec.h>
 #include <getopt.h>
 #include <chromaprint.h>
@@ -22,7 +25,8 @@
 enum {
     SAMPLERATE  = 44100,
     CHANNELS    = 2,
-    MAX_LENGTH  = 3600, // abort scan if track is too long, in seconds
+	// MAX_LENGTH  = 3600, // abort scan if track is too long, in seconds (Old Default)
+	MAX_LENGTH  = 500000, // Nice long scan time, for really long sets. AAK
     FP_LENGTH   = 120,  // length of fingerprint
 };
 
