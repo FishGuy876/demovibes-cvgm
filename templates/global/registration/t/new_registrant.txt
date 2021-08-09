@@ -1,1 +1,10 @@
-{% load i18n %}{% blocktrans with site.name as site_name and site.domain as domain %}You have received this message as a new user {{ username }} has activated their account at {{ site_name }}.  Log in using this URL to view user details: http://{{ domain }}/demovibes/user/{{ username }}{% endblocktrans %}
+{% load i18n %}{% blocktrans with site.name as site_name and site.domain as domain %}You have received this message as a new user has activated their account at {{ site_name }}.  
+
+Username: {{ username }}
+Username Link: https://{{ domain }}/demovibes/user/{{ username }}
+Email Address: {{ email }}
+
+To manage this user in the Admin panel, click the following link:
+https://{{ domain }}/admin/auth/user/{{ userid }}/
+
+The Admin Team.{% endblocktrans %}
