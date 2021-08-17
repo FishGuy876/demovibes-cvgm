@@ -59,6 +59,7 @@
 {% if thread.closed %}
 <p>Sorry, this thread is closed. No further comments are permitted.</p>
 {% else %}
+{% include "webview/forum_preface.html" %}
 {% if user.is_authenticated() %}
 <form method='post' action='.'>
     <fieldset>
