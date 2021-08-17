@@ -55,20 +55,23 @@
 </div>
 
 {% if user.is_authenticated() %}<h2><a href="{{ url("forum_subscriptions") }}">Manage Your Subscriptions</a></h2>{% endif %}
-<h2>Post a Reply</h2>
+<h2><img class="icon_header" src="{{ STATIC_URL }}page_white_edit.png" alt="" />Reply To This Forum Post</h2>
 {% if thread.closed %}
 <p>Sorry, this thread is closed. No further comments are permitted.</p>
 {% else %}
 {% if user.is_authenticated() %}
 <form method='post' action='.'>
-<p><label>Posting As</label> <span>{{ user.username }}</span></p>
-<p> {{ reply_form.body.label_tag() }}
-{{ reply_form.body }}
-{{ reply_form.body.errors }}</p>
-<p>{{ reply_form.subscribe.label_tag() }}
-{{ reply_form.subscribe }}
-{{ reply_form.subscribe.errors }}</p>
-<input type='submit' value='Submit' />
+    <fieldset>
+        <legend>Replying To This Forum Post</legend>
+        <p><label>Replying To This Post As:</label> <span>{{ user.username }}</span></p>
+        <p> {{ reply_form.body.label_tag() }}
+        {{ reply_form.body }}
+        {{ reply_form.body.errors }}</p>
+        <p>{{ reply_form.subscribe.label_tag() }}
+        {{ reply_form.subscribe }}
+        {{ reply_form.subscribe.errors }}</p>
+        <input type='submit' value='Submit' />
+    </fieldset>
 </form>
 {% else %}
 <p>Please log in to post a reply.</p>
