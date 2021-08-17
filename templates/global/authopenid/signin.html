@@ -23,11 +23,11 @@
 <br>
 {% endif %}
 <div class="login">
-
+    {% include "webview/signin_preface.html" %}
     <form id="auth_form" name="auth_form" action="{% url user_signin %}" method="post">
     <input type="hidden" name="next" value="{{ next }}" />
         <fieldset>
-                <legend>{% trans "Sign In Using Your Account ID" %}</legend>
+                <legend>{% trans "Sign In Using Your Existing Account ID" %}</legend>
                 <div class="form-row"><label for="id_username">{% trans "Username:" %}</label><br />{{ form2.username }}</div>
                 {% if form2.username.errors %}
                         <span class="error">{{ form2.username.errors|join:", " }}</span>
@@ -36,7 +36,7 @@
                 {% if form2.password.errors %}
                         <span class="error">{{ form2.password.errors|join:", " }}</span>
                 {% endif %}
-        <div class="submit-row"><input type="submit" name="blogin" value="{% trans "Sign in" %}" class="button"> </div>
+        <div class="submit-row"><input type="submit" name="blogin" value="{% trans "Log In" %}" class="button"> </div>
         </fieldset>
 </form>
 </div>
