@@ -138,7 +138,11 @@ int main(int argc, char** argv)
     while (decode_audio && !s.end_of_stream) {
         decoder_decode(&decoder, &s, SAMPLERATE);
         frames += s.frames;
-        die_if(frames > MAX_LENGTH * info.samplerate, "maxium length exceeded");
+        // AAK. Just as a note, if you experience wierd problems with dscan not being able to properly calculate song
+        // Lengths, and exiting with "maximum length exceeded" errors, even on short songs, it is safe to comment out
+        // The below line. This will then force the system to keep going. If the uploaded file is really a mess, the
+        // Type recognition will fail instead of the song length. It does not affect valid uploads.
+        die_if(frames > MAX_LENGTH * info.samplerate, "maximum length exceeded");
         if (enable_rg)
             rg_analyze(rg_ctx, (float*[]){s.buffer[0], s.buffer[1]}, s.frames);
         if ((enable_fp && frames <= FP_LENGTH * info.samplerate) || wavfile)
