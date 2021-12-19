@@ -10,6 +10,8 @@
 #include "stdafx.h"
 #include "mptString.h"
 
+#include "Endianness.h"
+
 #if defined(MPT_CHARSET_CODECVTUTF8)
 #include <codecvt>
 #endif
@@ -23,12 +25,6 @@
 
 #if defined(MODPLUG_TRACKER)
 #include <cwctype>
-#endif // MODPLUG_TRACKER
-
-#if defined(MODPLUG_TRACKER)
-#if MPT_COMPILER_GCC || MPT_COMPILER_CLANG
-#include <strings.h> // for strncasecmp
-#endif
 #endif // MODPLUG_TRACKER
 
 #if defined(MODPLUG_TRACKER)
@@ -68,7 +64,7 @@ List of string types
 --------------------
 
  *  std::string (OpenMPT, libopenmpt)
-    C++ string of unspedicifed 8bit encoding. Try to always document the
+    C++ string of unspecifed 8bit encoding. Try to always document the
     encoding if not clear from context. Do not use unless there is an obvious
     reason to do so.
 
@@ -88,14 +84,14 @@ List of string types
 
  *  CString (OpenMPT)
     MFC string type, either encoded in locale/CP_ACP (if !UNICODE) or UTF16 (if
-    UNICODE). Specify literals with _T(""). Use in MFC gui code.
+    UNICODE). Specify literals with _T(""). Use in MFC GUI code.
 
  *  CStringA (OpenMPT)
     MFC ANSI string type. The encoding is always CP_ACP. Do not use unless there
     is an obvious reason to do so.
 
  *  CStringW (OpenMPT)
-    MFC Unicode string type. Use in MFC gui code when explicit Unicode support
+    MFC Unicode string type. Use in MFC GUI code when explicit Unicode support
     is required.
 
  *  mpt::PathString (OpenMPT, libopenmpt)
@@ -116,6 +112,15 @@ List of string types
     depending on the underlying type of mpt::ustring, MPT_UTF8 *requires* a
     runtime conversion. Only use for string literals containing non-ascii
     characters (use MPT_USTRING otherwise).
+
+ *  MPT_ULITERAL / MPT_UCHAR / MPT_UCHAR_TYPE (OpenMPT, libopenmpt)
+    Macros which generate string literals, char literals and the char literal
+    type respectively. These are especially useful in constexpr contexts or
+    global data where MPT_USTRING is either unusable or requires a global
+    contructor to run. Do NOT use as a performance optimization in place of
+    MPT_USTRING however, because MPT_USTRING can be converted to C++11/14 user
+    defined literals eventually, while MPT_ULITERAL cannot because of constexpr
+    requirements.
 
  *  mpt::RawPathString (OpenMPT, libopenmpt)
     Internal representation of mpt::PathString. Only use for parsing path
@@ -164,7 +169,7 @@ Encoding of 8bit strings
 ------------------------
 
 8bit strings have an unspecified encoding. When the string is contained within a
-CSoundFile object, the encoding is most likely CSoundFile::GetCharset(),
+CSoundFile object, the encoding is most likely CSoundFile::GetCharsetInternal(),
 otherwise, try to gather the most probable encoding from surrounding or related
 code sections.
 
@@ -196,7 +201,7 @@ if in libopenmpt
 else
  if performance critical inner loop
   if needs unicode support
-   T = wchar_t*
+   T = MPT_UCHAR_TYPE* / MPT_ULITERAL
   else
    T = char*, document the encoding if not clear from context 
   fi
@@ -222,7 +227,11 @@ else
   if directly interfacing with wide winapi
    T = std::wstring
   else
-   T = mpt::ustring
+   if constexpr context or global data
+    T = MPT_UCHAR_TYPE* / MPT_ULITERAL
+   else
+    T = mpt::ustring
+	 fi
   fi
  fi
 fi
@@ -293,31 +302,6 @@ ToTcharStr, FromTcharStr.
 
 */
 
-
-
-namespace mpt {
-
-
-#ifdef MODPLUG_TRACKER
-
-// We cannot use the C runtime version in libopenmpt as it depends on the
-// global C locale.
-// We provide a plain ASCII version as mpt::CompareNoCaseAscci().
-
-int strnicmp(const char *a, const char *b, size_t count)
-//------------------------------------------------------
-{
-#if MPT_COMPILER_MSVC
-	return _strnicmp(a, b, count);
-#else
-	return strncasecmp(a, b, count);
-#endif
-}
-
-#endif // MODPLUG_TRACKER
-
-
-} // namespace mpt
 
 
 namespace mpt { namespace String {
@@ -458,14 +442,13 @@ static const uint32 CharsetTableCP437AMS2[256] = {
 #endif
 
 static std::wstring From8bit(const std::string &str, const uint32 (&table)[256], wchar_t replacement = L'\uFFFD')
-//---------------------------------------------------------------------------------------------------------------
 {
 	std::wstring res;
 	res.reserve(str.length());
 	for(std::size_t i = 0; i < str.length(); ++i)
 	{
 		uint32 c = static_cast<uint32>(static_cast<uint8>(str[i]));
-		if(c < CountOf(table))
+		if(c < mpt::size(table))
 		{
 			res.push_back(static_cast<wchar_t>(static_cast<uint32>(table[c])));
 		} else
@@ -477,7 +460,6 @@ static std::wstring From8bit(const std::string &str, const uint32 (&table)[256],
 }
 
 static std::string To8bit(const std::wstring &str, const uint32 (&table)[256], char replacement = '?')
-//----------------------------------------------------------------------------------------------------
 {
 	std::string res;
 	res.reserve(str.length());
@@ -488,7 +470,7 @@ static std::string To8bit(const std::wstring &str, const uint32 (&table)[256], c
 		// Try non-control characters first.
 		// In cases where there are actual characters mirrored in this range (like in AMS/AMS2 character sets),
 		// characters in the common range are preferred this way.
-		for(std::size_t x = 0x20; x < CountOf(table); ++x)
+		for(std::size_t x = 0x20; x < mpt::size(table); ++x)
 		{
 			if(c == table[x])
 			{
@@ -500,7 +482,7 @@ static std::string To8bit(const std::wstring &str, const uint32 (&table)[256], c
 		if(!found)
 		{
 			// try control characters
-			for(std::size_t x = 0x00; x < CountOf(table) && x < 0x20; ++x)
+			for(std::size_t x = 0x00; x < mpt::size(table) && x < 0x20; ++x)
 			{
 				if(c == table[x])
 				{
@@ -521,7 +503,6 @@ static std::string To8bit(const std::wstring &str, const uint32 (&table)[256], c
 #if defined(MPT_CHARSET_CODECVTUTF8) || defined(MPT_CHARSET_INTERNAL) || defined(MPT_CHARSET_WIN32)
 
 static std::wstring FromAscii(const std::string &str, wchar_t replacement = L'\uFFFD')
-//------------------------------------------------------------------------------------
 {
 	std::wstring res;
 	res.reserve(str.length());
@@ -540,7 +521,6 @@ static std::wstring FromAscii(const std::string &str, wchar_t replacement = L'\u
 }
 
 static std::string ToAscii(const std::wstring &str, char replacement = '?')
-//-------------------------------------------------------------------------
 {
 	std::string res;
 	res.reserve(str.length());
@@ -559,7 +539,6 @@ static std::string ToAscii(const std::wstring &str, char replacement = '?')
 }
 
 static std::wstring FromISO_8859_1(const std::string &str, wchar_t replacement = L'\uFFFD')
-//-----------------------------------------------------------------------------------------
 {
 	MPT_UNREFERENCED_PARAMETER(replacement);
 	std::wstring res;
@@ -573,7 +552,6 @@ static std::wstring FromISO_8859_1(const std::string &str, wchar_t replacement =
 }
 
 static std::string ToISO_8859_1(const std::wstring &str, char replacement = '?')
-//------------------------------------------------------------------------------
 {
 	std::string res;
 	res.reserve(str.length());
@@ -608,7 +586,6 @@ static std::string ToISO_8859_1(const std::wstring &str, char replacement = '?')
 // following non-convertible characters are not a problem.
 
 static std::wstring LocaleDecode(const std::string &str, const std::locale & locale, wchar_t replacement = L'\uFFFD', int retry = 0, bool * progress = nullptr)
-//-------------------------------------------------------------------------------------------------------------------------------------------------------------
 {
 	if(str.empty())
 	{
@@ -663,9 +640,9 @@ static std::wstring LocaleDecode(const std::string &str, const std::locale & loc
 		{
 			if(result == codecvt_type::error && in_next == in_begin && out_next == out_begin)
 			{
-				bool progress = true;
-				LocaleDecode(std::string(" ") + str, locale, replacement, 1, &progress);
-				if(!progress)
+				bool made_progress = true;
+				LocaleDecode(std::string(" ") + str, locale, replacement, 1, &made_progress);
+				if(!made_progress)
 				{
 					return LocaleDecode(str, locale, replacement, 2);
 				}
@@ -694,7 +671,6 @@ static std::wstring LocaleDecode(const std::string &str, const std::locale & loc
 }
 
 static std::string LocaleEncode(const std::wstring &str, const std::locale & locale, char replacement = '?', int retry = 0, bool * progress = nullptr)
-//----------------------------------------------------------------------------------------------------------------------------------------------------
 {
 	if(str.empty())
 	{
@@ -749,9 +725,9 @@ static std::string LocaleEncode(const std::wstring &str, const std::locale & loc
 		{
 			if(result == codecvt_type::error && in_next == in_begin && out_next == out_begin)
 			{
-				bool progress = true;
-				LocaleEncode(std::wstring(L" ") + str, locale, replacement, 1, &progress);
-				if(!progress)
+				bool made_progress = true;
+				LocaleEncode(std::wstring(L" ") + str, locale, replacement, 1, &made_progress);
+				if(!made_progress)
 				{
 					return LocaleEncode(str, locale, replacement, 2);
 				}
@@ -780,7 +756,6 @@ static std::string LocaleEncode(const std::wstring &str, const std::locale & loc
 }
 
 static std::wstring FromLocale(const std::string &str, wchar_t replacement = L'\uFFFD')
-//-------------------------------------------------------------------------------------
 {
 	try
 	{
@@ -811,7 +786,6 @@ static std::wstring FromLocale(const std::string &str, wchar_t replacement = L'\
 }
 
 static std::string ToLocale(const std::wstring &str, char replacement = '?')
-//--------------------------------------------------------------------------
 {
 	try
 	{
@@ -848,7 +822,6 @@ static std::string ToLocale(const std::wstring &str, char replacement = '?')
 #if defined(MPT_CHARSET_CODECVTUTF8)
 
 static std::wstring FromUTF8(const std::string &str, wchar_t replacement = L'\uFFFD')
-//-----------------------------------------------------------------------------------
 {
 	MPT_UNREFERENCED_PARAMETER(replacement);
 	std::wstring_convert<std::codecvt_utf8<wchar_t> > conv;
@@ -856,7 +829,6 @@ static std::wstring FromUTF8(const std::string &str, wchar_t replacement = L'\uF
 }
 
 static std::string ToUTF8(const std::wstring &str, char replacement = '?')
-//------------------------------------------------------------------------
 {
 	MPT_UNREFERENCED_PARAMETER(replacement);
 	std::wstring_convert<std::codecvt_utf8<wchar_t> > conv;
@@ -868,7 +840,6 @@ static std::string ToUTF8(const std::wstring &str, char replacement = '?')
 #if defined(MPT_CHARSET_INTERNAL) || defined(MPT_CHARSET_WIN32)
 
 static std::wstring FromUTF8(const std::string &str, wchar_t replacement = L'\uFFFD')
-//-----------------------------------------------------------------------------------
 {
 	const std::string &in = str;
 
@@ -878,9 +849,7 @@ static std::wstring FromUTF8(const std::string &str, wchar_t replacement = L'\uF
 	std::size_t charsleft = 0;
 	uint32 ucs4 = 0;
 
-	for ( std::string::const_iterator i = in.begin(); i != in.end(); ++i ) {
-
-		uint8 c = *i;
+	for ( uint8 c : in ) {
 
 		if ( charsleft == 0 ) {
 
@@ -949,7 +918,6 @@ static std::wstring FromUTF8(const std::string &str, wchar_t replacement = L'\uF
 }
 
 static std::string ToUTF8(const std::wstring &str, char replacement = '?')
-//------------------------------------------------------------------------
 {
 	const std::wstring &in = str;
 
@@ -1131,23 +1099,25 @@ static const char * Charset_wchar_t()
 		if(sizeof(wchar_t) == 2)
 		{
 			// "UTF-16" generates BOM
-			#if defined(MPT_PLATFORM_LITTLE_ENDIAN)
+			MPT_MAYBE_CONSTANT_IF(mpt::endian_is_little())
+			{
 				return "UTF-16LE";
-			#elif defined(MPT_PLATFORM_BIG_ENDIAN)
+			}
+			MPT_MAYBE_CONSTANT_IF(mpt::endian_is_big())
+			{
 				return "UTF-16BE";
-			#else
-				STATIC_ASSERT(false);
-			#endif
+			}
 		} else if(sizeof(wchar_t) == 4)
 		{
 			// "UTF-32" generates BOM
-			#if defined(MPT_PLATFORM_LITTLE_ENDIAN)
+			MPT_MAYBE_CONSTANT_IF(mpt::endian_is_little())
+			{
 				return "UTF-32LE";
-			#elif defined(MPT_PLATFORM_BIG_ENDIAN)
+			}
+			MPT_MAYBE_CONSTANT_IF(mpt::endian_is_big())
+			{
 				return "UTF-32BE";
-			#else
-				STATIC_ASSERT(false);
-			#endif
+			}
 		}
 		return "";
 	#endif // !MPT_ICONV_NO_WCHAR | MPT_ICONV_NO_WCHAR
@@ -1193,8 +1163,8 @@ Tdststring EncodeImpl(Charset charset, const std::wstring &src)
 			return Tdststring();
 		}
 		std::vector<CHAR> encoded_string(required_size);
-		WideCharToMultiByte(codepage, 0, src.c_str(), -1, &encoded_string[0], required_size, nullptr, nullptr);
-		return reinterpret_cast<const typename Tdststring::value_type*>(&encoded_string[0]);
+		WideCharToMultiByte(codepage, 0, src.c_str(), -1, encoded_string.data(), required_size, nullptr, nullptr);
+		return reinterpret_cast<const typename Tdststring::value_type*>(encoded_string.data());
 	#elif defined(MPT_CHARSET_ICONV)
 		iconv_t conv = iconv_t();
 		conv = iconv_open(CharsetToStringTranslit(charset), Charset_wchar_t());
@@ -1208,9 +1178,9 @@ Tdststring EncodeImpl(Charset charset, const std::wstring &src)
 		}
 		std::vector<wchar_t> wide_string(src.c_str(), src.c_str() + src.length() + 1);
 		std::vector<char> encoded_string(wide_string.size() * 8); // large enough
-		char * inbuf = reinterpret_cast<char*>(&wide_string[0]);
+		char * inbuf = reinterpret_cast<char*>(wide_string.data());
 		size_t inbytesleft = wide_string.size() * sizeof(wchar_t);
-		char * outbuf = &encoded_string[0];
+		char * outbuf = encoded_string.data();
 		size_t outbytesleft = encoded_string.size();
 		while(iconv(conv, &inbuf, &inbytesleft, &outbuf, &outbytesleft) == static_cast<size_t>(-1))
 		{
@@ -1231,7 +1201,7 @@ Tdststring EncodeImpl(Charset charset, const std::wstring &src)
 		}
 		iconv_close(conv);
 		conv = iconv_t();
-		return reinterpret_cast<const typename Tdststring::value_type*>(&encoded_string[0]);
+		return reinterpret_cast<const typename Tdststring::value_type*>(encoded_string.data());
 	#else
 		return EncodeImplFallback<Tdststring>(charset, src);
 	#endif
@@ -1300,8 +1270,8 @@ std::wstring DecodeImpl(Charset charset, const Tsrcstring &src)
 			return std::wstring();
 		}
 		std::vector<WCHAR> decoded_string(required_size);
-		MultiByteToWideChar(codepage, 0, reinterpret_cast<const char*>(src.c_str()), -1, &decoded_string[0], required_size);
-		return &decoded_string[0];
+		MultiByteToWideChar(codepage, 0, reinterpret_cast<const char*>(src.c_str()), -1, decoded_string.data(), required_size);
+		return decoded_string.data();
 	#elif defined(MPT_CHARSET_ICONV)
 		iconv_t conv = iconv_t();
 		conv = iconv_open(Charset_wchar_t(), CharsetToString(charset));
@@ -1311,9 +1281,9 @@ std::wstring DecodeImpl(Charset charset, const Tsrcstring &src)
 		}
 		std::vector<char> encoded_string(reinterpret_cast<const char*>(src.c_str()), reinterpret_cast<const char*>(src.c_str()) + src.length() + 1);
 		std::vector<wchar_t> wide_string(encoded_string.size() * 8); // large enough
-		char * inbuf = &encoded_string[0];
+		char * inbuf = encoded_string.data();
 		size_t inbytesleft = encoded_string.size();
-		char * outbuf = reinterpret_cast<char*>(&wide_string[0]);
+		char * outbuf = reinterpret_cast<char*>(wide_string.data());
 		size_t outbytesleft = wide_string.size() * sizeof(wchar_t);
 		while(iconv(conv, &inbuf, &inbytesleft, &outbuf, &outbytesleft) == static_cast<size_t>(-1))
 		{
@@ -1325,10 +1295,19 @@ std::wstring DecodeImpl(Charset charset, const Tsrcstring &src)
 				{
 					outbuf[i] = 0;
 				}
-				#ifdef MPT_PLATFORM_BIG_ENDIAN
+				#if defined(MPT_PLATFORM_LITTLE_ENDIAN)
+					outbuf[1] = uint8(0xff); outbuf[0] = uint8(0xfd);
+				#elif defined(MPT_PLATFORM_BIG_ENDIAN)
 					outbuf[sizeof(wchar_t)-1 - 1] = uint8(0xff); outbuf[sizeof(wchar_t)-1 - 0] = uint8(0xfd);
 				#else
-					outbuf[1] = uint8(0xff); outbuf[0] = uint8(0xfd);
+					MPT_MAYBE_CONSTANT_IF(mpt::endian_is_little())
+					{
+						outbuf[1] = uint8(0xff); outbuf[0] = uint8(0xfd);
+					}
+					MPT_MAYBE_CONSTANT_IF(mpt::endian_is_big())
+					{
+						outbuf[sizeof(wchar_t)-1 - 1] = uint8(0xff); outbuf[sizeof(wchar_t)-1 - 0] = uint8(0xfd);
+					}
 				#endif
 				outbuf += sizeof(wchar_t);
 				outbytesleft -= sizeof(wchar_t);
@@ -1342,7 +1321,7 @@ std::wstring DecodeImpl(Charset charset, const Tsrcstring &src)
 		}
 		iconv_close(conv);
 		conv = iconv_t();
-		return &wide_string[0];
+		return wide_string.data();
 	#else
 		return DecodeImplFallback<Tsrcstring>(charset, src);
 	#endif
@@ -1402,9 +1381,9 @@ Tdststring ConvertImpl(Charset to, Charset from, const Tsrcstring &src)
 		}
 		std::vector<char> src_string(reinterpret_cast<const char*>(src.c_str()), reinterpret_cast<const char*>(src.c_str()) + src.length() + 1);
 		std::vector<char> dst_string(src_string.size() * 8); // large enough
-		char * inbuf = &src_string[0];
+		char * inbuf = src_string.data();
 		size_t inbytesleft = src_string.size();
-		char * outbuf = &dst_string[0];
+		char * outbuf = dst_string.data();
 		size_t outbytesleft = dst_string.size();
 		while(iconv(conv, &inbuf, &inbytesleft, &outbuf, &outbytesleft) == static_cast<size_t>(-1))
 		{
@@ -1425,7 +1404,7 @@ Tdststring ConvertImpl(Charset to, Charset from, const Tsrcstring &src)
 		}
 		iconv_close(conv);
 		conv = iconv_t();
-		return reinterpret_cast<const typename Tdststring::value_type*>(&dst_string[0]);
+		return reinterpret_cast<const typename Tdststring::value_type*>(dst_string.data());
 	#else
 		return EncodeImpl<Tdststring>(to, DecodeImpl(from, src));
 	#endif
@@ -1436,7 +1415,6 @@ Tdststring ConvertImpl(Charset to, Charset from, const Tsrcstring &src)
 
 
 bool IsUTF8(const std::string &str)
-//---------------------------------
 {
 	return (str == String::EncodeImpl<std::string>(mpt::CharsetUTF8, String::DecodeImpl<std::string>(mpt::CharsetUTF8, str)));
 }
@@ -1667,12 +1645,18 @@ int CompareNoCaseAscii(const std::string &a, const std::string &b)
 mpt::ustring ToLowerCase(const mpt::ustring &s)
 {
 	#if defined(_MFC_VER)
-		CStringW tmp = mpt::ToCStringW(s);
-		tmp.MakeLower();
-		return mpt::ToUnicode(tmp);
+		#if defined(UNICODE)
+			CString tmp = mpt::ToCString(s);
+			tmp.MakeLower();
+			return mpt::ToUnicode(tmp);
+		#else // !UNICODE
+			CStringW tmp = mpt::ToCStringW(s);
+			tmp.MakeLower();
+			return mpt::ToUnicode(tmp);
+		#endif // UNICODE
 	#else // !_MFC_VER
 		std::wstring ws = mpt::ToWide(s);
-		std::transform(ws.begin(), ws.end(), ws.begin(), &std::towlower);	
+		std::transform(ws.begin(), ws.end(), ws.begin(), &std::towlower);
 		return mpt::ToUnicode(ws);
 	#endif // _MFC_VER
 }
@@ -1680,12 +1664,18 @@ mpt::ustring ToLowerCase(const mpt::ustring &s)
 mpt::ustring ToUpperCase(const mpt::ustring &s)
 {
 	#if defined(_MFC_VER)
-		CStringW tmp = mpt::ToCStringW(s);
-		tmp.MakeUpper();
-		return mpt::ToUnicode(tmp);
+		#if defined(UNICODE)
+			CString tmp = mpt::ToCString(s);
+			tmp.MakeUpper();
+			return mpt::ToUnicode(tmp);
+		#else // !UNICODE
+			CStringW tmp = mpt::ToCStringW(s);
+			tmp.MakeUpper();
+			return mpt::ToUnicode(tmp);
+		#endif // UNICODE
 	#else // !_MFC_VER
 		std::wstring ws = mpt::ToWide(s);
-		std::transform(ws.begin(), ws.end(), ws.begin(), &std::towlower);	
+		std::transform(ws.begin(), ws.end(), ws.begin(), &std::towlower);
 		return mpt::ToUnicode(ws);
 	#endif // _MFC_VER
 }

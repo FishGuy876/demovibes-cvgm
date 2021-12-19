@@ -22,6 +22,15 @@
   failure and 1 on success.
   - Functions that return integer values signal error condition by returning
   an invalid value (-1 in most cases, 0 in some cases).
+  - All functions that work on an openmpt_module object will call an
+  openmpt_error_func and depending on the value returned by this function log
+  the error code and/xor/or store it inside the openmpt_module object. Stored
+  error codes can be accessed with the openmpt_module_error_get_last() and
+  openmpt_module_error_get_last_message(). Stored errors will not get cleared
+  automatically and should be reset with openmpt_module_error_clear().
+  - Some functions not directly related to an openmpt_module object take an
+  explicit openmpt_error_func error function callback and a pointer to an int
+  and behave analog to the functions working on an openmpt_module object.
 
   \section libopenmpt_freebasic_strings Strings
 
@@ -64,7 +73,7 @@
 
   \section libopenmpt_freebasic_threads libopenmpt in multi-threaded environments
 
-  - libopenmpt is tread-aware.
+  - libopenmpt is thread-aware.
   - Individual libopenmpt objects are not thread-safe.
   - libopenmpt itself does not spawn any user-visible threads but may spawn
   threads for internal use.
@@ -82,14 +91,16 @@ Extern "C"
 
 '* API version of this header file
 Const OPENMPT_API_VERSION_MAJOR = 0
-Const OPENMPT_API_VERSION_MINOR = 2
-Const OPENMPT_API_VERSION = (OPENMPT_API_VERSION_MAJOR Shl 24) Or (OPENMPT_API_VERSION_MINOR Shl 16)
-#Define OPENMPT_API_VERSION_STRING (OPENMPT_API_VERSION_MAJOR & "." & OPENMPT_API_VERSION_MINOR)
+Const OPENMPT_API_VERSION_MINOR = 3
+Const OPENMPT_API_VERSION_PATCH = 0
+Const OPENMPT_API_VERSION = (OPENMPT_API_VERSION_MAJOR Shl 24) Or (OPENMPT_API_VERSION_MINOR Shl 16) Or (OPENMPT_API_VERSION_PATCH Shl 0)
+#Define OPENMPT_API_VERSION_STRING (OPENMPT_API_VERSION_MAJOR & "." & OPENMPT_API_VERSION_MINOR & "." & OPENMPT_API_VERSION_PATCH)
 
 /'* \brief Get the libopenmpt version number
 
   Returns the libopenmpt version number.
-  \return The value represents (major Shl 24 + minor << Shr 16 + revision).
+  \return The value represents (major Shl 24 + minor Shl 16 + patch Shl 0).
+  \remarks libopenmpt < 0.3.0-pre used the following scheme: (major Shl 24 + minor Shl 16 + revision).
   \remarks Check the HiWord of the return value against OPENMPT_API_VERSION to ensure that the correct library version is loaded.
 '/
 Declare Function openmpt_get_library_version() As ULong
@@ -127,10 +138,15 @@ Declare Sub openmpt_free_string(ByVal Str As Const ZString Ptr)
   \param key Key to query.
         Possible keys are:
          -  "library_version": verbose library version string
+         -  "library_version_is_release": "1" if the version is an officially released version                              
          -  "library_features": verbose library features string
          -  "core_version": verbose OpenMPT core version string
          -  "source_url": original source code URL
          -  "source_date": original source code date
+         -  "source_revision": original source code revision
+         -  "source_is_modified": "1" if the original source has been modified
+         -  "source_has_mixed_revisions": "1" if the original source has been compiled from different various revision
+         -  "source_is_package": "1" if the original source has been obtained from a source pacakge instead of source code version control
          -  "build": information about the current build (e.g. the build date or compiler used)
          -  "build_compiler": information about the compiler used to build libopenmpt
          -  "credits": all contributors
@@ -173,6 +189,7 @@ Const OPENMPT_STREAM_SEEK_END = 2
   \param bytes Number of bytes to read.
   \return Number of bytes actually read and written to dst.
   \retval 0 End of stream or error.
+  \remarks Short reads are allowed as long as they return at least 1 byte if EOF is not reached.
 '/
 Type openmpt_stream_read_func As Function(ByVal stream As Any Ptr, ByVal dst As Any Ptr, ByVal bytes As UInteger) As UInteger
 
@@ -185,6 +202,7 @@ Type openmpt_stream_read_func As Function(ByVal stream As Any Ptr, ByVal dst As 
   \return Returns 0 on success.
   \retval 0 Success.
   \retval -1 Failure. Position does not get updated.
+  \remarks libopenmpt will not try to seek beyond the file size, thus it is not important whether you allow for virtual positioning after the file end, or return an error in that case. The position equal to the file size needs to be seekable to.
 '/
 Type openmpt_stream_seek_func As Function(ByVal stream As Any Ptr, ByVal offset As LongInt, ByVal whence As Long) As Long
 
@@ -224,7 +242,7 @@ End Type
 /'* \brief Logging function
 
   \param message UTF-8 encoded log message.
-  \param user User context that was passed to openmpt_module_create(), openmpt_module_create_from_memory() or openmpt_could_open_propability().
+  \param user User context that was passed to openmpt_module_create2(), openmpt_module_create_from_memory2() or openmpt_could_open_probability2().
 '/
 Type openmpt_log_func As Sub(ByVal message As Const ZString Ptr, ByVal user As Any Ptr)
 
@@ -240,19 +258,304 @@ Declare Sub openmpt_log_func_default(ByVal message As Const ZString Ptr, ByVal u
 '/
 Declare Sub openmpt_log_func_silent(ByVal message As Const ZString Ptr, ByVal user As Any Ptr)
 
+'* No error. \since 0.3.0
+Const OPENMPT_ERROR_OK = 0
+
+'* Lowest value libopenmpt will use for any of its own error codes. \since 0.3.0
+Const OPENMPT_ERROR_BASE = 256
+
+'* Unknown internal error. \since 0.3.0
+Const OPENMPT_ERROR_UNKNOWN = OPENMPT_ERROR_BASE + 1
+
+'* Unknown internal C++ exception. \since 0.3.0
+Const OPENMPT_ERROR_EXCEPTION = OPENMPT_ERROR_BASE + 11
+
+'* Out of memory. \since 0.3.0
+Const OPENMPT_ERROR_OUT_OF_MEMORY = OPENMPT_ERROR_BASE + 21
+
+'* Runtime error. \since 0.3.0
+Const OPENMPT_ERROR_RUNTIME = OPENMPT_ERROR_BASE + 30
+'* Range error. \since 0.3.0
+Const OPENMPT_ERROR_RANGE = OPENMPT_ERROR_BASE + 31
+'* Arithmetic overflow. \since 0.3.0
+Const OPENMPT_ERROR_OVERFLOW = OPENMPT_ERROR_BASE + 32
+'* Arithmetic underflow. \since 0.3.0
+Const OPENMPT_ERROR_UNDERFLOW = OPENMPT_ERROR_BASE + 33
+
+'* Logic error. \since 0.3.0
+Const OPENMPT_ERROR_LOGIC = OPENMPT_ERROR_BASE + 40
+'* Value domain error. \since 0.3.0
+Const OPENMPT_ERROR_DOMAIN = OPENMPT_ERROR_BASE + 41
+'* Maximum supported size exceeded. \since 0.3.0
+Const OPENMPT_ERROR_LENGTH = OPENMPT_ERROR_BASE + 42
+'* Argument out of range. \since 0.3.0
+Const OPENMPT_ERROR_OUT_OF_RANGE = OPENMPT_ERROR_BASE + 43
+'* Invalid argument. \since 0.3.0
+Const OPENMPT_ERROR_INVALID_ARGUMENT = OPENMPT_ERROR_BASE + 44
+
+'* General libopenmpt error. \since 0.3.0
+Const OPENMPT_ERROR_GENERAL = OPENMPT_ERROR_BASE + 101
+'* openmpt_module Ptr is invalid. \since 0.3.0
+Const OPENMPT_ERROR_INVALID_MODULE_POINTER = OPENMPT_ERROR_BASE + 102
+'* NULL pointer argument. \since 0.3.0
+Const OPENMPT_ERROR_ARGUMENT_NULL_POINTER = OPENMPT_ERROR_BASE + 103
+
+/'* \brief Check whether the error is transient
+
+  Checks whether an error code represents a transient error which may not occur again in a later try if for example memory has been freed up after an out-of-memory error.
+  \param errorcode Error code.
+  \retval 0 Error is not transient.
+  \retval 1 Error is transient.
+  \sa OPENMPT_ERROR_OUT_OF_MEMORY
+  \since 0.3.0
+'/
+Declare Function openmpt_error_is_transient(ByVal errorcode As Long) As Long
+
+/'* \brief Convert error code to text
+
+  Converts an error code into a text string describing the error.
+  \param errorcode Error code.
+  \return Allocated string describing the error.
+  \retval NULL Not enough memory to allocate the string.
+  \since 0.3.0
+  \remarks Use openmpt_error_string to automatically handle the lifetime of the returned pointer.
+'/
+Declare Function openmpt_error_string_ Alias "openmpt_error_string" (ByVal errorcode As Long) As Const ZString Ptr
+
+'* Do not log or store the error. \since 0.3.0
+Const OPENMPT_ERROR_FUNC_RESULT_NONE = 0
+'* Log the error. \since 0.3.0
+Const OPENMPT_ERROR_FUNC_RESULT_LOG = 1
+'* Store the error. \since 0.3.0
+Const OPENMPT_ERROR_FUNC_RESULT_STORE = 2
+'* Log and store the error. \since 0.3.0
+Const OPENMPT_ERROR_FUNC_RESULT_DEFAULT = OPENMPT_ERROR_FUNC_RESULT_LOG Or OPENMPT_ERROR_FUNC_RESULT_STORE
+
+/'* \brief Error function
+
+  \param errorcode Error code.
+  \param user User context that was passed to openmpt_module_create2(), openmpt_module_create_from_memory2() or openmpt_could_open_probability2().
+  \return Mask of OPENMPT_ERROR_FUNC_RESULT_LOG and OPENMPT_ERROR_FUNC_RESULT_STORE.
+  \retval OPENMPT_ERROR_FUNC_RESULT_NONE Do not log or store the error.
+  \retval OPENMPT_ERROR_FUNC_RESULT_LOG Log the error.
+  \retval OPENMPT_ERROR_FUNC_RESULT_STORE Store the error.
+  \retval OPENMPT_ERROR_FUNC_RESULT_DEFAULT Log and store the error.
+  \sa OPENMPT_ERROR_FUNC_RESULT_NONE
+  \sa OPENMPT_ERROR_FUNC_RESULT_LOG
+  \sa OPENMPT_ERROR_FUNC_RESULT_STORE
+  \sa OPENMPT_ERROR_FUNC_RESULT_DEFAULT
+  \sa openmpt_error_func_default
+  \sa openmpt_error_func_log
+  \sa openmpt_error_func_store
+  \sa openmpt_error_func_ignore
+  \sa openmpt_error_func_errno
+  \since 0.3.0
+'/
+Type openmpt_error_func As Function(ByVal errorcode As Long, ByVal user As Any Ptr) As Long
+
+/'* \brief Default error function
+
+  Causes all errors to be logged and stored.
+  \param errorcode Error code.
+  \param user Ignored.
+  \retval OPENMPT_ERROR_FUNC_RESULT_DEFAULT Always.
+  \since 0.3.0
+'/
+Declare Function openmpt_error_func_default(ByVal errorcode As Long, ByVal User As Any Ptr) As Long
+
+/'* \brief Log error function
+
+  Causes all errors to be logged.
+  \param errorcode Error code.
+  \param user Ignored.
+  \retval OPENMPT_ERROR_FUNC_RESULT_LOG Always.
+  \since 0.3.0
+'/
+Declare Function openmpt_error_func_log(ByVal errorcode As Long, ByVal user As Any Ptr) As Long
+
+/'* \brief Store error function
+
+  Causes all errors to be stored.
+  \param errorcode Error code.
+  \param user Ignored.
+  \retval OPENMPT_ERROR_FUNC_RESULT_STORE Always.
+  \since 0.3.0
+'/
+Declare Function openmpt_error_func_store(ByVal errorcode As Long, ByVal user As Any Ptr) As Long
+
+/'* \brief Ignore error function
+
+  Causes all errors to be neither logged nor stored.
+  \param errorcode Error code.
+  \param user Ignored.
+  \retval OPENMPT_ERROR_FUNC_RESULT_NONE Always.
+  \since 0.3.0
+'/
+Declare Function openmpt_error_func_ignore(ByVal errorcode As Long, ByVal user As Any Ptr) As Long
+
+/'* \brief Errno error function
+
+  Causes all errors to be stored in the pointer passed in as user.
+  \param errorcode Error code.
+  \param user Pointer to an int as generated by openmpt_error_func_errno_userdata.
+  \retval OPENMPT_ERROR_FUNC_RESULT_NONE user is not NULL.
+  \retval OPENMPT_ERROR_FUNC_RESULT_DEFAULT user is NULL.
+  \since 0.3.0
+'/
+Declare Function openmpt_error_func_errno(ByVal errorcode As Long, ByVal user As Any Ptr) As Long
+
+/'* \brief User pointer for openmpt_error_func_errno
+
+  Provides a suitable user pointer argument for openmpt_error_func_errno.
+  \param errorcode Pointer to an integer value to be used as output by openmpt_error_func_errno.
+  \retval Cast(Any Ptr, errorcode).
+  \since 0.3.0
+'/
+Declare Function openmpt_error_func_errno_userdata(ByVal errorcode As Long Ptr) As Any Ptr
+
 /'* \brief Roughly scan the input stream to find out whether libopenmpt might be able to open it
 
   \param stream_callbacks Input stream callback operations.
   \param stream Input stream to scan.
   \param effort Effort to make when validating stream. Effort 0.0 does not even look at stream at all and effort 1.0 completely loads the file from stream. A lower effort requires less data to be loaded but only gives a rough estimate answer. Use an effort of 0.25 to only verify the header data of the module file.
-  \param logfunc Logging function where warning and errors are written.
+  \param logfunc Logging function where warning and errors are written. May be NULL.
   \param user Logging function user context.
   \return Probability between 0.0 and 1.0.
-  \remarks openmpt_could_open_propability() can return any value between 0.0 and 1.0. Only 0.0 and 1.0 are definitive answers, all values in between are just estimates. In general, any return value >0.0 means that you should try loading the file, and any value below 1.0 means that loading may fail. If you want a threshold above which you can be reasonably sure that libopenmpt will be able to load the file, use >=0.5. If you see the need for a threshold below which you could reasonably outright reject a file, use <0.25 (Note: Such a threshold for rejecting on the lower end is not recommended, but may be required for better integration into some other framework's probe scoring.).
-  \remarks openmpt_could_open_propability() expects the complete file data to be eventually available to it, even if it is asked to just parse the header. Verification will be unreliable (both false positives and false negatives), if you pretend that the file is just some few bytes of initial data threshold in size. In order to really just access the first bytes of a file, check in your callback functions whether data or seeking is requested beyond your initial data threshold, and in that case, return an error. openmpt_could_open_propability() will treat this as any other I/O error and return 0.0. You must not expect the correct result in this case. You instead must remember that it asked for more data than you currently want to provide to it and treat this situation as if openmpt_could_open_propability() returned 0.5.
+  \remarks openmpt_could_open_probability() can return any value between 0.0 and 1.0. Only 0.0 and 1.0 are definitive answers, all values in between are just estimates. In general, any return value >0.0 means that you should try loading the file, and any value below 1.0 means that loading may fail. If you want a threshold above which you can be reasonably sure that libopenmpt will be able to load the file, use >=0.5. If you see the need for a threshold below which you could reasonably outright reject a file, use <0.25 (Note: Such a threshold for rejecting on the lower end is not recommended, but may be required for better integration into some other framework's probe scoring.).
+  \remarks openmpt_could_open_probability() expects the complete file data to be eventually available to it, even if it is asked to just parse the header. Verification will be unreliable (both false positives and false negatives), if you pretend that the file is just some few bytes of initial data threshold in size. In order to really just access the first bytes of a file, check in your callback functions whether data or seeking is requested beyond your initial data threshold, and in that case, return an error. openmpt_could_open_probability() will treat this as any other I/O error and return 0.0. You must not expect the correct result in this case. You instead must remember that it asked for more data than you currently want to provide to it and treat this situation as if openmpt_could_open_probability() returned 0.5.
   \sa openmpt_stream_callbacks
+  \deprecated Please use openmpt_module_could_open_probability2().
+  \since 0.3.0
 '/
-Declare Function openmpt_could_open_propability(ByVal stream_callbacks As openmpt_stream_callbacks, ByVal stream As Any Ptr, ByVal effort As Double, ByVal logfunc As openmpt_log_func, ByVal user As Any Ptr) As Double
+Declare Function openmpt_could_open_probability(ByVal stream_callbacks As openmpt_stream_callbacks, ByVal stream As Any Ptr, ByVal effort As Double, ByVal logfunc As openmpt_log_func, ByVal user As Any Ptr) As Double
+
+/'* \brief Roughly scan the input stream to find out whether libopenmpt might be able to open it
+
+  \param stream_callbacks Input stream callback operations.
+  \param stream Input stream to scan.
+  \param effort Effort to make when validating stream. Effort 0.0 does not even look at stream at all and effort 1.0 completely loads the file from stream. A lower effort requires less data to be loaded but only gives a rough estimate answer. Use an effort of 0.25 to only verify the header data of the module file.
+  \param logfunc Logging function where warning and errors are written. May be NULL.
+  \param loguser Logging function user context.
+  \param errfunc Error function to define error behaviour. May be NULL.
+  \param erruser Error function user context.
+  \param errorcode Pointer to an integer where an error may get stored. May be NULL.
+  \param error_message Pointer to a string pointer where an error message may get stored. May be NULL.
+  \return Probability between 0.0 and 1.0.
+  \remarks openmpt_probe_file_header() or openmpt_probe_file_header_without_filesize() provide a simpler and faster interface that fits almost all use cases better. It is recommended to use openmpt_probe_file_header() or openmpt_probe_file_header_without_filesize() instead of openmpt_could_open_probability().
+  \remarks openmpt_could_open_probability2() can return any value between 0.0 and 1.0. Only 0.0 and 1.0 are definitive answers, all values in between are just estimates. In general, any return value >0.0 means that you should try loading the file, and any value below 1.0 means that loading may fail. If you want a threshold above which you can be reasonably sure that libopenmpt will be able to load the file, use >=0.5. If you see the need for a threshold below which you could reasonably outright reject a file, use <0.25 (Note: Such a threshold for rejecting on the lower end is not recommended, but may be required for better integration into some other framework's probe scoring.).
+  \remarks openmpt_could_open_probability2() expects the complete file data to be eventually available to it, even if it is asked to just parse the header. Verification will be unreliable (both false positives and false negatives), if you pretend that the file is just some few bytes of initial data threshold in size. In order to really just access the first bytes of a file, check in your callback functions whether data or seeking is requested beyond your initial data threshold, and in that case, return an error. openmpt_could_open_probability() will treat this as any other I/O error and return 0.0. You must not expect the correct result in this case. You instead must remember that it asked for more data than you currently want to provide to it and treat this situation as if openmpt_could_open_probability() returned 0.5.
+  \sa openmpt_stream_callbacks
+  \sa openmpt_probe_file_header
+  \sa openmpt_probe_file_header_without_filesize
+  \since 0.3.0
+'/
+Declare Function openmpt_could_open_probability2(ByVal stream_callbacks As openmpt_stream_callbacks, ByVal stream As Any Ptr, ByVal effort As Double, ByVal logfunc As openmpt_log_func, ByVal loguser As Any Ptr, ByVal errfunc As openmpt_error_func, ByVal erruser As Any Ptr, ByVal errorcode As Long Ptr, ByVal error_message As Const ZString Ptr Ptr) As Double
+
+/'* \brief Get recommended header size for successfull format probing
+
+  \sa openmpt_probe_file_header()
+  \sa openmpt_probe_file_header_without_filesize()
+  \since 0.3.0
+'/
+Declare Function openmpt_probe_file_header_get_recommended_size() As UInteger
+
+'* Probe for module formats in openmpt_probe_file_header() or openmpt_probe_file_header_without_filesize(). \since 0.3.0
+Const OPENMPT_PROBE_FILE_HEADER_FLAGS_MODULES = 1
+'* Probe for module-specific container formats in openmpt_probe_file_header() or openmpt_probe_file_header_without_filesize(). \since 0.3.0
+Const OPENMPT_PROBE_FILE_HEADER_FLAGS_CONTAINERS = 2
+
+'* Probe for the default set of formats in openmpt_probe_file_header() or openmpt_probe_file_header_without_filesize(). \since 0.3.0
+Const OPENMPT_PROBE_FILE_HEADER_FLAGS_DEFAULT = OPENMPT_PROBE_FILE_HEADER_FLAGS_MODULES or OPENMPT_PROBE_FILE_HEADER_FLAGS_CONTAINERS
+'* Probe for no formats in openmpt_probe_file_header() or openmpt_probe_file_header_without_filesize(). \since 0.3.0
+Const OPENMPT_PROBE_FILE_HEADER_FLAGS_NONE = 0
+
+'* Possible return values fo openmpt_probe_file_header() and openmpt_probe_file_header_without_filesize(). \since 0.3.0
+Const OPENMPT_PROBE_FILE_HEADER_RESULT_SUCCESS = 1
+'* Possible return values fo openmpt_probe_file_header() and openmpt_probe_file_header_without_filesize(). \since 0.3.0
+Const OPENMPT_PROBE_FILE_HEADER_RESULT_FAILURE = 0
+'* Possible return values fo openmpt_probe_file_header() and openmpt_probe_file_header_without_filesize(). \since 0.3.0
+Const OPENMPT_PROBE_FILE_HEADER_RESULT_WANTMOREDATA = -1
+'* Possible return values fo openmpt_probe_file_header() and openmpt_probe_file_header_without_filesize(). \since 0.3.0
+Const OPENMPT_PROBE_FILE_HEADER_RESULT_ERROR = -255
+
+/'* \brief Probe the provided bytes from the beginning of a file for supported file format headers to find out whether libopenmpt might be able to open it
+
+  \param flags Ored mask of OPENMPT_PROBE_FILE_HEADER_FLAGS_MODULES and OPENMPT_PROBE_FILE_HEADER_FLAGS_CONTAINERS, or OPENMPT_PROBE_FILE_HEADER_FLAGS_DEFAULT.
+  \param data Beginning of the file data.
+  \param size Size of the beginning of the file data.
+  \param filesize Full size of the file data on disk.
+  \param logfunc Logging function where warning and errors are written. May be NULL.
+  \param loguser Logging function user context. Used to pass any user-defined data associated with this module to the logging function.
+  \param errfunc Error function to define error behaviour. May be NULL.
+  \param erruser Error function user context. Used to pass any user-defined data associated with this module to the logging function.
+  \param error Pointer to an integer where an error may get stored. May be NULL.
+  \param error_message Pointer to a string pointer where an error message may get stored. May be NULL.
+  \remarks It is recommended to provide openmpt_probe_file_header_get_recommended_size() bytes of data for data and size. If the file is smaller, only provide the filesize amount and set size and filesize to the file's size. 
+  \remarks openmpt_could_open_probability2() provides a more elaborate interface that might be required for special use cases. It is recommended to use openmpt_probe_file_header() though, if possible.
+  \retval OPENMPT_PROBE_FILE_HEADER_RESULT_SUCCESS The file will most likely be supported by libopenmpt.
+  \retval OPENMPT_PROBE_FILE_HEADER_RESULT_FAILURE The file is not supported by libopenmpt.
+  \retval OPENMPT_PROBE_FILE_HEADER_RESULT_WANTMOREDATA An answer could not be determined with the amount of data provided.
+  \retval OPENMPT_PROBE_FILE_HEADER_RESULT_ERROR An internal error occurred.
+  \sa openmpt_probe_file_header_get_recommended_size()
+  \sa openmpt_probe_file_header_without_filesize()
+  \sa openmpt_probe_file_header_from_stream()
+  \sa openmpt_could_open_probability2()
+  \since 0.3.0
+'/
+Declare Function openmpt_probe_file_header(ByVal flags As ULongInt, ByVal Data As Const Any Ptr, ByVal size As UInteger, ByVal filesize As ULongInt, ByVal logfunc As openmpt_log_func, ByVal loguser As Any Ptr, ByVal errfunc As openmpt_error_func, ByVal erruser As Any Ptr, ByVal Error As Long Ptr, ByVal error_message As Const ZString Ptr Ptr) As Long
+
+/'* \brief Probe the provided bytes from the beginning of a file for supported file format headers to find out whether libopenmpt might be able to open it
+
+  \param flags Ored mask of OPENMPT_PROBE_FILE_HEADER_FLAGS_MODULES and OPENMPT_PROBE_FILE_HEADER_FLAGS_CONTAINERS, or OPENMPT_PROBE_FILE_HEADER_FLAGS_DEFAULT.
+  \param data Beginning of the file data.
+  \param size Size of the beginning of the file data.
+  \param logfunc Logging function where warning and errors are written. May be NULL.
+  \param loguser Logging function user context. Used to pass any user-defined data associated with this module to the logging function.
+  \param errfunc Error function to define error behaviour. May be NULL.
+  \param erruser Error function user context. Used to pass any user-defined data associated with this module to the logging function.
+  \param error Pointer to an integer where an error may get stored. May be NULL.
+  \param error_message Pointer to a string pointer where an error message may get stored. May be NULL.
+  \remarks It is recommended to use openmpt_probe_file_header() and provide the acutal file's size as a parameter if at all possible. libopenmpt can provide more accurate answers if the filesize is known.
+  \remarks It is recommended to provide openmpt_probe_file_header_get_recommended_size() bytes of data for data and size. If the file is smaller, only provide the filesize amount and set size to the file's size. 
+  \remarks openmpt_could_open_probability2() provides a more elaborate interface that might be required for special use cases. It is recommended to use openmpt_probe_file_header() though, if possible.
+  \retval OPENMPT_PROBE_FILE_HEADER_RESULT_SUCCESS The file will most likely be supported by libopenmpt.
+  \retval OPENMPT_PROBE_FILE_HEADER_RESULT_FAILURE The file is not supported by libopenmpt.
+  \retval OPENMPT_PROBE_FILE_HEADER_RESULT_WANTMOREDATA An answer could not be determined with the amount of data provided.
+  \retval OPENMPT_PROBE_FILE_HEADER_RESULT_ERROR An internal error occurred.
+  \sa openmpt_probe_file_header_get_recommended_size()
+  \sa openmpt_probe_file_header()
+  \sa openmpt_probe_file_header_from_stream()
+  \sa openmpt_could_open_probability2()
+  \since 0.3.0
+'/
+Declare Function openmpt_probe_file_header_without_filesize(ByVal flags As ULongInt, ByVal Data As Const Any Ptr, ByVal size As UInteger, ByVal logfunc As openmpt_log_func, ByVal loguser As Any Ptr, ByVal errfunc As openmpt_error_func, ByVal erruser As Any Ptr, ByVal Error As Long Ptr, ByVal error_message As Const ZString Ptr Ptr) As Long
+
+/'* \brief Probe the provided bytes from the beginning of a file for supported file format headers to find out whether libopenmpt might be able to open it
+
+  \param flags Ored mask of OPENMPT_PROBE_FILE_HEADER_FLAGS_MODULES and OPENMPT_PROBE_FILE_HEADER_FLAGS_CONTAINERS, or OPENMPT_PROBE_FILE_HEADER_FLAGS_DEFAULT.
+  \param stream_callbacks Input stream callback operations.
+  \param stream Input stream to scan.
+  \param logfunc Logging function where warning and errors are written. May be NULL.
+  \param loguser Logging function user context. Used to pass any user-defined data associated with this module to the logging function.
+  \param errfunc Error function to define error behaviour. May be NULL.
+  \param erruser Error function user context. Used to pass any user-defined data associated with this module to the logging function.
+  \param error Pointer to an integer where an error may get stored. May be NULL.
+  \param error_message Pointer to a string pointer where an error message may get stored. May be NULL.
+  \remarks The stream is left in an unspecified state when this function returns.
+  \remarks It is recommended to provide openmpt_probe_file_header_get_recommended_size() bytes of data for data and size. If the file is smaller, only provide the filesize amount and set size and filesize to the file's size. 
+  \remarks openmpt_could_open_probability2() provides a more elaborate interface that might be required for special use cases. It is recommended to use openmpt_probe_file_header() though, if possible.
+  \retval OPENMPT_PROBE_FILE_HEADER_RESULT_SUCCESS The file will most likely be supported by libopenmpt.
+  \retval OPENMPT_PROBE_FILE_HEADER_RESULT_FAILURE The file is not supported by libopenmpt.
+  \retval OPENMPT_PROBE_FILE_HEADER_RESULT_WANTMOREDATA An answer could not be determined with the amount of data provided.
+  \retval OPENMPT_PROBE_FILE_HEADER_RESULT_ERROR An internal error occurred.
+  \sa openmpt_probe_file_header_get_recommended_size()
+  \sa openmpt_probe_file_header()
+  \sa openmpt_probe_file_header_without_filesize()
+  \sa openmpt_could_open_probability2()
+  \since 0.3.0
+'/
+Declare Function openmpt_probe_file_header_from_stream(ByVal flags As ULongInt, ByVal stream_callbacks As openmpt_stream_callbacks, ByVal stream As Any Ptr, ByVal logfunc As openmpt_log_func, ByVal loguser As Any Ptr, ByVal errfunc As openmpt_error_func, ByVal erruser As Any Ptr, ByVal Error As Long Ptr, ByVal error_message As Const ZString Ptr Ptr) As Long
+
 
 '* \brief Opaque type representing a libopenmpt module
 Type openmpt_module
@@ -270,7 +573,7 @@ End Type
   \param stream Input stream to load the module from.
   \param logfunc Logging function where warning and errors are written. The logging function may be called throughout the lifetime of openmpt_module.
   \param user User-defined data associated with this module. This value will be passed to the logging callback function (logfunc)
-  \param ctls A map of initial ctl values, see openmpt_module_get_ctls.
+  \param ctls A map of initial ctl values. See openmpt_module_get_ctls().
   \return A pointer to the constructed openmpt_module, or NULL on failure.
   \remarks The input data can be discarded after an openmpt_module has been constructed successfully.
   \sa openmpt_stream_callbacks
@@ -279,15 +582,50 @@ Declare Function openmpt_module_create(ByVal stream_callbacks As openmpt_stream_
 
 /'* \brief Construct an openmpt_module
 
+  \param stream_callbacks Input stream callback operations.
+  \param stream Input stream to load the module from.
+  \param logfunc Logging function where warning and errors are written. The logging function may be called throughout the lifetime of openmpt_module. May be NULL.
+  \param loguser User-defined data associated with this module. This value will be passed to the logging callback function (logfunc)
+  \param errfunc Error function to define error behaviour. May be NULL.
+  \param erruser Error function user context.
+  \param errorcode Pointer to an integer where an error may get stored. May be NULL.
+  \param error_message Pointer to a string pointer where an error message may get stored. May be NULL.
+  \param ctls A map of initial ctl values. See openmpt_module_get_ctls().
+  \return A pointer to the constructed openmpt_module, or NULL on failure.
+  \remarks The input data can be discarded after an openmpt_module has been constructed successfully.
+  \sa openmpt_stream_callbacks
+  \since 0.3.0
+'/
+Declare Function openmpt_module_create2(ByVal stream_callbacks As openmpt_stream_callbacks, ByVal stream As Any Ptr, ByVal logfunc As openmpt_log_func = 0, ByVal loguser As Any Ptr = 0, ByVal errfunc As openmpt_error_func = 0, ByVal erruser As Any Ptr = 0, ByVal errorcode As Long Ptr = 0, ByVal error_message As Const ZString Ptr Ptr = 0, ByVal ctls As Const openmpt_module_initial_ctl Ptr = 0) As openmpt_module Ptr
+
+/'* \brief Construct an openmpt_module
+
   \param filedata Data to load the module from.
   \param filesize Amount of data available.
   \param logfunc Logging function where warning and errors are written. The logging function may be called throughout the lifetime of openmpt_module.
   \param user User-defined data associated with this module. This value will be passed to the logging callback function (logfunc)
-  \param ctls A map of initial ctl values, see openmpt_module_get_ctls.
+  \param ctls A map of initial ctl values. See openmpt_module_get_ctls().
   \return A pointer to the constructed openmpt_module, or NULL on failure.
   \remarks The input data can be discarded after an openmpt_module has been constructed successfully.
 '/
 Declare Function openmpt_module_create_from_memory(ByVal filedata As Const Any Ptr, ByVal filesize As UInteger, ByVal logfunc As openmpt_log_func = 0, ByVal user As Any Ptr = 0, ByVal ctls As Const openmpt_module_initial_ctl Ptr = 0) As openmpt_module Ptr
+
+/'* \brief Construct an openmpt_module
+
+  \param filedata Data to load the module from.
+  \param filesize Amount of data available.
+  \param logfunc Logging function where warning and errors are written. The logging function may be called throughout the lifetime of openmpt_module.
+  \param loguser User-defined data associated with this module. This value will be passed to the logging callback function (logfunc)
+  \param errfunc Error function to define error behaviour. May be NULL.
+  \param erruser Error function user context.
+  \param errorcode Pointer to an integer where an error may get stored. May be NULL.
+  \param error_message Pointer to a string pointer where an error message may get stored. May be NULL.
+  \param ctls A map of initial ctl values. See openmpt_module_get_ctls().
+  \return A pointer to the constructed openmpt_module, or NULL on failure.
+  \remarks The input data can be discarded after an openmpt_module has been constructed successfully.
+  \since 0.3.0
+'/
+Declare Function openmpt_module_create_from_memory2(ByVal filedata As Const Any Ptr, ByVal filesize As UInteger, ByVal logfunc As openmpt_log_func, ByVal loguser As Any Ptr, ByVal errfunc As openmpt_error_func, ByVal erruser As Any Ptr, ByVal errorcode As Long Ptr, ByVal error_message As Const ZString Ptr Ptr, ByVal ctls As Const openmpt_module_initial_ctl Ptr) As openmpt_module Ptr
 
 /'* \brief Unload a previously created openmpt_module from memory.
 
@@ -295,6 +633,77 @@ Declare Function openmpt_module_create_from_memory(ByVal filedata As Const Any P
 '/
 Declare Sub openmpt_module_destroy(ByVal module As openmpt_module Ptr)
 
+/'* \brief Set logging function.
+
+  Set the logging function of an already constructed openmpt_module.
+  \param module The module handle to work on.
+  \param logfunc Logging function where warning and errors are written. The logging function may be called throughout the lifetime of openmpt_module.
+  \param loguser User-defined data associated with this module. This value will be passed to the logging callback function (logfunc)
+  \since 0.3.0
+'/
+Declare Sub openmpt_module_set_log_func(ByVal module As openmpt_module Ptr, ByVal logfunc As openmpt_log_func, ByVal loguser As Any Ptr)
+
+/'* \brief Set error function.
+
+  Set the error function of an already constructed openmpt_module.
+  \param module The module handle to work on.
+  \param errfunc Error function to define error behaviour. May be NULL.
+  \param erruser Error function user context.
+  \since 0.3.0
+'/
+Declare Sub openmpt_module_set_error_func(ByVal module As openmpt_module Ptr, ByVal errfunc As openmpt_error_func, ByVal erruser As Any Ptr)
+
+/'* \brief Get last error.
+
+  Return the error currently stored in an openmpt_module. The stored error is not cleared.
+  \param module The module handle to work on.
+  \return The error currently stored.
+  \sa openmpt_module_error_get_last_message
+  \sa openmpt_module_error_set_last
+  \sa openmpt_module_error_clear
+  \since 0.3.0
+'/
+Declare Function openmpt_module_error_get_last(ByVal module As openmpt_module Ptr) As Long
+
+/'* \brief Get last error message.
+
+  Return the error message currently stored in an openmpt_module. The stored error is not cleared.
+  \param module The module handle to work on.
+  \return The error message currently stored.
+  \sa openmpt_module_error_set_last
+  \sa openmpt_module_error_clear
+  \since 0.3.0
+  \remarks Use openmpt_module_error_get_last_message to automatically handle the lifetime of the returned pointer.
+'/
+Declare Function openmpt_module_error_get_last_message_ Alias "openmpt_module_error_get_last_message" (ByVal module As openmpt_module Ptr) As Const ZString Ptr
+
+/'* \brief Set last error.
+
+  Set the error currently stored in an openmpt_module.
+  \param module The module handle to work on.
+  \param errorcode Error to be stored.
+  \sa openmpt_module_error_get_last
+  \sa openmpt_module_error_clear
+  \since 0.3.0
+'/
+Declare Sub openmpt_module_error_set_last(ByVal module As openmpt_module Ptr, ByVal errorcode As Long)
+
+/'* \brief Clear last error.
+
+  Set the error currently stored in an openmpt_module to OPPENMPT_ERROR_OK.
+  \param module The module handle to work on.
+  \sa openmpt_module_error_get_last
+  \sa openmpt_module_error_set_last
+  \since 0.3.0
+'/
+Declare Sub openmpt_module_error_clear(ByVal module As openmpt_module Ptr)
+
+/'*
+  \defgroup openmpt_module_render_param Render param indices
+ 
+  \brief Parameter index to use with openmpt_module_get_render_param() and openmpt_module_set_render_param()
+  @{
+'/
 /'* \brief Master Gain
 
   The related value represents a relative gain in milliBel.\n
@@ -331,11 +740,12 @@ Const OPENMPT_MODULE_RENDER_INTERPOLATIONFILTER_LENGTH = 3
   Higher values imply slower/softer volume ramps.
 '/
 Const OPENMPT_MODULE_RENDER_VOLUMERAMPING_STRENGTH = 4
+'* @}
 
 /'*
   \defgroup openmpt_module_command_index Pattern cell indices
 
-  \brief Parameter index to use with openmpt_module_get_pattern_row_channel_command, openmpt_module_format_pattern_row_channel_command and openmpt_module_highlight_pattern_row_channel_command
+  \brief Parameter index to use with openmpt_module_get_pattern_row_channel_command(), openmpt_module_format_pattern_row_channel_command() and openmpt_module_highlight_pattern_row_channel_command()
   @{
 '/
 Const OPENMPT_MODULE_COMMAND_NOTE = 0
@@ -351,10 +761,19 @@ Const OPENMPT_MODULE_COMMAND_PARAMETER = 5
   \param module The module handle to work on.
   \param subsong Index of the sub-song. -1 plays all sub-songs consecutively.
   \return 1 on success, 0 on failure.
-  \sa openmpt_module_get_num_subsongs, openmpt_module_get_subsong_names
+  \sa openmpt_module_get_num_subsongs, openmpt_module_get_selected_subsong, openmpt_module_get_subsong_name
   \remarks Whether subsong -1 (all subsongs consecutively), subsong 0 or some other subsong is selected by default, is an implementation detail and subject to change. If you do not want to care about subsongs, it is recommended to just not call openmpt_module_select_subsong() at all.
 '/
 Declare Function openmpt_module_select_subsong(ByVal module As openmpt_module Ptr, ByVal subsong As Long) As Long
+
+/'* \brief Get currently selected sub-song from a multi-song module
+
+  \param module The module handle to work on.
+  \return Currently selected sub-song. -1 for all subsongs consecutively, 0 or greater for the current sub-song index.
+  \sa openmpt_module_get_num_subsongs, openmpt_module_select_subsong, openmpt_module_get_subsong_name
+  \since 0.3.0
+'/
+Declare Function openmpt_module_get_selected_subsong(ByVal module As openmpt_module Ptr) As Long
 
 /'* \brief Set Repeat Count
 
@@ -418,7 +837,7 @@ Declare Function openmpt_module_set_position_order_row(ByVal module As openmpt_m
 /'* \brief Get render parameter
 
   \param module The module handle to work on.
-  \param param Parameter to query. See openmpt_module_render_param.
+  \param param Parameter to query. See \ref openmpt_module_render_param
   \param value Pointer to the variable that receives the current value of the parameter.
   \return 1 on success, 0 on failure (invalid param or value is NULL).
   \sa OPENMPT_MODULE_RENDER_MASTERGAIN_MILLIBEL
@@ -432,7 +851,7 @@ Declare Function openmpt_module_get_render_param(ByVal module As openmpt_module 
 /'* \brief Set render parameter
 
   \param module The module handle to work on.
-  \param param Parameter to set. See openmpt_module_render_param.
+  \param param Parameter to set. See \ref openmpt_module_render_param
   \param value The value to set param to.
   \return 1 on success, 0 on failure (invalid param).
   \sa OPENMPT_MODULE_RENDER_MASTERGAIN_MILLIBEL
@@ -453,7 +872,7 @@ Declare Function openmpt_module_set_render_param(ByVal module As openmpt_module 
   \return The number of frames actually rendered.
   \retval 0 The end of song has been reached.
   \remarks The output buffers are only written to up to the returned number of elements.
-  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+  \remarks You can freely switch between any of the "openmpt_module_read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
   \remarks It is recommended to use the floating point API because of the greater dynamic range and no implied clipping.
   \sa \ref libopenmpt_freebasic_outputformat
 '/
@@ -469,7 +888,7 @@ Declare Function openmpt_module_read_mono(ByVal module As openmpt_module Ptr, By
   \return The number of frames actually rendered.
   \retval 0 The end of song has been reached.
   \remarks The output buffers are only written to up to the returned number of elements.
-  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+  \remarks You can freely switch between any of the "openmpt_module_read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
   \remarks It is recommended to use the floating point API because of the greater dynamic range and no implied clipping.
   \sa \ref libopenmpt_freebasic_outputformat
 '/
@@ -487,7 +906,7 @@ Declare Function openmpt_module_read_stereo(ByVal module As openmpt_module Ptr, 
   \return The number of frames actually rendered.
   \retval 0 The end of song has been reached.
   \remarks The output buffers are only written to up to the returned number of elements.
-  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+  \remarks You can freely switch between any of the "openmpt_module_read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
   \remarks It is recommended to use the floating point API because of the greater dynamic range and no implied clipping.
   \sa \ref libopenmpt_freebasic_outputformat
 '/
@@ -502,7 +921,7 @@ Declare Function openmpt_module_read_quad(ByVal module As openmpt_module Ptr, By
   \return The number of frames actually rendered.
   \retval 0 The end of song has been reached.
   \remarks The output buffers are only written to up to the returned number of elements.
-  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+  \remarks You can freely switch between any of the "openmpt_module_read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
   \remarks Floating point samples are in the [-1.0..1.0] nominal range. They are not clipped to that range though and thus might overshoot.
   \sa \ref libopenmpt_freebasic_outputformat
 '/
@@ -518,7 +937,7 @@ Declare Function openmpt_module_read_float_mono(ByVal module As openmpt_module P
   \return The number of frames actually rendered.
   \retval 0 The end of song has been reached.
   \remarks The output buffers are only written to up to the returned number of elements.
-  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+  \remarks You can freely switch between any of the "openmpt_module_read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
   \remarks Floating point samples are in the [-1.0..1.0] nominal range. They are not clipped to that range though and thus might overshoot.
   \sa \ref libopenmpt_freebasic_outputformat
 '/
@@ -536,7 +955,7 @@ Declare Function openmpt_module_read_float_stereo(ByVal module As openmpt_module
   \return The number of frames actually rendered.
   \retval 0 The end of song has been reached.
   \remarks The output buffers are only written to up to the returned number of elements.
-  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+  \remarks You can freely switch between any of the "openmpt_module_read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
   \remarks Floating point samples are in the [-1.0..1.0] nominal range. They are not clipped to that range though and thus might overshoot.
   \sa \ref libopenmpt_freebasic_outputformat
 '/
@@ -551,7 +970,7 @@ Declare Function openmpt_module_read_float_quad(ByVal module As openmpt_module P
   \return The number of frames actually rendered.
   \retval 0 The end of song has been reached.
   \remarks The output buffers are only written to up to the returned number of elements.
-  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+  \remarks You can freely switch between any of the "openmpt_module_read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
   \remarks It is recommended to use the floating point API because of the greater dynamic range and no implied clipping.
   \sa \ref libopenmpt_freebasic_outputformat
 '/
@@ -566,7 +985,7 @@ Declare Function openmpt_module_read_interleaved_stereo(ByVal module As openmpt_
   \return The number of frames actually rendered.
   \retval 0 The end of song has been reached.
   \remarks The output buffers are only written to up to the returned number of elements.
-  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+  \remarks You can freely switch between any of the "openmpt_module_read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
   \remarks It is recommended to use the floating point API because of the greater dynamic range and no implied clipping.
   \sa \ref libopenmpt_freebasic_outputformat
 '/
@@ -581,7 +1000,7 @@ Declare Function openmpt_module_read_interleaved_quad(ByVal module As openmpt_mo
   \return The number of frames actually rendered.
   \retval 0 The end of song has been reached.
   \remarks The output buffers are only written to up to the returned number of elements.
-  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+  \remarks You can freely switch between any of the "openmpt_module_read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
   \remarks Floating point samples are in the [-1.0..1.0] nominal range. They are not clipped to that range though and thus might overshoot.
   \sa \ref libopenmpt_freebasic_outputformat
 '/
@@ -596,7 +1015,7 @@ Declare Function openmpt_module_read_interleaved_float_stereo(ByVal module As op
   \return The number of frames actually rendered.
   \retval 0 The end of song has been reached.
   \remarks The output buffers are only written to up to the returned number of elements.
-  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+  \remarks You can freely switch between any of the "openmpt_module_read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
   \remarks Floating point samples are in the [-1.0..1.0] nominal range. They are not clipped to that range though and thus might overshoot.
   \sa \ref libopenmpt_freebasic_outputformat
 '/
@@ -725,7 +1144,7 @@ Declare Function openmpt_module_get_current_channel_vu_rear_right(ByVal module A
 
   \param module The module handle to work on.
   \return The number of sub-songs in the module. This includes any "hidden" songs (songs that share the same sequence, but start at different order indices) and "normal" sub-songs or "sequences" (if the format supports them).
-  \sa openmpt_module_get_subsong_names, openmpt_module_select_subsong
+  \sa openmpt_module_get_subsong_name, openmpt_module_select_subsong, openmpt_module_get_selected_subsong
 '/
 Declare Function openmpt_module_get_num_subsongs(ByVal module As openmpt_module Ptr) As Long
 
@@ -770,7 +1189,7 @@ Declare Function openmpt_module_get_num_samples(ByVal module As openmpt_module P
   \param module The module handle to work on.
   \param index The sub-song whose name should be retrieved
   \return The sub-song name.
-  \sa openmpt_module_get_num_subsongs, openmpt_module_select_subsong
+  \sa openmpt_module_get_num_subsongs, openmpt_module_select_subsong, openmpt_module_get_selected_subsong
   \remarks Use openmpt_module_get_subsong_name to automatically handle the lifetime of the returned pointer.
 '/
 Declare Function openmpt_module_get_subsong_name_ Alias "openmpt_module_get_subsong_name" (ByVal module As openmpt_module Ptr, ByVal index As Long) As Const ZString Ptr
@@ -847,7 +1266,7 @@ Declare Function openmpt_module_get_pattern_num_rows(ByVal module As openmpt_mod
   \param pattern The pattern whose data should be retrieved.
   \param row The row from which the data should be retrieved.
   \param channel The channel from which the data should be retrieved.
-  \param command The cell index at which the data should be retrieved. See openmpt_module_command_index
+  \param command The cell index at which the data should be retrieved. See \ref openmpt_module_command_index
   \return The internal, raw pattern data at the given pattern position.
 '/
 Declare Function openmpt_module_get_pattern_row_channel_command_(ByVal module As openmpt_module Ptr, ByVal pattern As Long, ByVal row As Long, ByVal channel As Long, ByVal command_ As Long) As UByte
@@ -859,7 +1278,7 @@ Declare Function openmpt_module_get_pattern_row_channel_command_(ByVal module As
   \param row The row from which the data should be retrieved.
   \param channel The channel from which the data should be retrieved.
   \param command The cell index at which the data should be retrieved.
-  \return The formatted pattern data at the given pattern position. See openmpt_module_command_index
+  \return The formatted pattern data at the given pattern position. See \ref openmpt_module_command_index
   \sa openmpt_module_highlight_pattern_row_channel_command
   \remarks Use openmpt_module_format_pattern_row_channel_command to automatically handle the lifetime of the returned pointer.
 '/
@@ -871,7 +1290,7 @@ Declare Function openmpt_module_format_pattern_row_channel_command_ Alias "openm
   \param pattern The pattern whose data should be retrieved.
   \param row The row from which the data should be retrieved.
   \param channel The channel from which the data should be retrieved.
-  \param command The cell index at which the data should be retrieved. See openmpt_module_command_index
+  \param command The cell index at which the data should be retrieved. See \ref openmpt_module_command_index
   \return The highlighting string for the formatted pattern data as retrieved by openmpt_module_get_pattern_row_channel_command at the given pattern position.
   \remarks The returned string will map each character position of the string returned by openmpt_module_get_pattern_row_channel_command to a highlighting instruction.
            Possible highlighting characters are:
@@ -930,6 +1349,7 @@ Declare Function openmpt_module_highlight_pattern_row_channel_ Alias "openmpt_mo
            - subsong: The current subsong. Setting it has identical semantics as openmpt_module_select_subsong(), getting it returns the currently selected subsong.
            - play.tempo_factor: Set a floating point tempo factor. "1.0" is the default tempo.
            - play.pitch_factor: Set a floating point pitch factor. "1.0" is the default pitch.
+           - render.resampler.emulate_amiga: Set to "1" to enable the Amiga resampler for Amiga modules. This emulates the sound characteristics of the Paula chip and overrides the selected interpolation filter. Non-Amiga module formats are not affected by this setting. 
            - dither: Set the dither algorithm that is used for the 16 bit versions of openmpt_module_read. Supported values are:
                      - 0: No dithering.
                      - 1: Default mode. Chosen by OpenMPT code, might change.
@@ -954,6 +1374,7 @@ Declare Function openmpt_module_ctl_get_ Alias "openmpt_module_ctl_get" (ByVal m
   \param module The module handle to work on.
   \param ctl The ctl key whose value should be set.
   \param value The value that should be set.
+  \return 1 if successful, 0 in case the value is not sensible (e.g. negative tempo factor) or the ctl is not recognized.
   \sa openmpt_module_get_ctls
 '/
 Declare Function openmpt_module_ctl_set(ByVal module As openmpt_module Ptr, ByVal ctl As Const ZString Ptr, ByVal value As Const ZString Ptr) As Long
@@ -1009,40 +1430,95 @@ End Function
 /'* \brief Construct an openmpt_module
 
   \param file The FreeBASIC file handle to load from.
-  \param logfunc Log where any warnings or errors are printed to. The lifetime of the reference has to be as long as the lifetime of the module instance.
-  \param user User-defined data associated with this module. This value will be passed to the logging callback function (logfunc)
-  \param ctls A map of initial ctl values, see openmpt_module_get_ctls.
+  \param logfunc Logging function where warning and errors are written. May be NULL.
+  \param loguser Logging function user context. Used to pass any user-defined data associated with this module to the logging function.
+  \param errfunc Error function to define error behaviour. May be NULL.
+  \param erruser Error function user context. Used to pass any user-defined data associated with this module to the error function.
+  \param errorcode Pointer to an integer where an error may get stored. May be NULL.
+  \param error_message Pointer to a string pointer where an error message may get stored. May be NULL.
+  \param ctls A map of initial ctl values. See openmpt_module_get_ctls().
   \return A pointer to the constructed openmpt_module, or NULL on failure.
   \remarks The file handle can be closed after an openmpt_module has been constructed successfully.
+  \sa openmpt_module_create2
+'/
+Function openmpt_module_create_from_fbhandle2(_
+		ByVal file As Integer,_
+		ByVal logfunc As openmpt_log_func = 0,_
+		ByVal loguser As Any Ptr = 0,_
+		ByVal errfunc As openmpt_error_func = 0,_
+		ByVal erruser As Any Ptr = 0,_
+		ByVal errorcode As Long Ptr = 0,_
+		ByVal error_message As Const ZString Ptr Ptr = 0,_
+		ByVal ctls As Const openmpt_module_initial_ctl Ptr = 0) As openmpt_module Ptr
+	Return openmpt_module_create2(openmpt_stream_get_file_callbacks(), Cast(FILE Ptr, FileAttr(file, fbFileAttrHandle)), logfunc, loguser, errfunc, erruser, errorcode, error_message, ctls)
+End Function
+
+/'* \brief Construct an openmpt_module
+
+  \param file The FreeBASIC file handle to load from.
+  \param logfunc Logging function where warning and errors are written. May be NULL.
+  \param loguser Logging function user context. Used to pass any user-defined data associated with this module to the logging function.
+  \param ctls A map of initial ctl values. See openmpt_module_get_ctls().
+  \return A pointer to the constructed openmpt_module, or NULL on failure.
+  \remarks The file handle can be closed after an openmpt_module has been constructed successfully.
+  \deprecated Please use openmpt_module_create_from_fbhandle2().
+  \sa openmpt_module_create2
 '/
 Function openmpt_module_create_from_fbhandle(_
 		ByVal file As Integer,_
 		ByVal logfunc As openmpt_log_func = 0,_
-		ByVal user As Any Ptr = 0,_
+		ByVal loguser As Any Ptr = 0,_
 		ByVal ctls As Const openmpt_module_initial_ctl Ptr = 0) As openmpt_module Ptr
-	Return openmpt_module_create(openmpt_stream_get_file_callbacks(), Cast(FILE Ptr, FileAttr(file, fbFileAttrHandle)), logfunc, user, ctls)
+	Return openmpt_module_create_from_fbhandle2(file, logfunc, loguser, 0, 0, 0, 0, ctls)
 End Function
 
 /'* \brief Construct an openmpt_module
 
   \param filename The file to load from.
-  \param logfunc Log where any warnings or errors are printed to. The lifetime of the reference has to be as long as the lifetime of the module instance.
-  \param user User-defined data associated with this module. This value will be passed to the logging callback function (logfunc)
-  \param ctls A map of initial ctl values, see openmpt_module_get_ctls.
+  \param logfunc Logging function where warning and errors are written. May be NULL.
+  \param loguser Logging function user context. Used to pass any user-defined data associated with this module to the logging function.
+  \param errfunc Error function to define error behaviour. May be NULL.
+  \param erruser Error function user context. Used to pass any user-defined data associated with this module to the error function.
+  \param errorcode Pointer to an integer where an error may get stored. May be NULL.
+  \param error_message Pointer to a string pointer where an error message may get stored. May be NULL.
+  \param ctls A map of initial ctl values. See openmpt_module_get_ctls().
   \return A pointer to the constructed openmpt_module, or NULL on failure.
+  \sa openmpt_module_create2
 '/
-Function openmpt_module_create_from_filename(_
+Function openmpt_module_create_from_filename2(_
 		ByRef filename As String,_
 		ByVal logfunc As openmpt_log_func = 0,_
-		ByVal user As Any Ptr = 0,_
+		ByVal loguser As Any Ptr = 0,_
+		ByVal errfunc As openmpt_error_func = 0,_
+		ByVal erruser As Any Ptr = 0,_
+		ByVal errorcode As Long Ptr = 0,_
+		ByVal error_message As Const ZString Ptr Ptr = 0,_
 		ByVal ctls As Const openmpt_module_initial_ctl Ptr = 0) As openmpt_module Ptr
 	Var file = fopen(filename, "rb")
 	Var retval = CPtr(openmpt_module Ptr, 0)
 	If(file <> 0) Then
-		retval = openmpt_module_create(openmpt_stream_get_file_callbacks(), file, logfunc, user, ctls)
+		retval = openmpt_module_create2(openmpt_stream_get_file_callbacks(), file, logfunc, loguser, errfunc, erruser, errorcode, error_message, ctls)
 		fclose(file)
 	EndIf
 	Return retval
+End Function
+
+/'* \brief Construct an openmpt_module
+
+  \param filename The file to load from.
+  \param logfunc Logging function where warning and errors are written. May be NULL.
+  \param loguser Logging function user context. Used to pass any user-defined data associated with this module to the logging function.
+  \param ctls A map of initial ctl values. See openmpt_module_get_ctls().
+  \return A pointer to the constructed openmpt_module, or NULL on failure.
+  \deprecated Please use openmpt_module_create_from_filename2().
+  \sa openmpt_module_create2
+'/
+Function openmpt_module_create_from_filename(_
+		ByRef filename As String,_
+		ByVal logfunc As openmpt_log_func = 0,_
+		ByVal loguser As Any Ptr = 0,_
+		ByVal ctls As Const openmpt_module_initial_ctl Ptr = 0) As openmpt_module Ptr
+	Return openmpt_module_create_from_filename2(filename, logfunc, loguser, 0, 0, 0, 0, ctls)
 End Function
 
 '* String handling for wrapping and freeing ZStrings returned by libopenmpt
@@ -1056,6 +1532,16 @@ End Function
 '* \sa openmpt_get_string_
 Function openmpt_get_string(ByVal key As Const ZString Ptr) As String
 	Return openmpt_get_zstring(openmpt_get_string_(key))
+End Function
+
+'* \sa openmpt_error_string_
+Function openmpt_error_string (ByVal errorcode As Long) As String
+	Return openmpt_get_zstring(openmpt_error_string_(errorcode))
+End Function
+
+'* \sa openmpt_module_error_get_last_message_
+Function openmpt_module_error_get_last_message (ByVal module As openmpt_module Ptr) As String
+	Return openmpt_get_zstring(openmpt_module_error_get_last_message_(module))
 End Function
 
 '* \sa openmpt_module_get_metadata_keys_

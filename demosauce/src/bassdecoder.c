@@ -292,7 +292,7 @@ static bool bass_probe(const char* path)
 static void bass_init(void)
 {
     BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 0);
-    if (!BASS_Init(0, 0, 0, 0, NULL)) {
+    if (!BASS_Init(0, 44100, 0, 0, NULL)) {
         log_fatal("[bass] BASS_Init failed");
         exit(EXIT_FAILURE);
     }

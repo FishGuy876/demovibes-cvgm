@@ -33,6 +33,11 @@
 #  LDLIBS
 #  ARFLAGS
 #
+#  CXXSTDLIB_PCLIBSPRIVATE   C++ standard library (or libraries) required for
+#                   static linking. This will be put in the pkg-config file
+#                   libopenmpt.pc Libs.private field and used for nothing else.
+#
+#
 #
 # Build flags (provide on each `make` invocation) (defaults are shown):
 #
@@ -47,8 +52,8 @@
 #  OPTIMIZE_SIZE=0  Build size-optimized binaries
 #  TEST=1           Include test suite in default target.
 #  ONLY_TEST=0      Only build the test suite.
-#  ANCIENT=0        Use a pre-C++0x compiler (i.e. GCC before 4.3.0)
 #  STRICT=0         Treat warnings as errors.
+#  STDCXX=c++11     C++ standard version (only for GCC and clang)
 #  CHECKED=0        Enable run-time assertions.
 #  CHECKED_ADDRESS=0   Enable address sanitizer
 #  CHECKED_UNDEFINED=0 Enable undefined behaviour sanitizer
@@ -57,28 +62,30 @@
 # Build flags for libopenmpt (provide on each `make` invocation)
 #  (defaults are 0):
 #
-#  USE_DLOPEN=1     Support loading 3rd party libraries with dlopen or LoadLibrary.
-#  NO_LTDL=1        Do not require libltdl
-#  NO_DL=1          Do not fallback to libdl
-#
 #  NO_ZLIB=1        Avoid using zlib, even if found
 #  NO_MPG123=1      Avoid using libmpg123, even if found
 #  NO_OGG=1         Avoid using libogg, even if found
 #  NO_VORBIS=1      Avoid using libvorbis, even if found
 #  NO_VORBISFILE=1  Avoid using libvorbisfile, even if found
 #
-#  USE_MINIMP3=1    Use minimp3. You have to copy minimp3 into
-#                   include/minimp3/ yourself.
+#  NO_STBVORBIS=1   Do not fallback to stb_vorbis
+#
+#  USE_MINIMP3=1    Use minimp3.
 #                   Beware that minimp3 is LGPL 2.1 licensed.
 #
-# Build flags for openmpt123 (provide on each `make` invocation)
-#
+# Build flags for libopenmpt examples and openmpt123
+#  (provide on each `make` invocation)
 #  (defaults are 0):
+#
+#  NO_PORTAUDIO=1      Avoid using PortAudio, even if found
+#  NO_PORTAUDIOCPP=1   Avoid using PortAudio C++, even if found
+#
+# Build flags for openmpt123 (provide on each `make` invocation)
+#  (defaults are 0):
+#
 #  NO_PULSEAUDIO=1     Avoid using PulseAudio, even if found
 #  NO_SDL=1            Avoid using SDL, even if found
 #  NO_SDL2=1           Avoid using SDL2, even if found
-#  NO_PORTAUDIO=1      Avoid using PortAudio, even if found
-#  NO_PORTAUDIOCPP=1   Avoid using PortAudio C++, even if found
 #  NO_FLAC=1           Avoid using FLAC, even if found
 #  NO_SNDFILE=1        Avoid using libsndfile, even if found
 #
@@ -147,8 +154,8 @@ OPTIMIZE=1
 OPTIMIZE_SIZE=0
 TEST=1
 ONLY_TEST=0
-ANCIENT=0
 SOSUFFIX=.so
+SOSUFFIXWINDOWS=0
 OPENMPT123=1
 STRICT=0
 
@@ -182,10 +189,9 @@ MANDIR ?= $(PREFIX)/share/man
 
 # version
 
-LIBOPENMPT_VERSION_MAJOR=0
-LIBOPENMPT_VERSION_MINOR=2
+include libopenmpt/libopenmpt_version.mk 
 
-LIBOPENMPT_SONAME=libopenmpt$(SOSUFFIX).0
+LIBOPENMPT_SO_VERSION=$(LIBOPENMPT_LTVER_CURRENT)
 
 
 # host setup
@@ -243,6 +249,14 @@ endif
 
 # build setup
 
+BINDIR_MADE:=$(shell mkdir -p bin)
+
+ifeq ($(SOSUFFIXWINDOWS),1)
+LIBOPENMPT_SONAME=libopenmpt-$(LIBOPENMPT_SO_VERSION)$(SOSUFFIX)
+else
+LIBOPENMPT_SONAME=libopenmpt$(SOSUFFIX).$(LIBOPENMPT_SO_VERSION)
+endif
+
 INSTALL_PROGRAM = $(INSTALL) -m 0755
 INSTALL_DATA = $(INSTALL) -m 0644
 INSTALL_LIB = $(INSTALL) -m 0644
@@ -276,8 +290,8 @@ CXXFLAGS += -g
 CFLAGS   += -g
 endif
 
-CXXFLAGS += -W
-CFLAGS   += -W
+CXXFLAGS += -Wall
+CFLAGS   += -Wall
 
 else
 
@@ -334,11 +348,8 @@ endif
 
 ifeq ($(HOST),unix)
 
-ifeq ($(ANCIENT),1)
-else
 ifeq ($(shell help2man --version > /dev/null 2>&1 && echo yes ),yes)
 MPT_WITH_HELP2MAN := 1
-endif
 endif
 
 ifeq ($(shell doxygen --version > /dev/null 2>&1 && echo yes ),yes)
@@ -347,31 +358,11 @@ endif
 
 endif
 
+PC_LIBS_PRIVATE :=
+PC_LIBS_PRIVATE += $(CXXSTDLIB_PCLIBSPRIVATE)
+
 ifeq ($(HACK_ARCHIVE_SUPPORT),1)
 NO_ZLIB:=1
-endif
-
-ifeq ($(USE_DLOPEN),1)
-CPPFLAGS_DLOPEN := -DMPT_ENABLE_DLOPEN
-ifeq ($(NO_LTDL),1)
-ifeq ($(NO_DL),1)
-else
-ifeq ($(UNAME_S),Linux)
-CPPFLAGS_DL := -DMPT_WITH_DL
-LDLIBS_DL   := -ldl
-PC_LIBS_DL := -ldl
-endif
-ifeq ($(UNAME_S),FreeBSD)
-CPPFLAGS_DL := -DMPT_WITH_DL
-LDLIBS_DL   := 
-PC_LIBS_DL := 
-endif
-endif
-else
-CPPFLAGS_LTDL := -DMPT_WITH_LTDL
-LDLIBS_LTDL   := -lltdl
-PC_LIBS_LTDL := -lltdl
-endif
 endif
 
 ifeq ($(NO_ZLIB),1)
@@ -383,6 +374,11 @@ LDFLAGS_ZLIB  := $(shell pkg-config --libs-only-L   zlib ) $(shell pkg-config --
 LDLIBS_ZLIB   := $(shell pkg-config --libs-only-l   zlib )
 PC_REQUIRES_ZLIB := zlib
 else
+ifeq ($(FORCE_DEPS),1)
+$(error zlib not found)
+else
+$(warning warning: zlib not found)
+endif
 NO_ZLIB:=1
 endif
 endif
@@ -390,12 +386,17 @@ endif
 ifeq ($(NO_MPG123),1)
 else
 #LDLIBS   += -lmpg123
-ifeq ($(shell pkg-config --exists libmpg123 && echo yes),yes)
-CPPFLAGS_MPG123 := $(shell pkg-config --cflags-only-I libmpg123 ) -DMPT_WITH_MPG123
-LDFLAGS_MPG123  := $(shell pkg-config --libs-only-L   libmpg123 ) $(shell pkg-config --libs-only-other libmpg123 )
-LDLIBS_MPG123   := $(shell pkg-config --libs-only-l   libmpg123 )
+ifeq ($(shell pkg-config --exists 'libmpg123 >= 1.13.0' && echo yes),yes)
+CPPFLAGS_MPG123 := $(shell pkg-config --cflags-only-I 'libmpg123 >= 1.13.0' ) -DMPT_WITH_MPG123
+LDFLAGS_MPG123  := $(shell pkg-config --libs-only-L   'libmpg123 >= 1.13.0' ) $(shell pkg-config --libs-only-other 'libmpg123 >= 1.13.0' )
+LDLIBS_MPG123   := $(shell pkg-config --libs-only-l   'libmpg123 >= 1.13.0' )
 PC_REQUIRES_MPG123 := libmpg123
 else
+ifeq ($(FORCE_DEPS),1)
+$(error mpg123 not found)
+else
+$(warning warning: mpg123 not found)
+endif
 NO_MPG123:=1
 endif
 endif
@@ -409,6 +410,11 @@ LDFLAGS_OGG  := $(shell pkg-config --libs-only-L   ogg ) $(shell pkg-config --li
 LDLIBS_OGG   := $(shell pkg-config --libs-only-l   ogg )
 PC_REQUIRES_OGG := ogg
 else
+ifeq ($(FORCE_DEPS),1)
+$(error ogg not found)
+else
+$(warning warning: ogg not found)
+endif
 NO_OGG:=1
 endif
 endif
@@ -422,6 +428,11 @@ LDFLAGS_VORBIS  := $(shell pkg-config --libs-only-L   vorbis ) $(shell pkg-confi
 LDLIBS_VORBIS   := $(shell pkg-config --libs-only-l   vorbis )
 PC_REQUIRES_VORBIS := vorbis
 else
+ifeq ($(FORCE_DEPS),1)
+$(error vorbis not found)
+else
+$(warning warning: vorbis not found)
+endif
 NO_VORBIS:=1
 endif
 endif
@@ -435,6 +446,11 @@ LDFLAGS_VORBISFILE  := $(shell pkg-config --libs-only-L   vorbisfile ) $(shell p
 LDLIBS_VORBISFILE   := $(shell pkg-config --libs-only-l   vorbisfile )
 PC_REQUIRES_VORBISFILE := vorbisfile
 else
+ifeq ($(FORCE_DEPS),1)
+$(error vorbisfile not found)
+else
+$(warning warning: vorbisfile not found)
+endif
 NO_VORBISFILE:=1
 endif
 endif
@@ -448,6 +464,11 @@ LDFLAGS_SDL  := $(shell pkg-config --libs-only-L   sdl2 ) $(shell pkg-config --l
 LDLIBS_SDL   := $(shell pkg-config --libs-only-l   sdl2 )
 NO_SDL:=1
 else
+ifeq ($(FORCE_DEPS),1)
+$(error sdl2 not found)
+else
+$(warning warning: sdl2 not found)
+endif
 NO_SDL2:=1
 endif
 endif
@@ -460,6 +481,11 @@ CPPFLAGS_SDL := $(shell pkg-config --cflags-only-I sdl ) -DMPT_WITH_SDL
 LDFLAGS_SDL  := $(shell pkg-config --libs-only-L   sdl ) $(shell pkg-config --libs-only-other sdl )
 LDLIBS_SDL   := $(shell pkg-config --libs-only-l   sdl )
 else
+ifeq ($(FORCE_DEPS),1)
+$(error sdl not found)
+else
+$(warning warning: sdl not found)
+endif
 NO_SDL:=1
 endif
 endif
@@ -472,6 +498,11 @@ CPPFLAGS_PORTAUDIO := $(shell pkg-config --cflags-only-I portaudio-2.0 ) -DMPT_W
 LDFLAGS_PORTAUDIO  := $(shell pkg-config --libs-only-L   portaudio-2.0 ) $(shell pkg-config --libs-only-other portaudio-2.0 )
 LDLIBS_PORTAUDIO   := $(shell pkg-config --libs-only-l   portaudio-2.0 )
 else
+ifeq ($(FORCE_DEPS),1)
+$(error portaudio not found)
+else
+$(warning warning: portaudio not found)
+endif
 NO_PORTAUDIO:=1
 endif
 endif
@@ -484,6 +515,11 @@ CPPFLAGS_PORTAUDIOCPP := $(shell pkg-config --cflags-only-I portaudiocpp ) -DMPT
 LDFLAGS_PORTAUDIOCPP  := $(shell pkg-config --libs-only-L   portaudiocpp ) $(shell pkg-config --libs-only-other portaudiocpp )
 LDLIBS_PORTAUDIOCPP   := $(shell pkg-config --libs-only-l   portaudiocpp )
 else
+ifeq ($(FORCE_DEPS),1)
+$(error portaudiocpp not found)
+else
+$(warning warning: portaudiocpp not found)
+endif
 NO_PORTAUDIOCPP:=1
 endif
 endif
@@ -496,6 +532,11 @@ CPPFLAGS_PULSEAUDIO := $(shell pkg-config --cflags-only-I libpulse libpulse-simp
 LDFLAGS_PULSEAUDIO  := $(shell pkg-config --libs-only-L   libpulse libpulse-simple ) $(shell pkg-config --libs-only-other libpulse libpulse-simple )
 LDLIBS_PULSEAUDIO   := $(shell pkg-config --libs-only-l   libpulse libpulse-simple )
 else
+ifeq ($(FORCE_DEPS),1)
+$(error pulseaudio not found)
+else
+$(warning warning: pulseaudio not found)
+endif
 NO_PULSEAUDIO:=1
 endif
 endif
@@ -508,6 +549,11 @@ CPPFLAGS_FLAC := $(shell pkg-config --cflags-only-I 'flac >= 1.3.0' ) -DMPT_WITH
 LDFLAGS_FLAC  := $(shell pkg-config --libs-only-L   'flac >= 1.3.0' ) $(shell pkg-config --libs-only-other 'flac >= 1.3.0' )
 LDLIBS_FLAC   := $(shell pkg-config --libs-only-l   'flac >= 1.3.0' )
 else
+ifeq ($(FORCE_DEPS),1)
+$(error flac not found)
+else
+$(warning warning: flac not found)
+endif
 NO_FLAC:=1
 endif
 endif
@@ -520,6 +566,11 @@ CPPFLAGS_SNDFILE := $(shell pkg-config --cflags-only-I   sndfile ) -DMPT_WITH_SN
 LDFLAGS_SNDFILE  := $(shell pkg-config --libs-only-L     sndfile ) $(shell pkg-config --libs-only-other sndfile )
 LDLIBS_SNDFILE   := $(shell pkg-config --libs-only-l     sndfile )
 else
+ifeq ($(FORCE_DEPS),1)
+$(error sndfile not found)
+else
+$(warning warning: sndfile not found)
+endif
 NO_SNDFILE:=1
 endif
 endif
@@ -528,9 +579,9 @@ ifeq ($(HACK_ARCHIVE_SUPPORT),1)
 CPPFLAGS += -DMPT_BUILD_HACK_ARCHIVE_SUPPORT
 endif
 
-CPPFLAGS += $(CPPFLAGS_DLOPEN) $(CPPFLAGS_LTDL) $(CPPFLAGS_DL) $(CPPFLAGS_ZLIB) $(CPPFLAGS_MPG123) $(CPPFLAGS_OGG) $(CPPFLAGS_VORBIS) $(CPPFLAGS_VORBISFILE)
-LDFLAGS += $(LDFLAGS_LTDL) $(LDFLAGS_DL) $(LDFLAGS_ZLIB) $(LDFLAGS_MPG123) $(LDFLAGS_OGG) $(LDFLAGS_VORBIS) $(LDFLAGS_VORBISFILE)
-LDLIBS += $(LDLIBS_LTDL) $(LDLIBS_DL) $(LDLIBS_ZLIB) $(LDLIBS_MPG123) $(LDLIBS_OGG) $(LDLIBS_VORBIS) $(LDLIBS_VORBISFILE)
+CPPFLAGS += $(CPPFLAGS_ZLIB) $(CPPFLAGS_MPG123) $(CPPFLAGS_OGG) $(CPPFLAGS_VORBIS) $(CPPFLAGS_VORBISFILE)
+LDFLAGS += $(LDFLAGS_ZLIB) $(LDFLAGS_MPG123) $(LDFLAGS_OGG) $(LDFLAGS_VORBIS) $(LDFLAGS_VORBISFILE)
+LDLIBS += $(LDLIBS_ZLIB) $(LDLIBS_MPG123) $(LDLIBS_OGG) $(LDLIBS_VORBIS) $(LDLIBS_VORBISFILE)
 
 CPPFLAGS_OPENMPT123 += $(CPPFLAGS_SDL2) $(CPPFLAGS_SDL) $(CPPFLAGS_PORTAUDIO) $(CPPFLAGS_PULSEAUDIO) $(CPPFLAGS_FLAC) $(CPPFLAGS_SNDFILE)
 LDFLAGS_OPENMPT123  += $(LDFLAGS_SDL2) $(LDFLAGS_SDL) $(LDFLAGS_PORTAUDIO) $(LDFLAGS_PULSEAUDIO) $(LDFLAGS_FLAC) $(LDFLAGS_SNDFILE)
@@ -567,28 +618,63 @@ LDLIBS_OPENMPT123   += $(LDLIBS_SDL2) $(LDLIBS_SDL) $(LDLIBS_PORTAUDIO) $(LDLIBS
 
 
 -include build/dist.mk
+DIST_LIBOPENMPT_VERSION_PURE:=$(LIBOPENMPT_VERSION_MAJOR).$(LIBOPENMPT_VERSION_MINOR).$(LIBOPENMPT_VERSION_PATCH)$(LIBOPENMPT_VERSION_PREREL)
 CPPFLAGS += -Ibuild/svn_version
 ifeq ($(MPT_SVNVERSION),)
 SVN_INFO:=$(shell svn info . > /dev/null 2>&1 ; echo $$? )
 ifeq ($(SVN_INFO),0)
 # in svn checkout
-MPT_SVNURL :=  $(shell svn info --xml | grep '^<url>' | sed 's/<url>//g' | sed 's/<\/url>//g' )
 MPT_SVNVERSION := $(shell svnversion -n . | tr ':' '-' )
+MPT_SVNURL := $(shell svn info --xml | grep '^<url>' | sed 's/<url>//g' | sed 's/<\/url>//g' )
 MPT_SVNDATE := $(shell svn info --xml | grep '^<date>' | sed 's/<date>//g' | sed 's/<\/date>//g' )
 CPPFLAGS += -D MPT_SVNURL=\"$(MPT_SVNURL)\" -D MPT_SVNVERSION=\"$(MPT_SVNVERSION)\" -D MPT_SVNDATE=\"$(MPT_SVNDATE)\"
 DIST_OPENMPT_VERSION:=r$(MPT_SVNVERSION)
-DIST_LIBOPENMPT_VERSION:=$(LIBOPENMPT_VERSION_MAJOR).$(LIBOPENMPT_VERSION_MINOR).$(MPT_SVNVERSION)
+ifeq ($(LIBOPENMPT_VERSION_PREREL),)
+DIST_LIBOPENMPT_VERSION:=$(LIBOPENMPT_VERSION_MAJOR).$(LIBOPENMPT_VERSION_MINOR).$(LIBOPENMPT_VERSION_PATCH)$(LIBOPENMPT_VERSION_PREREL)+release
+else
+DIST_LIBOPENMPT_VERSION:=$(LIBOPENMPT_VERSION_MAJOR).$(LIBOPENMPT_VERSION_MINOR).$(LIBOPENMPT_VERSION_PATCH)$(LIBOPENMPT_VERSION_PREREL)+r$(MPT_SVNVERSION)
+endif
+else
+GIT_STATUS:=$(shell git status > /dev/null 2>&1 ; echo $$? )
+ifeq ($(GIT_STATUS),0)
+# in git chechout
+MPT_SVNVERSION := $(shell git log --grep=git-svn-id -n 1 | grep git-svn-id | tail -n 1 | tr ' ' '\n' | tail -n 2 | head -n 1 | sed 's/@/ /g' | awk '{print $$2;}' )$(shell if [ $$(git rev-list $$(git log --grep=git-svn-id -n 1 --format=format:'%H')  ^$$(git log -n 1 --format=format:'%H') --count ) -ne 0 ] ; then  echo M ; fi )
+MPT_SVNURL := $(shell git log --grep=git-svn-id -n 1 | grep git-svn-id | tail -n 1 | tr ' ' '\n' | tail -n 2 | head -n 1 | sed 's/@/ /g' | awk '{print $$1;}' )
+MPT_SVNDATE := $(shell git log -n 1 --date=iso --format=format:'%cd' | sed 's/ +0000/Z/g' | tr ' ' 'T' )
+CPPFLAGS += -D MPT_SVNURL=\"$(MPT_SVNURL)\" -D MPT_SVNVERSION=\"$(MPT_SVNVERSION)\" -D MPT_SVNDATE=\"$(MPT_SVNDATE)\"
+DIST_OPENMPT_VERSION:=r$(MPT_SVNVERSION)
+ifeq ($(LIBOPENMPT_VERSION_PREREL),)
+DIST_LIBOPENMPT_VERSION:=$(LIBOPENMPT_VERSION_MAJOR).$(LIBOPENMPT_VERSION_MINOR).$(LIBOPENMPT_VERSION_PATCH)$(LIBOPENMPT_VERSION_PREREL)+release
+else
+DIST_LIBOPENMPT_VERSION:=$(LIBOPENMPT_VERSION_MAJOR).$(LIBOPENMPT_VERSION_MINOR).$(LIBOPENMPT_VERSION_PATCH)$(LIBOPENMPT_VERSION_PREREL)+r$(MPT_SVNVERSION)
+endif
 else
 # not in svn checkout
 DIST_OPENMPT_VERSION:=rUNKNOWN
-DIST_LIBOPENMPT_VERSION:=$(LIBOPENMPT_VERSION_MAJOR).$(LIBOPENMPT_VERSION_MINOR)
+ifeq ($(LIBOPENMPT_VERSION_PREREL),)
+DIST_LIBOPENMPT_VERSION:=$(LIBOPENMPT_VERSION_MAJOR).$(LIBOPENMPT_VERSION_MINOR).$(LIBOPENMPT_VERSION_PATCH)$(LIBOPENMPT_VERSION_PREREL)+release
+else
+DIST_LIBOPENMPT_VERSION:=$(LIBOPENMPT_VERSION_MAJOR).$(LIBOPENMPT_VERSION_MINOR).$(LIBOPENMPT_VERSION_PATCH)$(LIBOPENMPT_VERSION_PREREL)+rUNKNOWN
+endif
+endif
 endif
 else
 # in dist package
 DIST_OPENMPT_VERSION:=r$(MPT_SVNVERSION)
-DIST_LIBOPENMPT_VERSION:=$(LIBOPENMPT_VERSION_MAJOR).$(LIBOPENMPT_VERSION_MINOR).$(MPT_SVNVERSION)
+ifeq ($(LIBOPENMPT_VERSION_PREREL),)
+DIST_LIBOPENMPT_VERSION:=$(LIBOPENMPT_VERSION_MAJOR).$(LIBOPENMPT_VERSION_MINOR).$(LIBOPENMPT_VERSION_PATCH)$(LIBOPENMPT_VERSION_PREREL)+release
+else
+DIST_LIBOPENMPT_VERSION:=$(LIBOPENMPT_VERSION_MAJOR).$(LIBOPENMPT_VERSION_MINOR).$(LIBOPENMPT_VERSION_PATCH)$(LIBOPENMPT_VERSION_PREREL)+r$(MPT_SVNVERSION)
 endif
+endif
+DIST_LIBOPENMPT_TARBALL_VERSION:=$(DIST_LIBOPENMPT_VERSION_PURE)
 
+ifeq ($(MPT_SVNVERSION),)
+else
+MPT_SVNREVISION := $(shell echo $(MPT_SVNVERSION) | sed 's/M//g' | sed 's/S//g' | sed 's/P//g' | sed -E 's/([0-9]+)-//g' )
+MPT_SVNDIRTY := $(shell echo $(MPT_SVNVERSION) | grep -v 'M\|S\|P' >/dev/null 2>&1 ; echo $$? )
+MPT_SVNMIXED := $(shell echo $(MPT_SVNVERSION) | grep -v '-' >/dev/null 2>&1; echo $$? )
+endif
 
 
 CPPFLAGS += -DLIBOPENMPT_BUILD
@@ -599,9 +685,11 @@ COMMON_CXX_SOURCES += \
  
 SOUNDLIB_CXX_SOURCES += \
  $(COMMON_CXX_SOURCES) \
+ $(sort $(wildcard soundbase/*.cpp)) \
  $(sort $(wildcard soundlib/*.cpp)) \
  $(sort $(wildcard soundlib/plugins/*.cpp)) \
  $(sort $(wildcard soundlib/plugins/dmo/*.cpp)) \
+ $(sort $(wildcard sounddsp/*.cpp)) \
  
 
 ifeq ($(HACK_ARCHIVE_SUPPORT),1)
@@ -613,14 +701,18 @@ LIBOPENMPT_CXX_SOURCES += \
  libopenmpt/libopenmpt_c.cpp \
  libopenmpt/libopenmpt_cxx.cpp \
  libopenmpt/libopenmpt_impl.cpp \
- libopenmpt/libopenmpt_ext.cpp \
+ libopenmpt/libopenmpt_ext_impl.cpp \
  
+include/miniz/miniz.o : CFLAGS+=$(CFLAGS_SILENT)
+include/miniz/miniz.test.o : CFLAGS+=$(CFLAGS_SILENT)
 ifeq ($(NO_ZLIB),1)
 LIBOPENMPT_C_SOURCES += include/miniz/miniz.c
 LIBOPENMPTTEST_C_SOURCES += include/miniz/miniz.c
 CPPFLAGS += -DMPT_WITH_MINIZ
 endif
 
+include/minimp3/minimp3.o : CFLAGS+=$(CFLAGS_SILENT)
+include/minimp3/minimp3.test.o : CFLAGS+=$(CFLAGS_SILENT)
 ifeq ($(NO_MPG123),1)
 ifeq ($(USE_MINIMP3),1)
 LIBOPENMPT_C_SOURCES += include/minimp3/minimp3.c
@@ -629,20 +721,31 @@ CPPFLAGS += -DMPT_WITH_MINIMP3
 endif
 endif
 
+include/stb_vorbis/stb_vorbis.o : CFLAGS+=$(CFLAGS_SILENT)
+include/stb_vorbis/stb_vorbis.test.o : CFLAGS+=$(CFLAGS_SILENT)
 ifeq ($(NO_OGG),1)
+ifeq ($(NO_STBVORBIS),1)
+else
 LIBOPENMPT_C_SOURCES += include/stb_vorbis/stb_vorbis.c
 LIBOPENMPTTEST_C_SOURCES += include/stb_vorbis/stb_vorbis.c
 CPPFLAGS += -DMPT_WITH_STBVORBIS -DSTB_VORBIS_NO_PULLDATA_API -DSTB_VORBIS_NO_STDIO
+endif
 else
 ifeq ($(NO_VORBIS),1)
+ifeq ($(NO_STBVORBIS),1)
+else
 LIBOPENMPT_C_SOURCES += include/stb_vorbis/stb_vorbis.c
 LIBOPENMPTTEST_C_SOURCES += include/stb_vorbis/stb_vorbis.c
 CPPFLAGS += -DMPT_WITH_STBVORBIS -DSTB_VORBIS_NO_PULLDATA_API -DSTB_VORBIS_NO_STDIO
+endif
 else
 ifeq ($(NO_VORBISFILE),1)
+ifeq ($(NO_STBVORBIS),1)
+else
 LIBOPENMPT_C_SOURCES += include/stb_vorbis/stb_vorbis.c
 LIBOPENMPTTEST_C_SOURCES += include/stb_vorbis/stb_vorbis.c
 CPPFLAGS += -DMPT_WITH_STBVORBIS -DSTB_VORBIS_NO_PULLDATA_API -DSTB_VORBIS_NO_STDIO
+endif
 else
 endif
 endif
@@ -778,6 +881,12 @@ MISC_OUTPUTS += bin/libopenmpt_test.js.mem
 MISC_OUTPUTS += bin/made.docs
 MISC_OUTPUTS += bin/$(LIBOPENMPT_SONAME)
 MISC_OUTPUTS += bin/libopenmpt.js.mem
+MISC_OUTPUTS += bin/libopenmpt_example_c.js.mem 
+MISC_OUTPUTS += bin/libopenmpt_example_c_mem.js.mem 
+MISC_OUTPUTS += bin/libopenmpt_example_c_pipe.js.mem
+MISC_OUTPUTS += bin/libopenmpt_example_c_probe.js.mem
+MISC_OUTPUTS += bin/libopenmpt_example_c_stdout.js.mem
+MISC_OUTPUTS += bin/libopenmpt_example_c_unsafe.js.mem
 MISC_OUTPUTS += bin/openmpt.a
 #old
 MISC_OUTPUTS += bin/libopenmpt_example_c_safe$(EXESUFFIX)
@@ -793,6 +902,7 @@ DIST_OUTPUTS += bin/dist-tar.tar
 DIST_OUTPUTS += bin/dist-zip.tar
 DIST_OUTPUTS += bin/dist-doc.tar
 DIST_OUTPUTS += bin/dist-autotools.tar
+DIST_OUTPUTS += bin/dist-js.tar   
 DIST_OUTPUTS += bin/made.docs
 
 DIST_OUTPUTDIRS += bin/dist
@@ -800,6 +910,7 @@ DIST_OUTPUTDIRS += bin/dist-doc
 DIST_OUTPUTDIRS += bin/dist-tar
 DIST_OUTPUTDIRS += bin/dist-zip
 DIST_OUTPUTDIRS += bin/dist-autotools
+DIST_OUTPUTDIRS += bin/dist-js
 DIST_OUTPUTDIRS += bin/docs
 
 
@@ -819,7 +930,11 @@ doc: bin/made.docs
 bin/made.docs:
 	$(VERYSILENT)mkdir -p bin/docs
 	$(INFO) [DOXYGEN] libopenmpt
+ifeq ($(SILENT_DOCS),1)
+	$(SILENT) ( cat libopenmpt/Doxyfile ; echo 'PROJECT_NUMBER = "$(DIST_LIBOPENMPT_VERSION)"' ; echo 'WARN_IF_DOC_ERROR = NO' ) | doxygen -
+else
 	$(SILENT) ( cat libopenmpt/Doxyfile ; echo 'PROJECT_NUMBER = "$(DIST_LIBOPENMPT_VERSION)"' ) | doxygen -
+endif
 	$(VERYSILENT)touch $@
 
 .PHONY: check
@@ -851,7 +966,7 @@ bin/libopenmpt.pc:
 	$(VERYSILENT)echo 'Version: $(DIST_LIBOPENMPT_VERSION)' >> $@.tmp
 	$(VERYSILENT)echo 'Requires.private: $(PC_REQUIRES_ZLIB) $(PC_REQUIRES_MPG123) $(PC_REQUIRES_OGG) $(PC_REQUIRES_VORBIS) $(PC_REQUIRES_VORBISFILE)' >> $@.tmp
 	$(VERYSILENT)echo 'Libs: -L$${libdir} -lopenmpt' >> $@.tmp
-	$(VERYSILENT)echo 'Libs.private: $(PC_LIBS_DL) $(PC_LIBS_LTDL)' >> $@.tmp
+	$(VERYSILENT)echo 'Libs.private: $(PC_LIBS_PRIVATE)' >> $@.tmp
 	$(VERYSILENT)echo 'Cflags: -I$${includedir}' >> $@.tmp
 	$(VERYSILENT)mv $@.tmp $@
 
@@ -861,9 +976,11 @@ install: $(OUTPUTS)
 	$(INSTALL_DATA) libopenmpt/libopenmpt_config.h $(DESTDIR)$(PREFIX)/include/libopenmpt/libopenmpt_config.h
 	$(INSTALL_DATA) libopenmpt/libopenmpt_version.h $(DESTDIR)$(PREFIX)/include/libopenmpt/libopenmpt_version.h
 	$(INSTALL_DATA) libopenmpt/libopenmpt.h $(DESTDIR)$(PREFIX)/include/libopenmpt/libopenmpt.h
+	$(INSTALL_DATA) libopenmpt/libopenmpt_stream_callbacks_buffer.h $(DESTDIR)$(PREFIX)/include/libopenmpt/libopenmpt_stream_callbacks_buffer.h
 	$(INSTALL_DATA) libopenmpt/libopenmpt_stream_callbacks_fd.h $(DESTDIR)$(PREFIX)/include/libopenmpt/libopenmpt_stream_callbacks_fd.h
 	$(INSTALL_DATA) libopenmpt/libopenmpt_stream_callbacks_file.h $(DESTDIR)$(PREFIX)/include/libopenmpt/libopenmpt_stream_callbacks_file.h
 	$(INSTALL_DATA) libopenmpt/libopenmpt.hpp $(DESTDIR)$(PREFIX)/include/libopenmpt/libopenmpt.hpp
+	$(INSTALL_DATA) libopenmpt/libopenmpt_ext.h $(DESTDIR)$(PREFIX)/include/libopenmpt/libopenmpt_ext.h
 	$(INSTALL_DATA) libopenmpt/libopenmpt_ext.hpp $(DESTDIR)$(PREFIX)/include/libopenmpt/libopenmpt_ext.hpp
 	$(INSTALL_MAKE_DIR) $(DESTDIR)$(PREFIX)/lib/pkgconfig
 	$(INSTALL_DATA) bin/libopenmpt.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig/libopenmpt.pc
@@ -893,7 +1010,6 @@ endif
 	$(INSTALL_MAKE_DIR) $(DESTDIR)$(PREFIX)/share/doc/libopenmpt
 	$(INSTALL_DATA) LICENSE   $(DESTDIR)$(PREFIX)/share/doc/libopenmpt/LICENSE
 	$(INSTALL_DATA) README.md $(DESTDIR)$(PREFIX)/share/doc/libopenmpt/README.md
-	$(INSTALL_DATA) TODO      $(DESTDIR)$(PREFIX)/share/doc/libopenmpt/TODO
 	$(INSTALL_MAKE_DIR) $(DESTDIR)$(PREFIX)/share/doc/libopenmpt/examples
 	$(INSTALL_DATA) examples/libopenmpt_example_c.c $(DESTDIR)$(PREFIX)/share/doc/libopenmpt/examples/libopenmpt_example_c.c
 	$(INSTALL_DATA) examples/libopenmpt_example_c_mem.c $(DESTDIR)$(PREFIX)/share/doc/libopenmpt/examples/libopenmpt_example_c_mem.c
@@ -915,8 +1031,8 @@ install-openmpt-modplug: $(OUTPUTS)
 ifeq ($(SHARED_LIB),1)
 	$(INSTALL_MAKE_DIR) $(DESTDIR)$(PREFIX)/lib
 	$(INSTALL_LIB) bin/libopenmpt_modplug$(SOSUFFIX) $(DESTDIR)$(PREFIX)/lib/libopenmpt_modplug$(SOSUFFIX)
-	$(INSTALL_LIB) bin/libopenmpt_modplug$(SOSUFFIX) $(DESTDIR)$(PREFIX)/lib/libopenmpt_modplug$(SOSUFFIX).0
-	$(INSTALL_LIB) bin/libopenmpt_modplug$(SOSUFFIX) $(DESTDIR)$(PREFIX)/lib/libopenmpt_modplug$(SOSUFFIX).0.0.0
+	$(INSTALL_LIB) bin/libopenmpt_modplug$(SOSUFFIX) $(DESTDIR)$(PREFIX)/lib/libopenmpt_modplug$(SOSUFFIX).1
+	$(INSTALL_LIB) bin/libopenmpt_modplug$(SOSUFFIX) $(DESTDIR)$(PREFIX)/lib/libopenmpt_modplug$(SOSUFFIX).1.0.0
 endif
 
 .PHONY: install-modplug
@@ -924,8 +1040,8 @@ install-modplug: $(OUTPUTS)
 ifeq ($(SHARED_LIB),1)
 	$(INSTALL_MAKE_DIR) $(DESTDIR)$(PREFIX)/lib
 	$(INSTALL_LIB) bin/libopenmpt_modplug$(SOSUFFIX) $(DESTDIR)$(PREFIX)/lib/libmodplug$(SOSUFFIX)
-	$(INSTALL_LIB) bin/libopenmpt_modplug$(SOSUFFIX) $(DESTDIR)$(PREFIX)/lib/libmodplug$(SOSUFFIX).0
-	$(INSTALL_LIB) bin/libopenmpt_modplug$(SOSUFFIX) $(DESTDIR)$(PREFIX)/lib/libmodplug$(SOSUFFIX).0.0.0
+	$(INSTALL_LIB) bin/libopenmpt_modplug$(SOSUFFIX) $(DESTDIR)$(PREFIX)/lib/libmodplug$(SOSUFFIX).1
+	$(INSTALL_LIB) bin/libopenmpt_modplug$(SOSUFFIX) $(DESTDIR)$(PREFIX)/lib/libmodplug$(SOSUFFIX).1.0.0
 endif
 
 .PHONY: dist
@@ -934,36 +1050,49 @@ dist: bin/dist-tar.tar bin/dist-zip.tar bin/dist-doc.tar
 .PHONY: dist-tar
 dist-tar: bin/dist-tar.tar
 
-bin/dist-tar.tar: bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION).tar.gz
+bin/dist-tar.tar: bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION).makefile.tar.gz
 	rm -rf bin/dist-tar.tar
-	cd bin/ && cp dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION).tar.gz ./
-	cd bin/ && tar cvf dist-tar.tar libopenmpt-$(DIST_LIBOPENMPT_VERSION).tar.gz
-	rm bin/libopenmpt-$(DIST_LIBOPENMPT_VERSION).tar.gz
+	cd bin/dist-tar/ && rm -rf libopenmpt
+	cd bin/dist-tar/ && mkdir -p libopenmpt/src.makefile/$(DIST_LIBOPENMPT_TARBALL_VERSION)/
+	cd bin/dist-tar/ && cp libopenmpt-$(DIST_LIBOPENMPT_VERSION).makefile.tar.gz libopenmpt/src.makefile/$(DIST_LIBOPENMPT_TARBALL_VERSION)/
+	cd bin/dist-tar/ && tar cvf ../dist-tar.tar libopenmpt
 
 .PHONY: dist-zip
 dist-zip: bin/dist-zip.tar
 
-bin/dist-zip.tar: bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)-windows.zip
+bin/dist-zip.tar: bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION).msvc.zip
 	rm -rf bin/dist-zip.tar
-	cd bin/ && cp dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)-windows.zip ./
-	cd bin/ && tar cvf dist-zip.tar libopenmpt-$(DIST_LIBOPENMPT_VERSION)-windows.zip
-	rm bin/libopenmpt-$(DIST_LIBOPENMPT_VERSION)-windows.zip
+	cd bin/dist-zip/ && rm -rf libopenmpt
+	cd bin/dist-zip/ && mkdir -p libopenmpt/src.msvc/$(DIST_LIBOPENMPT_TARBALL_VERSION)/
+	cd bin/dist-zip/ && cp libopenmpt-$(DIST_LIBOPENMPT_VERSION).msvc.zip libopenmpt/src.msvc/$(DIST_LIBOPENMPT_TARBALL_VERSION)/
+	cd bin/dist-zip/ && tar cvf ../dist-zip.tar libopenmpt
 
 .PHONY: dist-doc
 dist-doc: bin/dist-doc.tar
 
-bin/dist-doc.tar: bin/dist-doc/libopenmpt-doc-$(DIST_LIBOPENMPT_VERSION).tar.gz
+bin/dist-doc.tar: bin/dist-doc/libopenmpt-$(DIST_LIBOPENMPT_VERSION).doc.tar.gz
 	rm -rf bin/dist-doc.tar
-	cd bin/ && cp dist-doc/libopenmpt-doc-$(DIST_LIBOPENMPT_VERSION).tar.gz ./
-	cd bin/ && tar cvf dist-doc.tar libopenmpt-doc-$(DIST_LIBOPENMPT_VERSION).tar.gz
-	rm bin/libopenmpt-doc-$(DIST_LIBOPENMPT_VERSION).tar.gz
+	cd bin/dist-doc/ && rm -rf libopenmpt
+	cd bin/dist-doc/ && mkdir -p libopenmpt/doc/$(DIST_LIBOPENMPT_TARBALL_VERSION)/
+	cd bin/dist-doc/ && cp libopenmpt-$(DIST_LIBOPENMPT_VERSION).doc.tar.gz libopenmpt/doc/$(DIST_LIBOPENMPT_TARBALL_VERSION)/
+	cd bin/dist-doc/ && tar cvf ../dist-doc.tar libopenmpt
+
+.PHONY: dist-js
+dist-js: bin/dist-js.tar
+
+bin/dist-js.tar: bin/dist-js/libopenmpt-$(DIST_LIBOPENMPT_VERSION).dev.js.tar.gz
+	rm -rf bin/dist-js.tar
+	cd bin/dist-js/ && rm -rf libopenmpt
+	cd bin/dist-js/ && mkdir -p libopenmpt/dev.js/$(DIST_LIBOPENMPT_TARBALL_VERSION)/
+	cd bin/dist-js/ && cp libopenmpt-$(DIST_LIBOPENMPT_VERSION).dev.js.tar.gz libopenmpt/dev.js/$(DIST_LIBOPENMPT_TARBALL_VERSION)/
+	cd bin/dist-js/ && tar cvf ../dist-js.tar libopenmpt
 
 .PHONY: bin/dist.mk
 bin/dist.mk:
 	rm -rf $@
 	echo > $@.tmp
-	echo 'MPT_SVNURL=$(MPT_SVNURL)' >> $@.tmp
 	echo 'MPT_SVNVERSION=$(MPT_SVNVERSION)' >> $@.tmp
+	echo 'MPT_SVNURL=$(MPT_SVNURL)' >> $@.tmp
 	echo 'MPT_SVNDATE=$(MPT_SVNDATE)' >> $@.tmp
 	mv $@.tmp $@
 
@@ -972,35 +1101,42 @@ bin/svn_version_dist.h:
 	rm -rf $@
 	echo > $@.tmp
 	echo '#pragma once' >> $@.tmp
-	echo '#define OPENMPT_VERSION_SVNURL "$(MPT_SVNURL)"' >> $@.tmp
 	echo '#define OPENMPT_VERSION_SVNVERSION "$(MPT_SVNVERSION)"' >> $@.tmp
-	echo '#define OPENMPT_VERSION_SVNDATE "$(MPT_SVNDATE)"' >> $@.tmp
+	echo '#define OPENMPT_VERSION_REVISION $(MPT_SVNREVISION)' >> $@.tmp
+	echo '#define OPENMPT_VERSION_DIRTY $(MPT_SVNDIRTY)' >> $@.tmp
+	echo '#define OPENMPT_VERSION_MIXEDREVISIONS $(MPT_SVNMIXED)' >> $@.tmp
+	echo '#define OPENMPT_VERSION_URL "$(MPT_SVNURL)"' >> $@.tmp
+	echo '#define OPENMPT_VERSION_DATE "$(MPT_SVNDATE)"' >> $@.tmp
 	echo '#define OPENMPT_VERSION_IS_PACKAGE 1' >> $@.tmp
 	echo >> $@.tmp
 	mv $@.tmp $@
 
-.PHONY: bin/dist-doc/libopenmpt-doc-$(DIST_LIBOPENMPT_VERSION).tar
-bin/dist-doc/libopenmpt-doc-$(DIST_LIBOPENMPT_VERSION).tar: docs
+.PHONY: bin/dist-doc/libopenmpt-$(DIST_LIBOPENMPT_VERSION).doc.tar
+bin/dist-doc/libopenmpt-$(DIST_LIBOPENMPT_VERSION).doc.tar: docs
 	mkdir -p bin/dist-doc
-	rm -rf bin/dist-doc/libopenmpt-doc-$(DIST_LIBOPENMPT_VERSION)
-	mkdir -p bin/dist-doc/libopenmpt-doc-$(DIST_LIBOPENMPT_VERSION)
-	cp -Rv bin/docs/html bin/dist-doc/libopenmpt-doc-$(DIST_LIBOPENMPT_VERSION)/docs
-	cd bin/dist-doc/ && tar cv libopenmpt-doc-$(DIST_LIBOPENMPT_VERSION) > libopenmpt-doc-$(DIST_LIBOPENMPT_VERSION).tar
+	rm -rf bin/dist-doc/libopenmpt-$(DIST_LIBOPENMPT_VERSION).doc
+	mkdir -p bin/dist-doc/libopenmpt-$(DIST_LIBOPENMPT_VERSION).doc
+	cp -Rv bin/docs/html bin/dist-doc/libopenmpt-$(DIST_LIBOPENMPT_VERSION).doc/docs
+	cd bin/dist-doc/ && tar cv libopenmpt-$(DIST_LIBOPENMPT_VERSION).doc > libopenmpt-$(DIST_LIBOPENMPT_VERSION).doc.tar
 
-.PHONY: bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION).tar
-bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION).tar: bin/dist.mk bin/svn_version_dist.h
+.PHONY: bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION).makefile.tar
+bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION).makefile.tar: bin/dist.mk bin/svn_version_dist.h
 	mkdir -p bin/dist-tar
 	rm -rf bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)
 	mkdir -p bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)
+	mkdir -p bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build
 	mkdir -p bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/include
 	svn export ./LICENSE            bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/LICENSE
 	svn export ./README.md          bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/README.md
-	svn export ./TODO               bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/TODO
 	svn export ./Makefile           bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/Makefile
 	svn export ./bin                bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/bin
-	svn export ./build              bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build
+	svn export ./build/android_ndk  bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/android_ndk
+	svn export ./build/make         bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/make
+	svn export ./build/svn_version  bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/svn_version
 	svn export ./common             bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/common
+	svn export ./soundbase          bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/soundbase
 	svn export ./soundlib           bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/soundlib
+	svn export ./sounddsp           bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/sounddsp
 	svn export ./test               bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/test
 	svn export ./libopenmpt         bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/libopenmpt
 	svn export ./examples           bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/examples
@@ -1012,28 +1148,41 @@ bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION).tar: bin/dist.mk bin/svn_vers
 	svn export ./include/stb_vorbis bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/include/stb_vorbis
 	cp bin/dist.mk bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/dist.mk
 	cp bin/svn_version_dist.h bin/dist-tar/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/svn_version/svn_version.h
-	cd bin/dist-tar/ && tar cv libopenmpt-$(DIST_LIBOPENMPT_VERSION) > libopenmpt-$(DIST_LIBOPENMPT_VERSION).tar
+	cd bin/dist-tar/ && tar cv libopenmpt-$(DIST_LIBOPENMPT_VERSION) > libopenmpt-$(DIST_LIBOPENMPT_VERSION).makefile.tar
 
-.PHONY: bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)-windows.zip
-bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)-windows.zip: bin/dist.mk bin/svn_version_dist.h
+.PHONY: bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION).msvc.zip
+bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION).msvc.zip: bin/dist.mk bin/svn_version_dist.h
 	mkdir -p bin/dist-zip
 	rm -rf bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)
 	mkdir -p bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)
+	mkdir -p bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build
 	mkdir -p bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/include
 	svn export ./LICENSE               bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/LICENSE               --native-eol CRLF
 	svn export ./README.md             bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/README.md             --native-eol CRLF
-	svn export ./TODO                  bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/TODO                  --native-eol CRLF
 	svn export ./Makefile              bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/Makefile              --native-eol CRLF
 	svn export ./bin                   bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/bin                   --native-eol CRLF
-	svn export ./build                 bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build                 --native-eol CRLF
+	svn export ./build/svn_version            bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/svn_version            --native-eol CRLF
+	svn export ./build/vcpkg                  bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/vcpkg                  --native-eol CRLF
+	svn export ./build/vs                     bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/vs                     --native-eol CRLF
+	svn export ./build/vs2015                 bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/vs2015                 --native-eol CRLF
+	svn export ./build/vs2015xp               bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/vs2015xp               --native-eol CRLF
+	svn export ./build/vs2017                 bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/vs2017                 --native-eol CRLF
+	svn export ./build/vs2017xp               bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/vs2017xp               --native-eol CRLF
+	svn export ./build/windesktop81           bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/windesktop81           --native-eol CRLF
+	svn export ./build/winstore82             bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/winstore82             --native-eol CRLF
+	svn export ./build/download_externals.cmd bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/download_externals.cmd --native-eol CRLF
 	svn export ./common                bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/common                --native-eol CRLF
+	svn export ./soundbase             bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/soundbase             --native-eol CRLF
 	svn export ./soundlib              bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/soundlib              --native-eol CRLF
+	svn export ./sounddsp              bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/sounddsp              --native-eol CRLF
 	svn export ./test                  bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/test                  --native-eol CRLF
 	svn export ./libopenmpt            bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/libopenmpt            --native-eol CRLF
 	svn export ./examples              bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/examples              --native-eol CRLF
 	svn export ./openmpt123            bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/openmpt123            --native-eol CRLF
 	svn export ./contrib               bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/contrib               --native-eol CRLF
+	svn export ./include/minimp3       bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/include/minimp3       --native-eol CRLF
 	svn export ./include/miniz         bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/include/miniz         --native-eol CRLF
+	svn export ./include/mpg123        bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/include/mpg123        --native-eol CRLF
 	svn export ./include/flac          bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/include/flac          --native-eol CRLF
 	svn export ./include/portaudio     bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/include/portaudio     --native-eol CRLF
 	svn export ./include/modplug       bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/include/modplug       --native-eol CRLF
@@ -1045,10 +1194,9 @@ bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)-windows.zip: bin/dist.mk bin/
 	svn export ./include/winamp        bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/include/winamp        --native-eol CRLF
 	svn export ./include/xmplay        bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/include/xmplay        --native-eol CRLF
 	svn export ./include/zlib          bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/include/zlib          --native-eol CRLF
-	svn export ./include/msinttypes    bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/include/msinttypes    --native-eol CRLF
 	cp bin/dist.mk bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/dist.mk
 	cp bin/svn_version_dist.h bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/build/svn_version/svn_version.h
-	cd bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/ && zip -r ../libopenmpt-$(DIST_LIBOPENMPT_VERSION)-windows.zip --compression-method deflate -9 *
+	cd bin/dist-zip/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/ && zip -r ../libopenmpt-$(DIST_LIBOPENMPT_VERSION).msvc.zip --compression-method deflate -9 *
 
 .PHONY: bin/dist-zip/OpenMPT-src-$(DIST_OPENMPT_VERSION).zip
 bin/dist-zip/OpenMPT-src-$(DIST_OPENMPT_VERSION).zip: bin/svn_version_dist.h
@@ -1057,6 +1205,19 @@ bin/dist-zip/OpenMPT-src-$(DIST_OPENMPT_VERSION).zip: bin/svn_version_dist.h
 	svn export ./ bin/dist-zip/OpenMPT-src-$(DIST_OPENMPT_VERSION)/ --native-eol CRLF
 	cp bin/svn_version_dist.h bin/dist-zip/OpenMPT-src-$(DIST_OPENMPT_VERSION)/common/svn_version_default/svn_version.h
 	cd bin/dist-zip/OpenMPT-src-$(DIST_OPENMPT_VERSION)/ && zip -r ../OpenMPT-src-$(DIST_OPENMPT_VERSION).zip --compression-method deflate -9 *
+
+.PHONY: bin/dist-js/libopenmpt-$(DIST_LIBOPENMPT_VERSION).dev.js.tar
+bin/dist-js/libopenmpt-$(DIST_LIBOPENMPT_VERSION).dev.js.tar: bin/libopenmpt.js
+	mkdir -p bin/dist-js
+	rm -rf bin/dist-js/libopenmpt-$(DIST_LIBOPENMPT_VERSION)
+	mkdir -p bin/dist-js/libopenmpt-$(DIST_LIBOPENMPT_VERSION)
+	mkdir -p bin/dist-js/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/licenses
+	svn export ./LICENSE                         bin/dist-js/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/license.txt
+	svn export ./include/miniz/miniz.c           bin/dist-js/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/licenses/license.miniz.txt
+	svn export ./include/stb_vorbis/stb_vorbis.c bin/dist-js/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/licenses/license.stb_vorbis.txt
+	cp bin/libopenmpt.js                         bin/dist-js/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/libopenmpt.js
+	cp bin/libopenmpt.js.mem                     bin/dist-js/libopenmpt-$(DIST_LIBOPENMPT_VERSION)/libopenmpt.js.mem
+	cd bin/dist-js/ && tar cv libopenmpt-$(DIST_LIBOPENMPT_VERSION) > libopenmpt-$(DIST_LIBOPENMPT_VERSION).dev.js.tar
 
 bin/libopenmpt.a: $(LIBOPENMPT_OBJECTS)
 	$(INFO) [AR] $@
@@ -1200,3 +1361,15 @@ clean-dist:
 	$(INFO) clean-dist ...
 	$(SILENT)$(RM) $(call FIXPATH,$(DIST_OUTPUTS))
 	$(SILENT)$(RMTREE) $(call FIXPATH,$(DIST_OUTPUTDIRS))
+
+.PHONY: distversion
+distversion:
+	$(SILENT)echo "$(DIST_LIBOPENMPT_VERSION)"
+
+.PHONY: distversion-pure
+distversion-pure:
+	$(SILENT)echo "$(DIST_LIBOPENMPT_VERSION_PURE)"
+
+.PHONY: distversion-tarball
+distversion-tarball:
+	$(SILENT)echo "$(DIST_LIBOPENMPT_TARBALL_VERSION)"

@@ -14,7 +14,6 @@
 #include "mptCPU.h"
 #include "mptOS.h"
 #include "mptTime.h"
-#include "mptUUID.h"
 #include "mptLibrary.h"
 #include "mptTypeTraits.h"
 
@@ -53,7 +52,6 @@ namespace mpt { namespace String {
 // No escaping is performed.
 template<typename T>
 mpt::ustring Combine(const std::vector<T> &vals, const mpt::ustring &sep=MPT_USTRING(","))
-//----------------------------------------------------------------------------------------
 {
 	mpt::ustring str;
 	for(std::size_t i = 0; i < vals.size(); ++i)
@@ -62,13 +60,12 @@ mpt::ustring Combine(const std::vector<T> &vals, const mpt::ustring &sep=MPT_UST
 		{
 			str += sep;
 		}
-		str += mpt::ToUString(vals[i]);
+		str += mpt::ufmt::val(vals[i]);
 	}
 	return str;
 }
 template<typename T>
 std::string Combine(const std::vector<T> &vals, const std::string &sep=std::string(","))
-//--------------------------------------------------------------------------------------
 {
 	std::string str;
 	for(std::size_t i = 0; i < vals.size(); ++i)
@@ -77,7 +74,7 @@ std::string Combine(const std::vector<T> &vals, const std::string &sep=std::stri
 		{
 			str += sep;
 		}
-		str += mpt::ToString(vals[i]);
+		str += mpt::fmt::val(vals[i]);
 	}
 	return str;
 }
@@ -87,7 +84,6 @@ std::string Combine(const std::vector<T> &vals, const std::string &sep=std::stri
 // Leading or trailing separators result in a default-constructed element being inserted before or after the other elements.
 template<typename T>
 std::vector<T> Split(const mpt::ustring &str, const mpt::ustring &sep=MPT_USTRING(","))
-//-------------------------------------------------------------------------------------
 {
 	std::vector<T> vals;
 	std::size_t pos = 0;
@@ -104,7 +100,6 @@ std::vector<T> Split(const mpt::ustring &str, const mpt::ustring &sep=MPT_USTRIN
 }
 template<typename T>
 std::vector<T> Split(const std::string &str, const std::string &sep=std::string(","))
-//-----------------------------------------------------------------------------------
 {
 	std::vector<T> vals;
 	std::size_t pos = 0;
@@ -129,7 +124,7 @@ namespace mpt {
 // integer type narrower than int to double.
 //  As this is apparently valid by the current standard, Library Working Group
 // Issue #2735 has been filed (see
-// <https://cplusplus.github.io/LWG/lwg-active.html#2735>).
+// <https://cplusplus.github.io/LWG/lwg-defects.html#2735>).
 //  In any case, avoid this insanity and provide our own mpt::abs implementation
 // for signed integer and floating point types.
 //  Note: We stick to a C++98-style implementation only overloading int and
@@ -137,38 +132,44 @@ namespace mpt {
 // which a templated version returning the argument type would not do. OpenMPT
 // probably assumes this semantic when calling abs(int8) in various places.
 inline int abs(int x)
-//-------------------
 {
 	return std::abs(x);
 }
 inline long abs(long x)
-//---------------------
 {
 	return std::abs(x);
 }
 inline long long abs(long long x)
-//-------------------------------
 {
-	#if MPT_MSVC_BEFORE(2010,0)
-		return (x >= 0) ? x : -x;
-	#else
-		return std::abs(x);
-	#endif
+	return std::abs(x);
 }
 inline float abs(float x)
-//-----------------------
 {
 	return std::fabs(x);
 }
 inline double abs(double x)
-//-------------------------
 {
 	return std::fabs(x);
 }
 inline long double abs(long double x)
-//-----------------------------------
 {
 	return std::fabs(x);
+}
+
+// Modulo with more intuitive behaviour for some contexts:
+// Instead of being symmetrical around 0, the pattern for positive numbers is repeated in the negative range.
+// For example, wrapping_modulo(-1, m) == (m - 1).
+// Behaviour is undefined if m<=0.
+template<typename T, typename M>
+MPT_CONSTEXPR11_FUN auto wrapping_modulo(T x, M m) -> decltype(x % m)
+{
+	return (x >= 0) ? (x % m) : (m - 1 - ((-1 - x) % m));
+}
+
+template<typename T, typename D>
+MPT_CONSTEXPR11_FUN auto wrapping_divide(T x, D d) -> decltype(x / d)
+{
+	return (x >= 0) ? (x / d) : (((x + 1) / d) - 1);
 }
 
 } // namespace mpt
@@ -177,27 +178,33 @@ inline long double abs(long double x)
 // Memset given object to zero.
 template <class T>
 inline void MemsetZero(T &a)
-//--------------------------
 {
-#if MPT_COMPILER_HAS_TYPE_TRAITS
 	static_assert(std::is_pointer<T>::value == false, "Won't memset pointers.");
-	static_assert(std::is_pod<T>::value == true, "Won't memset non-pods.");
+#if MPT_GCC_BEFORE(5,1,0) || MPT_CLANG_BEFORE(3,5,0) || (MPT_COMPILER_CLANG && defined(__GLIBCXX__))
+	MPT_STATIC_ASSERT(std::is_standard_layout<T>::value);
+	MPT_STATIC_ASSERT(std::is_trivial<T>::value); // approximation
+#else // default
+	MPT_STATIC_ASSERT(std::is_standard_layout<T>::value);
+	MPT_STATIC_ASSERT(std::is_trivially_copyable<T>::value); // C++11, but not supported on most compilers we care about
 #endif
 	std::memset(&a, 0, sizeof(T));
 }
 
 
+#ifdef MODPLUG_TRACKER
 // Copy given object to other location.
 template <class T>
-inline T &MemCopy(T &destination, const T &source)
-//------------------------------------------------
+void MemCopy(T &destination, const T &source)
 {
-#if MPT_COMPILER_HAS_TYPE_TRAITS
 	static_assert(std::is_pointer<T>::value == false, "Won't copy pointers.");
-	static_assert(std::is_pod<T>::value == true, "Won't copy non-pods.");
+#if MPT_GCC_BEFORE(5,1,0) || MPT_CLANG_BEFORE(3,5,0) || (MPT_COMPILER_CLANG && defined(__GLIBCXX__))
+	MPT_STATIC_ASSERT(std::is_trivial<T>::value); // approximation
+#else // default
+	MPT_STATIC_ASSERT(std::is_trivially_copyable<T>::value); // C++11, but not supported on most compilers we care about
 #endif
-	return *static_cast<T *>(std::memcpy(&destination, &source, sizeof(T)));
+	std::memcpy(&destination, &source, sizeof(T));
 }
+#endif // MODPLUG_TRACKER
 
 
 namespace mpt {
@@ -280,7 +287,7 @@ template <typename T> inline span<T> as_span(T * beg, T * end) { return span<T>(
 
 template <typename T> inline span<T> as_span(T * data, std::size_t size) { return span<T>(data, size); }
 
-template <typename T, std::size_t N> inline span<T> as_span(T (&arr)[N]) { return span<T>(arr, N); }
+template <typename T, std::size_t N> inline span<T> as_span(T (&arr)[N]) { return span<T>(std::begin(arr), std::end(arr)); }
 
 template <typename T> inline span<T> as_span(std::vector<T> & cont) { return span<T>(cont); }
 
@@ -295,6 +302,19 @@ typedef mpt::span<mpt::byte> byte_span;
 typedef mpt::span<const mpt::byte> const_byte_span;
 
 
+
+template <typename T> inline std::vector<typename std::remove_const<T>::type> make_vector(T * beg, T * end) { return std::vector<typename std::remove_const<T>::type>(beg, end); }
+
+template <typename T> inline std::vector<typename std::remove_const<T>::type> make_vector(T * data, std::size_t size) { return std::vector<typename std::remove_const<T>::type>(data, data + size); }
+
+template <typename T> inline std::vector<typename std::remove_const<T>::type> make_vector(mpt::span<T> data) { return std::vector<typename std::remove_const<T>::type>(data.data(), data.data() + data.size()); }
+
+template <typename T, std::size_t N> inline std::vector<typename std::remove_const<T>::type> make_vector(T (&arr)[N]) { return std::vector<typename std::remove_const<T>::type>(std::begin(arr), std::end(arr)); }
+
+template <typename T> inline std::vector<typename std::remove_const<T>::type> make_vector(const std::basic_string<T> & str) { return std::vector<typename std::remove_const<T>::type>(str.begin(), str.end()); }
+
+
+
 template <typename Tdst, typename Tsrc>
 struct byte_cast_impl
 {
@@ -304,10 +324,8 @@ struct byte_cast_impl
 		STATIC_ASSERT(sizeof(Tdst) == sizeof(mpt::byte));
 		// not checking is_byte_castable here because we are actually
 		// doing a static_cast and converting the value
-#if MPT_COMPILER_HAS_TYPE_TRAITS
 		STATIC_ASSERT(std::is_integral<Tsrc>::value);
 		STATIC_ASSERT(std::is_integral<Tdst>::value);
-#endif
 		return static_cast<Tdst>(src);
 	}
 };
@@ -320,10 +338,8 @@ struct byte_cast_impl<mpt::span<Tdst>, mpt::span<Tsrc> >
 		STATIC_ASSERT(sizeof(Tdst) == sizeof(mpt::byte));
 		STATIC_ASSERT(mpt::is_byte_castable<Tsrc>::value);
 		STATIC_ASSERT(mpt::is_byte_castable<Tdst>::value);
-#if MPT_COMPILER_HAS_TYPE_TRAITS
 		STATIC_ASSERT(std::is_integral<Tsrc>::value);
 		STATIC_ASSERT(std::is_integral<Tdst>::value);
-#endif
 		return mpt::as_span(mpt::byte_cast_impl<Tdst*, Tsrc*>()(src.begin()), mpt::byte_cast_impl<Tdst*, Tsrc*>()(src.end()));
 	}
 };
@@ -336,10 +352,8 @@ struct byte_cast_impl<Tdst*, Tsrc*>
 		STATIC_ASSERT(sizeof(Tdst) == sizeof(mpt::byte));
 		STATIC_ASSERT(mpt::is_byte_castable<Tsrc>::value);
 		STATIC_ASSERT(mpt::is_byte_castable<Tdst>::value);
-#if MPT_COMPILER_HAS_TYPE_TRAITS
 		STATIC_ASSERT(std::is_integral<Tsrc>::value);
 		STATIC_ASSERT(std::is_integral<Tdst>::value);
-#endif
 		return reinterpret_cast<Tdst*>(src);
 	}
 };
@@ -354,9 +368,7 @@ struct void_cast_impl<Tdst*, void*>
 	{
 		STATIC_ASSERT(sizeof(Tdst) == sizeof(mpt::byte));
 		STATIC_ASSERT(mpt::is_byte_castable<Tdst>::value);
-#if MPT_COMPILER_HAS_TYPE_TRAITS
 		STATIC_ASSERT(std::is_integral<Tdst>::value);
-#endif
 		return reinterpret_cast<Tdst*>(src);
 	}
 };
@@ -367,9 +379,7 @@ struct void_cast_impl<Tdst*, const void*>
 	{
 		STATIC_ASSERT(sizeof(Tdst) == sizeof(mpt::byte));
 		STATIC_ASSERT(mpt::is_byte_castable<Tdst>::value);
-#if MPT_COMPILER_HAS_TYPE_TRAITS
 		STATIC_ASSERT(std::is_integral<Tdst>::value);
-#endif
 		return reinterpret_cast<Tdst*>(src);
 	}
 };
@@ -380,9 +390,7 @@ struct void_cast_impl<void*, Tsrc*>
 	{
 		STATIC_ASSERT(sizeof(Tsrc) == sizeof(mpt::byte));
 		STATIC_ASSERT(mpt::is_byte_castable<Tsrc>::value);
-#if MPT_COMPILER_HAS_TYPE_TRAITS
 		STATIC_ASSERT(std::is_integral<Tsrc>::value);
-#endif
 		return reinterpret_cast<void*>(src);
 	}
 };
@@ -393,9 +401,7 @@ struct void_cast_impl<const void*, Tsrc*>
 	{
 		STATIC_ASSERT(sizeof(Tsrc) == sizeof(mpt::byte));
 		STATIC_ASSERT(mpt::is_byte_castable<Tsrc>::value);
-#if MPT_COMPILER_HAS_TYPE_TRAITS
 		STATIC_ASSERT(std::is_integral<Tsrc>::value);
-#endif
 		return reinterpret_cast<const void*>(src);
 	}
 };
@@ -418,7 +424,6 @@ inline Tdst void_cast(Tsrc src)
 // Saturate the value of src to the domain of Tdst
 template <typename Tdst, typename Tsrc>
 inline Tdst saturate_cast(Tsrc src)
-//---------------------------------
 {
 	// This code tries not only to obviously avoid overflows but also to avoid signed/unsigned comparison warnings and type truncation warnings (which in fact would be safe here) by explicit casting.
 	STATIC_ASSERT(std::numeric_limits<Tdst>::is_integer);
@@ -460,7 +465,6 @@ inline Tdst saturate_cast(Tsrc src)
 
 template <typename Tdst>
 inline Tdst saturate_cast(double src)
-//-----------------------------------
 {
 	if(src >= std::numeric_limits<Tdst>::max())
 	{
@@ -475,7 +479,6 @@ inline Tdst saturate_cast(double src)
 
 template <typename Tdst>
 inline Tdst saturate_cast(float src)
-//----------------------------------
 {
 	if(src >= std::numeric_limits<Tdst>::max())
 	{
@@ -491,13 +494,6 @@ inline Tdst saturate_cast(float src)
 
 } // namespace mpt
 
-
-#if MPT_MSVC_BEFORE(2010,0) || MPT_GCC_BEFORE(4,4,0)
-// Compiler too old.
-#ifndef MPT_MINMAX_MACROS
-#define MPT_MINMAX_MACROS
-#endif
-#endif
 
 #if defined(MODPLUG_TRACKER)
 // Tracker code requires MIN/MAX to work in constexpr contexts.
@@ -528,13 +524,13 @@ inline Tdst saturate_cast(float src)
 namespace mpt { namespace Legacy {
 
 template <typename Ta, typename Tb>
-forceinline auto MAX(const Ta &a, const Tb &b) -> decltype((a>b)?a:b)
+MPT_FORCEINLINE auto MAX(const Ta &a, const Tb &b) -> decltype((a>b)?a:b)
 {
 	return (a > b) ? a : b;
 }
 
 template <typename Ta, typename Tb>
-forceinline auto MIN(const Ta &a, const Tb &b) -> decltype((a<b)?a:b)
+MPT_FORCEINLINE auto MIN(const Ta &a, const Tb &b) -> decltype((a<b)?a:b)
 {
 	return (a < b) ? a : b;
 }
@@ -607,8 +603,28 @@ inline T ExponentialGrow(const T &x)
 {
 	return Util::ExponentialGrow(x, std::numeric_limits<T>::max());
 }
-									
+
 } //namespace Util
+
+
+namespace mpt
+{
+
+// C++17 clamp
+
+template<typename T, typename Compare>
+MPT_CONSTEXPR11_FUN const T & clamp(const T & v, const T & lo, const T & hi, Compare comp)
+{
+	return comp(v, lo) ? lo : comp(hi, v) ? hi : v;
+}
+
+template<typename T>
+MPT_CONSTEXPR11_FUN const T & clamp(const T & v, const T & lo, const T & hi)
+{
+	return mpt::clamp(v, lo, hi, std::less<T>());
+}
+
+} // namespace mpt
 
 
 // Limits 'val' to given range. If 'val' is less than 'lowerLimit', 'val' is set to value 'lowerLimit'.
@@ -616,7 +632,6 @@ inline T ExponentialGrow(const T &x)
 // If 'lowerLimit' > 'upperLimit', 'val' won't be modified.
 template<class T, class C>
 inline void Limit(T& val, const C lowerLimit, const C upperLimit)
-//---------------------------------------------------------------
 {
 	if(lowerLimit > upperLimit) return;
 	if(val < lowerLimit) val = lowerLimit;
@@ -627,7 +642,6 @@ inline void Limit(T& val, const C lowerLimit, const C upperLimit)
 // Like Limit, but returns value
 template<class T, class C>
 inline T Clamp(T val, const C lowerLimit, const C upperLimit)
-//-----------------------------------------------------------
 {
 	if(val < lowerLimit) return lowerLimit;
 	else if(val > upperLimit) return upperLimit;
@@ -639,7 +653,6 @@ inline T Clamp(T val, const C lowerLimit, const C upperLimit)
 // GCC does not warn if the type is templated.
 template<typename T, typename C>
 inline bool IsInRange(T val, C lo, C hi)
-//--------------------------------------
 {
 	return lo <= val && val <= hi;
 }
@@ -647,7 +660,6 @@ inline bool IsInRange(T val, C lo, C hi)
 // Like Limit, but with upperlimit only.
 template<class T, class C>
 inline void LimitMax(T& val, const C upperLimit)
-//----------------------------------------------
 {
 	if(val > upperLimit)
 		val = upperLimit;
@@ -657,20 +669,107 @@ inline void LimitMax(T& val, const C upperLimit)
 // Returns sign of a number (-1 for negative numbers, 1 for positive numbers, 0 for 0)
 template <class T>
 int sgn(T value)
-//--------------
 {
 	return (value > T(0)) - (value < T(0));
 }
 
 
+
+// mpt::rshift_signed
+// mpt::lshift_signed
+// Shift a signed integer value in a well-defined manner.
+// Does the same thing as MSVC would do. This is verified by the test suite.
+
+namespace mpt
+{
+
+template <typename T>
+MPT_FORCEINLINE auto rshift_signed_standard(T x, int y) -> decltype(x >> y)
+{
+	MPT_STATIC_ASSERT(std::numeric_limits<T>::is_integer);
+	MPT_STATIC_ASSERT(std::numeric_limits<T>::is_signed);
+	typedef decltype(x >> y) result_type;
+	typedef typename std::make_unsigned<result_type>::type unsigned_result_type;
+	const unsigned_result_type roffset = static_cast<unsigned_result_type>(1) << ((sizeof(result_type) * 8) - 1);
+	result_type rx = x;
+	unsigned_result_type urx = static_cast<unsigned_result_type>(rx);
+	urx += roffset;
+	urx >>= y;
+	urx -= roffset >> y;
+	return static_cast<result_type>(urx);
+}
+
+template <typename T>
+MPT_FORCEINLINE auto lshift_signed_standard(T x, int y) -> decltype(x << y)
+{
+	MPT_STATIC_ASSERT(std::numeric_limits<T>::is_integer);
+	MPT_STATIC_ASSERT(std::numeric_limits<T>::is_signed);
+	typedef decltype(x << y) result_type;
+	typedef typename std::make_unsigned<result_type>::type unsigned_result_type;
+	const unsigned_result_type roffset = static_cast<unsigned_result_type>(1) << ((sizeof(result_type) * 8) - 1);
+	result_type rx = x;
+	unsigned_result_type urx = static_cast<unsigned_result_type>(rx);
+	urx += roffset;
+	urx <<= y;
+	urx -= roffset << y;
+	return static_cast<result_type>(urx);
+}
+
+#if MPT_COMPILER_SHIFT_SIGNED
+
+template <typename T>
+MPT_FORCEINLINE auto rshift_signed_undefined(T x, int y) -> decltype(x >> y)
+{
+	MPT_STATIC_ASSERT(std::numeric_limits<T>::is_integer);
+	MPT_STATIC_ASSERT(std::numeric_limits<T>::is_signed);
+	return x >> y;
+}
+
+template <typename T>
+MPT_FORCEINLINE auto lshift_signed_undefined(T x, int y) -> decltype(x << y)
+{
+	MPT_STATIC_ASSERT(std::numeric_limits<T>::is_integer);
+	MPT_STATIC_ASSERT(std::numeric_limits<T>::is_signed);
+	return x << y;
+}
+
+template <typename T>
+MPT_FORCEINLINE auto rshift_signed(T x, int y) -> decltype(x >> y)
+{
+	return mpt::rshift_signed_undefined(x, y);
+}
+
+template <typename T>
+MPT_FORCEINLINE auto lshift_signed(T x, int y) -> decltype(x << y)
+{
+	return mpt::lshift_signed_undefined(x, y);
+}
+
+#else
+
+template <typename T>
+MPT_FORCEINLINE auto rshift_signed(T x, int y) -> decltype(x >> y)
+{
+	return mpt::rshift_signed_standard(x, y);
+}
+
+template <typename T>
+MPT_FORCEINLINE auto lshift_signed(T x, int y) -> decltype(x << y)
+{
+	return mpt::lshift_signed_standard(x, y);
+}
+
+#endif
+
+} // namespace mpt
+
+
+
 namespace Util
 {
 
-	// Minimum of 3 values
-	template <class T> inline const T& Min(const T& a, const T& b, const T& c) {return std::min(std::min(a, b), c);}
-
 	// Returns maximum value of given integer type.
-	template <class T> inline T MaxValueOfType(const T&) {static_assert(std::numeric_limits<T>::is_integer == true, "Only integer types are allowed."); return (std::numeric_limits<T>::max)();}
+	template <class T> constexpr T MaxValueOfType(const T&) {static_assert(std::numeric_limits<T>::is_integer == true, "Only integer types are allowed."); return (std::numeric_limits<T>::max)();}
 
 	// The following MPT_MAX_* macros are useful as std::numeric_limits is not
 	// usable in constexpr-like contexts like static_assert in pre-C++11
@@ -687,13 +786,20 @@ namespace Util
 	#define MPT_MAX_VALUE_OF_TYPE(integral_type) ( std::numeric_limits<integral_type>::is_signed ? MPT_MAX_SIGNED_VALUE(integral_type) : MPT_MAX_UNSIGNED_VALUE(integral_type) )
 
 	/// Returns value rounded to nearest integer.
-#if (MPT_COMPILER_MSVC && MPT_MSVC_BEFORE(2013,0)) || (MPT_COMPILER_GCC && MPT_GCC_BEFORE(4,3,0)) || MPT_OS_ANDROID || MPT_OS_EMSCRIPTEN
+#if (MPT_OS_EMSCRIPTEN && MPT_OS_EMSCRIPTEN_ANCIENT)
 	// MSVC before 2013 does not support C99/C++11.
-	// GCC before 4.3.0 does not support C++11.
-	// Android has std::round just missing even though it should be available.
 	// Certain emscripten versions and/or combinations with nodejs (at least the following combination: emscripten 1.34.8, clang 3.7.0, nodejs 0.10.38) fail assert(std::round(1.5)==2.0). The work-around always works.
 	inline double Round(const double& val) {if(val >= 0.0) return std::floor(val + 0.5); else return std::ceil(val - 0.5);}
 	inline float Round(const float& val) {if(val >= 0.0f) return std::floor(val + 0.5f); else return std::ceil(val - 0.5f);}
+#elif MPT_OS_ANDROID && defined(__GLIBCXX__) && !defined(_LIBCPP_VERSION)
+	// NDK 12b gnustl_shared armeabi-v7a only provides round() in ::.
+	// NDK 12b gnustl_shared arm64-v8a has round() in std::.
+	// NDK 12b c++_shared armeabi-v7a has round() in std::.
+	// Just fallback to :: for Android gnustl_shared.
+	// This work-around can be removed once Android switches to LLVM libc++.
+	// Currently (ndk-r12b), libc++ has problems with exceptions.
+	inline double Round(const double& val) { return ::round(val); }
+	inline float Round(const float& val) { return ::roundf(val); }
 #else
 	inline double Round(const double& val) { return std::round(val); }
 	inline float Round(const float& val) { return std::round(val); }
@@ -736,45 +842,45 @@ namespace Util {
 
 	// Multiply two 32-bit integers, receive 64-bit result.
 	// MSVC generates unnecessarily complicated code for the unoptimized variant using _allmul.
-	forceinline int64 mul32to64(int32 a, int32 b)
+	MPT_FORCEINLINE int64 mul32to64(int32 a, int32 b)
 	{
-#if MPT_COMPILER_MSVC
+#if MPT_COMPILER_MSVC && (defined(_M_IX86) || defined(_M_X64))
 		return __emul(a, b);
 #else
 		return static_cast<int64>(a) * b;
 #endif
 	}
 
-	forceinline uint64 mul32to64_unsigned(uint32 a, uint32 b)
+	MPT_FORCEINLINE uint64 mul32to64_unsigned(uint32 a, uint32 b)
 	{
-#if MPT_COMPILER_MSVC
+#if MPT_COMPILER_MSVC && (defined(_M_IX86) || defined(_M_X64))
 		return __emulu(a, b);
 #else
 		return static_cast<uint64>(a) * b;
 #endif
 	}
 
-	forceinline int32 muldiv(int32 a, int32 b, int32 c)
+	MPT_FORCEINLINE int32 muldiv(int32 a, int32 b, int32 c)
 	{
 		return mpt::saturate_cast<int32>( mul32to64( a, b ) / c );
 	}
 
-	forceinline int32 muldivr(int32 a, int32 b, int32 c)
+	MPT_FORCEINLINE int32 muldivr(int32 a, int32 b, int32 c)
 	{
 		return mpt::saturate_cast<int32>( ( mul32to64( a, b ) + ( c / 2 ) ) / c );
 	}
 
 	// Do not use overloading because catching unsigned version by accident results in slower X86 code.
-	forceinline uint32 muldiv_unsigned(uint32 a, uint32 b, uint32 c)
+	MPT_FORCEINLINE uint32 muldiv_unsigned(uint32 a, uint32 b, uint32 c)
 	{
 		return mpt::saturate_cast<uint32>( mul32to64_unsigned( a, b ) / c );
 	}
-	forceinline uint32 muldivr_unsigned(uint32 a, uint32 b, uint32 c)
+	MPT_FORCEINLINE uint32 muldivr_unsigned(uint32 a, uint32 b, uint32 c)
 	{
 		return mpt::saturate_cast<uint32>( ( mul32to64_unsigned( a, b ) + ( c / 2u ) ) / c );
 	}
 
-	forceinline int32 muldivrfloor(int64 a, uint32 b, uint32 c)
+	MPT_FORCEINLINE int32 muldivrfloor(int64 a, uint32 b, uint32 c)
 	{
 		a *= b;
 		a += c / 2u;
@@ -860,10 +966,19 @@ namespace Util {
 		}
 	}
 
+} // namespace Util
+
+
+namespace mpt
+{
+
 	// Greatest Common Divisor. Always returns non-negative number.
-	template <class T>
-	T gcd(T a, T b)
+	// compatible with C++17 std::gcd
+	template <typename A, typename B>
+	inline typename std::common_type<A, B>::type gcd(A a_, B b_)
 	{
+		typename std::common_type<A, B>::type a = a_;
+		typename std::common_type<A, B>::type b = b_;
 		if(a < 0)
 			a = -a;
 		if(b < 0)
@@ -880,17 +995,26 @@ namespace Util {
 	}
 
 	// Least Common Multiple. Always returns non-negative number.
-	template <class T>
-	int lcm(T a, T b)
+	// compatible with C++17 std::lcm
+	template <typename A, typename B>
+	inline typename std::common_type<A, B>::type lcm(A a_, B b_)
 	{
+		typename std::common_type<A, B>::type a = a_;
+		typename std::common_type<A, B>::type b = b_;
 		if(a < 0)
 			a = -a;
 		if(b < 0)
 			b = -b;
 		if((a | b) == 0)
 			return 0;
-		return a / gcd<T>(a, b) * b;
+		return a / mpt::gcd(a, b) * b;
 	}
+
+} // namespace mpt
+
+
+namespace Util
+{
 
 	template<typename T, std::size_t n>
 	class fixed_size_queue
@@ -984,11 +1108,15 @@ namespace Util {
 namespace Util
 {
 
-mpt::ustring BinToHex(const std::vector<char> &src);
-std::vector<char> HexToBin(const mpt::ustring &src);
+std::vector<mpt::byte> HexToBin(const mpt::ustring &src);
+mpt::ustring BinToHex(mpt::const_byte_span src);
+
+template <typename T> inline mpt::ustring BinToHex(mpt::span<T> src) { return Util::BinToHex(mpt::byte_cast<mpt::const_byte_span>(src)); }
 
 } // namespace Util
 
+
+#if defined(MODPLUG_TRACKER) || (defined(LIBOPENMPT_BUILD) && defined(LIBOPENMPT_BUILD_TEST))
 
 namespace mpt
 {
@@ -999,6 +1127,8 @@ namespace mpt
 std::string getenv(const std::string &env_var, const std::string &def = std::string());
 
 } // namespace mpt
+
+#endif // MODPLUG_TRACKER || (LIBOPENMPT_BUILD && LIBOPENMPT_BUILD_TEST)
 
 
 OPENMPT_NAMESPACE_END

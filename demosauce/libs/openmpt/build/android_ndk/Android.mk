@@ -6,16 +6,85 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE := openmpt
 
-LOCAL_CPP_FEATURES += exceptions
-LOCAL_CPP_FEATURES += rtti
+LOCAL_CFLAGS   +=#-std=c99
+LOCAL_CPPFLAGS += -std=c++11 -fexceptions -frtti
 
-LOCAL_C_INCLUDES := $(LOCAL_PATH) $(LOCAL_PATH)/common $(LOCAL_PATH)/build/svn_version
+LOCAL_CPP_FEATURES += exceptions rtti
 
-LOCAL_CFLAGS   :=            -fvisibility=hidden -DLIBOPENMPT_BUILD -DMPT_WITH_ZLIB
-LOCAL_CPPFLAGS := -std=c++11 -fvisibility=hidden -DLIBOPENMPT_BUILD -DMPT_WITH_ZLIB
-LOCAL_LDLIBS := -lz
+LOCAL_C_INCLUDES += $(LOCAL_PATH) $(LOCAL_PATH)/common $(LOCAL_PATH)/build/svn_version
 
-LOCAL_SRC_FILES := \
+LOCAL_CFLAGS   += -fvisibility=hidden -Wall -DLIBOPENMPT_BUILD -DMPT_WITH_ZLIB
+LOCAL_CPPFLAGS +=#-fvisibility=hidden -Wall -DLIBOPENMPT_BUILD -DMPT_WITH_ZLIB
+LOCAL_LDLIBS   += -latomic -lz
+
+MPT_SVNURL?=
+MPT_SVNVERSION?=
+MPT_SVNDATE?=
+ifneq ($(MPT_SVNURL),)
+LOCAL_CFLAGS   += -D MPT_SVNURL=\"$(MPT_SVNURL)\"
+LOCAL_CPPFLAGS +=#-D MPT_SVNURL=\"$(MPT_SVNURL)\"
+endif
+ifneq ($(MPT_SVNVERSION),)
+LOCAL_CFLAGS   += -D MPT_SVNVERSION=\"$(MPT_SVNVERSION)\"
+LOCAL_CPPFLAGS +=#-D MPT_SVNVERSION=\"$(MPT_SVNVERSION)\"
+endif
+ifneq ($(MPT_SVNDATE),)
+LOCAL_CFLAGS   += -D MPT_SVNDATE=\"$(MPT_SVNDATE)\"
+LOCAL_CPPFLAGS +=#-D MPT_SVNDATE=\"$(MPT_SVNDATE)\"
+endif
+
+
+LOCAL_SRC_FILES := 
+
+ifeq ($(MPT_WITH_MINIMP3),1)
+LOCAL_CFLAGS     += -DMPT_WITH_MINIMP3
+LOCAL_CPPFLAGS   +=#-DMPT_WITH_MINIMP3
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
+LOCAL_SRC_FILES  += include/minimp3/minimp3.c
+LOCAL_LDLIBS     += 
+endif
+
+ifeq ($(MPT_WITH_MPG123),1)
+LOCAL_CFLAGS     += -DMPT_WITH_MPG123
+LOCAL_CPPFLAGS   +=#-DMPT_WITH_MPG123
+LOCAL_C_INCLUDES += 
+LOCAL_SRC_FILES  += 
+LOCAL_LDLIBS     += -lmpg123
+endif
+
+ifeq ($(MPT_WITH_OGG),1)
+LOCAL_CFLAGS     += -DMPT_WITH_OGG
+LOCAL_CPPFLAGS   +=#-DMPT_WITH_OGG
+LOCAL_C_INCLUDES += 
+LOCAL_SRC_FILES  += 
+LOCAL_LDLIBS     += -logg
+endif
+
+ifeq ($(MPT_WITH_STBVORBIS),1)
+LOCAL_CFLAGS     += -DMPT_WITH_STBVORBIS
+LOCAL_CPPFLAGS   +=#-DMPT_WITH_STBVORBIS
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
+LOCAL_SRC_FILES  += 	include/stb_vorbis/stb_vorbis.c
+LOCAL_LDLIBS     += 
+endif
+
+ifeq ($(MPT_WITH_VORBIS),1)
+LOCAL_CFLAGS     += -DMPT_WITH_VORBIS
+LOCAL_CPPFLAGS   +=#-DMPT_WITH_VORBIS
+LOCAL_C_INCLUDES += 
+LOCAL_SRC_FILES  += 
+LOCAL_LDLIBS     += -lvorbis
+endif
+
+ifeq ($(MPT_WITH_VORBISFILE),1)
+LOCAL_CFLAGS     += -DMPT_WITH_VORBISFILE
+LOCAL_CPPFLAGS   +=#-DMPT_WITH_VORBISFILE
+LOCAL_C_INCLUDES += 
+LOCAL_SRC_FILES  += 
+LOCAL_LDLIBS     += -lvorbisfile
+endif
+
+LOCAL_SRC_FILES += \
 	common/stdafx.cpp \
 	common/ComponentManager.cpp \
 	common/FileReader.cpp \
@@ -33,6 +102,7 @@ LOCAL_SRC_FILES := \
 	common/mptStringParse.cpp \
 	common/mptTime.cpp \
 	common/mptUUID.cpp \
+	common/mptWine.cpp \
 	common/Profiler.cpp \
 	common/serialization_utils.cpp \
 	common/typedefs.cpp \
@@ -40,8 +110,12 @@ LOCAL_SRC_FILES := \
 	libopenmpt/libopenmpt_c.cpp \
 	libopenmpt/libopenmpt_cxx.cpp \
 	libopenmpt/libopenmpt_impl.cpp \
-	libopenmpt/libopenmpt_ext.cpp \
+	libopenmpt/libopenmpt_ext_impl.cpp \
 	soundlib/AudioCriticalSection.cpp \
+	soundlib/ContainerMMCMP.cpp \
+	soundlib/ContainerPP20.cpp \
+	soundlib/ContainerUMX.cpp \
+	soundlib/ContainerXPK.cpp \
 	soundlib/Dither.cpp \
 	soundlib/Dlsbank.cpp \
 	soundlib/Fastmix.cpp \
@@ -55,6 +129,7 @@ LOCAL_SRC_FILES := \
 	soundlib/Load_digi.cpp \
 	soundlib/Load_dmf.cpp \
 	soundlib/Load_dsm.cpp \
+	soundlib/Load_dtm.cpp \
 	soundlib/Load_far.cpp \
 	soundlib/Load_gdm.cpp \
 	soundlib/Load_imf.cpp \
@@ -75,8 +150,9 @@ LOCAL_SRC_FILES := \
 	soundlib/Load_s3m.cpp \
 	soundlib/Load_sfx.cpp \
 	soundlib/Load_stm.cpp \
+	soundlib/Load_stp.cpp \
 	soundlib/Load_ult.cpp \
-	soundlib/Load_umx.cpp \
+	soundlib/Load_uax.cpp \
 	soundlib/Load_wav.cpp \
 	soundlib/Load_xm.cpp \
 	soundlib/Message.cpp \
@@ -85,7 +161,6 @@ LOCAL_SRC_FILES := \
 	soundlib/MixerLoops.cpp \
 	soundlib/MixerSettings.cpp \
 	soundlib/MixFuncTable.cpp \
-	soundlib/Mmcmp.cpp \
 	soundlib/ModChannel.cpp \
 	soundlib/modcommand.cpp \
 	soundlib/ModInstrument.cpp \
@@ -95,17 +170,24 @@ LOCAL_SRC_FILES := \
 	soundlib/mod_specifications.cpp \
 	soundlib/MPEGFrame.cpp \
 	soundlib/OggStream.cpp \
+	soundlib/Paula.cpp \
 	soundlib/patternContainer.cpp \
 	soundlib/pattern.cpp \
 	soundlib/RowVisitor.cpp \
 	soundlib/S3MTools.cpp \
 	soundlib/SampleFormats.cpp \
+	soundlib/SampleFormatFLAC.cpp \
+	soundlib/SampleFormatMediaFoundation.cpp \
+	soundlib/SampleFormatMP3.cpp \
+	soundlib/SampleFormatOpus.cpp \
+	soundlib/SampleFormatVorbis.cpp \
 	soundlib/SampleIO.cpp \
 	soundlib/Sndfile.cpp \
 	soundlib/Snd_flt.cpp \
 	soundlib/Snd_fx.cpp \
 	soundlib/Sndmix.cpp \
 	soundlib/SoundFilePlayConfig.cpp \
+	soundlib/UMXTools.cpp \
 	soundlib/UpgradeModule.cpp \
 	soundlib/Tables.cpp \
 	soundlib/Tagging.cpp \
@@ -117,14 +199,22 @@ LOCAL_SRC_FILES := \
 	soundlib/XMTools.cpp \
 	soundlib/plugins/DigiBoosterEcho.cpp \
 	soundlib/plugins/dmo/DMOPlugin.cpp \
+	soundlib/plugins/dmo/Chorus.cpp \
 	soundlib/plugins/dmo/Compressor.cpp \
 	soundlib/plugins/dmo/Distortion.cpp \
 	soundlib/plugins/dmo/Echo.cpp \
+	soundlib/plugins/dmo/Flanger.cpp \
 	soundlib/plugins/dmo/Gargle.cpp \
+	soundlib/plugins/dmo/I3DL2Reverb.cpp \
 	soundlib/plugins/dmo/ParamEq.cpp \
 	soundlib/plugins/dmo/WavesReverb.cpp \
+	soundlib/plugins/LFOPlugin.cpp \
 	soundlib/plugins/PluginManager.cpp \
 	soundlib/plugins/PlugInterface.cpp \
+	sounddsp/AGC.cpp \
+	sounddsp/DSP.cpp \
+	sounddsp/EQ.cpp \
+	sounddsp/Reverb.cpp \
 	test/TestToolsLib.cpp \
 	test/test.cpp
 

@@ -41,6 +41,7 @@ namespace MptVersion
 
 	// Returns version string from given numerical version value.
 	std::string ToStr(const VersionNum v);
+	mpt::ustring ToUString(const VersionNum v);
 
 	// Return a version without build number (the last number in the version).
 	// The current versioning scheme uses this number only for test builds, and it should be 00 for official builds,
@@ -60,16 +61,13 @@ namespace MptVersion
 		bool IsDirty; // svn working copy is dirty (or false)
 		bool HasMixedRevisions; // svn working copy has mixed revisions (or false)
 		bool IsPackage; // source code originates from a packaged version of the source code
-		std::string Date; // svn date (ór empty string)
+		std::string Date; // svn date (or empty string)
 		SourceInfo() : Url(std::string()), Revision(0), IsDirty(false), HasMixedRevisions(false), IsPackage(false) { }
 	public:
 		std::string GetUrlWithRevision() const; // i.e. "https://source.openmpt.org/svn/openmpt/trunk/OpenMPT@1234" or empty string
 		std::string GetStateString() const; // i.e. "+dirty" or "clean"
 	};
 	SourceInfo GetSourceInfo();
-
-	// Returns true if the build will run on ancient Windows versions.
-	bool IsForOlderWindows();
 
 	// Returns either the URL to download release builds or the URL to download test builds, depending on the current build.
 	mpt::ustring GetDownloadURL();

@@ -5,15 +5,13 @@
 *   http://www.gnu.org/licenses/gpl.txt
 *   also, this is beerware! you are strongly encouraged to invite the
 *   authors of this software to a beer when you happen to meet them.
-*   copyright MMXV by maep
+*   copyright MMXVIII by maep
 */
 
 // TODO add stream size counter to ffmpeg
-// TODO replcae info flags with control calls?
 // TODO print length seems to depend on samplerate
-
-// 07-26-2021 - Changed length of MAX_LENGTH to something very very high to prevent sticking on long upload scans.
-//              Ideally, this should be re-coded to pull the value from the settings file.
+// TODO loopiness generic
+// TODO samplerate for openmpt
 
 #include <libavcodec/avcodec.h>
 #include <getopt.h>
@@ -23,22 +21,28 @@
 #include "all.h"
 
 enum {
-    SAMPLERATE  = 44100,
-    CHANNELS    = 2,
-	// MAX_LENGTH  = 3600, // abort scan if track is too long, in seconds (Old Default)
-	MAX_LENGTH  = 500000, // Nice long scan time, for really long sets. AAK
-    FP_LENGTH   = 120,  // length of fingerprint
+    SAMPLERATE = 44100,
+    CHANNELS   = 2,
+    MAX_LENGTH = 3600, // abort scan if track is too long, in seconds
+    FP_LENGTH  = 120,  // length of fingerprint
+};
+
+struct scan {
+    int64_t frames;
+    int64_t silence;
+    double  nrg_l;
+    double  nrg_r;
+    double  corr;
 };
 
 static const char* LOAD_OPTS    = "bass_prescan=true";
 static const char* HELP_MESSAGE =
-    "demosauce scan tool 0.6.0"ID_STR"\n"
+    "demosauce scan tool 0.6.3"ID_STR"\n"
     "syntax: dscan [options] file\n"
-    "   -h          print help\n"
-    "   -r          replaygain analysis\n"
-    "   -c          acoustic fingerprint\n"
-    "   -o file.wav decode to wav\n"
-    "   -d          print debug information";
+    "   -c      acoustic fingerprint\n"
+    "   -d      print debug information\n"
+    "   -h      print help\n"
+    "   -o PATH decode to wav";
 
 // for some formats avcodec fails to provide a bitrate so I just
 // make an educated guess. if the file contains large amounts of
@@ -78,17 +82,37 @@ static void wav_close(FILE* f)
     fclose(f);
 }
 
+// update scan states for silence and channel separation detection
+static void update_scan(struct scan* scan, const struct stream* s)
+{
+    assert(s->channels == 2);
+    const float* lbuf = s->buffer[0];
+    const float* rbuf = s->buffer[1];
+
+    for (int i = 0; i < s->frames; i++) {
+        scan->nrg_l  += lbuf[i] * lbuf[i];
+        scan->nrg_r  += rbuf[i] * rbuf[i];
+        scan->corr   += lbuf[i] * rbuf[i];
+        scan->silence = fabsf(fmaxf(lbuf[i], rbuf[i])) < 0.001 ? scan->silence + 1 : 0;
+    }
+    scan->frames += s->frames;
+}
+
+static double channel_correlation(struct scan* scan)
+{
+    return scan->corr / sqrt(scan->nrg_l * scan->nrg_r);
+}
+
 int main(int argc, char** argv)
 {
-    bool    enable_rg   = false;
-    bool    enable_fp   = false;
-    FILE*   wavfile     = NULL;
+    bool  enable_fp = false;
+    FILE* wavfile   = NULL;
 
     decoder_init();
     die_if(argc < 2, HELP_MESSAGE);
 
     char c = 0;
-    while ((c = getopt(argc, argv, "hrco:d")) != -1) {
+    while ((c = getopt(argc, argv, "hrcqo:d")) != -1) {
         switch (c) {
         default:
         case '?':
@@ -96,9 +120,6 @@ int main(int argc, char** argv)
         case 'h':
             puts(HELP_MESSAGE);
             return EXIT_SUCCESS;
-        case 'r':
-            enable_rg = true;
-            break;
         case 'c':
             enable_fp = true;
             break;
@@ -129,34 +150,38 @@ int main(int argc, char** argv)
     ChromaprintContext* cp_ctx = chromaprint_new(CHROMAPRINT_ALGORITHM_DEFAULT);
     die_if(!chromaprint_start(cp_ctx, SAMPLERATE, CHANNELS), "chromaprint error");
 
-    // ffmpeg length is unreliable, get accurate length, full decode is needed
-    bool decode_audio = enable_rg || enable_fp || wavfile || !(info.flags & INFO_EXACTLEN);
-    struct stream s   = {0};
-    int64_t frames    = 0;
-    int16_t buf[SAMPLERATE * CHANNELS]; // for chromaprint / wav output
+    struct stream s    = {0};
+    struct scan   scan = {0};
+    int16_t buf16[SAMPLERATE * CHANNELS]; // for chromaprint / wav output
 
-    while (decode_audio && !s.end_of_stream) {
+    // processing loop
+    while (!s.end_of_stream) {
+        // decode some samples
         decoder_decode(&decoder, &s, SAMPLERATE);
-        frames += s.frames;
-        // AAK. Just as a note, if you experience wierd problems with dscan not being able to properly calculate song
-        // Lengths, and exiting with "maximum length exceeded" errors, even on short songs, it is safe to comment out
-        // The below line. This will then force the system to keep going. If the uploaded file is really a mess, the
-        // Type recognition will fail instead of the song length. It does not affect valid uploads.
-        die_if(frames > MAX_LENGTH * info.samplerate, "maximum length exceeded");
-        if (enable_rg)
-            rg_analyze(rg_ctx, (float*[]){s.buffer[0], s.buffer[1]}, s.frames);
-        if ((enable_fp && frames <= FP_LENGTH * info.samplerate) || wavfile)
-            stream_read_convert(&s, swr_ctx, (uint8_t*[]){(uint8_t*)buf}, s.frames);
-        if (enable_fp && frames <= FP_LENGTH * info.samplerate)
-            die_if(!chromaprint_feed(cp_ctx, buf, s.frames * CHANNELS), "chromaprint error");
-        if (wavfile)
-            die_if(fwrite(buf, CHANNELS * 2, s.frames, wavfile) != s.frames, "wav write error");
+        // silence, channel corr
+        update_scan(&scan, &s);
+        // replay gain
+        rg_analyze(rg_ctx, (float*[]){s.buffer[0], s.buffer[1]}, s.frames);
+        // convert to 16 bit for wav / chromaprint
+        bool process_fp = enable_fp && scan.frames <= FP_LENGTH * info.samplerate;
+        if (process_fp || wavfile)
+            stream_read_convert(&s, swr_ctx, (uint8_t*[]){(uint8_t*)buf16}, s.frames);
+        // chromaprint
+        if (process_fp) {
+            bool ok = chromaprint_feed(cp_ctx, buf16, s.frames * CHANNELS);
+            die_if(!ok, "chromaprint error");
+        }
+        // output wav
+        if (wavfile) {
+            int bw = fwrite(buf16, CHANNELS * 2, s.frames, wavfile);
+            die_if(bw != s.frames, "wav write error");
+        }
+        // exit in case decoder loops or some joker uploads a long file
+        die_if(scan.frames > MAX_LENGTH * info.samplerate, "maxium length exceeded");
     }
 
     if (wavfile)
         wav_close(wavfile);
-
-    printf("decoder:%s\n", decoder.name);
 
     char* str = decoder_metadata(&decoder, "artist");
     if (str)
@@ -168,26 +193,22 @@ int main(int argc, char** argv)
         printf("title:%s\n", str);
     free(str);
 
+    printf("decoder:%s\n", decoder.name);
     printf("type:%s\n", info.codec);
-
-    // use measured length, ffmpeg & co can be unreliable
-    double length = decode_audio ? ((double)frames / SAMPLERATE) : info.length;
-    printf("length:%.2f\n", length);
-
-    if (enable_rg)
-        printf("replaygain:%f\n", rg_title_gain(rg_ctx));
-
-    if (!strcmp(decoder.name, "bass") && (info.flags & INFO_MOD))
-        printf("loopiness:%s\n", decoder_control(&decoder, "bass_loopiness"));
+    printf("length:%.2f\n", (double)scan.frames / SAMPLERATE); // use measured length, ffmpeg & co can be unreliable
+    printf("samplerate:%i\n", info.samplerate);
+    printf("silence:%.2f\n", (double)scan.silence / SAMPLERATE);
+    printf("correlation:%.2f\n", channel_correlation(&scan));
+    printf("replaygain:%.2f\n", rg_title_gain(rg_ctx));
 
     if (info.bitrate) {
         printf("bitrate:%.2f\n", info.bitrate);
     } else if (!strcmp(decoder.name, "ffmpeg")) {
-        printf("bitrate:%.2f\n", fake_bitrate(path, frames / info.samplerate));
+        printf("bitrate:%.2f\n", fake_bitrate(path, scan.frames / info.samplerate));
     }
 
-    if (info.samplerate > 0)
-        printf("samplerate:%d\n", info.samplerate);
+    if (!strcmp(decoder.name, "bass") && (info.flags & INFO_MOD))
+        printf("loopiness:%s\n", decoder_control(&decoder, "bass_loopiness"));
 
     if (enable_fp) {
         char* fingerprint = NULL;

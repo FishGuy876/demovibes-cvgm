@@ -36,16 +36,84 @@ OPENMPT_NAMESPACE_BEGIN
 // v1.01: Added option to embed instrument headers
 
 
-bool CSoundFile::ReadITProject(FileReader &file, ModLoadingFlags loadFlags)
-//-------------------------------------------------------------------------
+struct ITPModCommand
 {
-#ifndef MPT_EXTERNAL_SAMPLES
+	uint8le note;
+	uint8le instr;
+	uint8le volcmd;
+	uint8le command;
+	uint8le vol;
+	uint8le param;
+	operator ModCommand() const
+	{
+		ModCommand result;
+		result.note = (ModCommand::IsNote(note) || ModCommand::IsSpecialNote(note)) ? note : NOTE_NONE;
+		result.instr = instr;
+		result.command = (command < MAX_EFFECTS) ? static_cast<EffectCommand>(command.get()) : CMD_NONE;
+		result.volcmd = (volcmd < MAX_VOLCMDS) ? static_cast<VolumeCommand>(volcmd.get()) : VOLCMD_NONE;
+		result.vol = vol;
+		result.param = param;
+		return result;
+	}
+};
+
+MPT_BINARY_STRUCT(ITPModCommand, 6)
+
+
+struct ITPHeader
+{
+	uint32le magic;
+	uint32le version;
+};
+
+MPT_BINARY_STRUCT(ITPHeader, 8)
+
+
+static bool ValidateHeader(const ITPHeader &hdr)
+{
+	if(hdr.magic != MAGIC4BE('.','i','t','p'))
+	{
+		return false;
+	}
+	if(hdr.version > 0x00000103 || hdr.version < 0x00000100)
+	{
+		return false;
+	}
+	return true;
+}
+
+
+static uint64 GetHeaderMinimumAdditionalSize(const ITPHeader &hdr)
+{
+	MPT_UNREFERENCED_PARAMETER(hdr);
+	return 12 + 4 + 24 + 4 - sizeof(ITPHeader);
+}
+
+
+CSoundFile::ProbeResult CSoundFile::ProbeFileHeaderITP(MemoryFileReader file, const uint64 *pfilesize)
+{
+	ITPHeader hdr;
+	if(!file.ReadStruct(hdr))
+	{
+		return ProbeWantMoreData;
+	}
+	if(!ValidateHeader(hdr))
+	{
+		return ProbeFailure;
+	}
+	return ProbeAdditionalSize(file, pfilesize, GetHeaderMinimumAdditionalSize(hdr));
+}
+
+
+bool CSoundFile::ReadITProject(FileReader &file, ModLoadingFlags loadFlags)
+{
+#if !defined(MPT_EXTERNAL_SAMPLES) && !defined(MPT_FUZZ_TRACKER)
 	// Doesn't really make sense to support this format when there's no support for external files...
 	MPT_UNREFERENCED_PARAMETER(file);
 	MPT_UNREFERENCED_PARAMETER(loadFlags);
 	return false;
-#else // MPT_EXTERNAL_SAMPLES
-	
+#else // !MPT_EXTERNAL_SAMPLES && !MPT_FUZZ_TRACKER
+
 	enum ITPSongFlags
 	{
 		ITP_EMBEDMIDICFG	= 0x00001,	// Embed macros in file
@@ -57,25 +125,32 @@ bool CSoundFile::ReadITProject(FileReader &file, ModLoadingFlags loadFlags)
 		ITP_ITPEMBEDIH		= 0x40000,	// Embed instrument headers in project file
 	};
 
-	uint32 version, size;
-
 	file.Rewind();
 
-	// Check file ID
-	if(!file.CanRead(12 + 4 + 24 + 4)
-		|| file.ReadUint32LE() != MAGIC4BE('.','i','t','p')	// Magic bytes
-		|| (version = file.ReadUint32LE()) > 0x00000103		// Format version
-		|| version < 0x00000100)
+	ITPHeader hdr;
+	if(!file.ReadStruct(hdr))
 	{
 		return false;
-	} else if(loadFlags == onlyVerifyHeader)
+	}
+	if(!ValidateHeader(hdr))
+	{
+		return false;
+	}
+	if(!file.CanRead(mpt::saturate_cast<FileReader::off_t>(GetHeaderMinimumAdditionalSize(hdr))))
+	{
+		return false;
+	}
+	if(loadFlags == onlyVerifyHeader)
 	{
 		return true;
 	}
 
+	uint32 version, size;
+	version = hdr.version;
+
 	InitializeGlobals(MOD_TYPE_IT);
 	m_playBehaviour.reset();
-	file.ReadString<mpt::String::maybeNullTerminated>(m_songName, file.ReadUint32LE());
+	file.ReadSizedString<uint32le, mpt::String::maybeNullTerminated>(m_songName);
 
 	// Song comments
 	m_songMessage.Read(file, file.ReadUint32LE(), SongMessage::leCR);
@@ -86,7 +161,6 @@ bool CSoundFile::ReadITProject(FileReader &file, ModLoadingFlags loadFlags)
 	{
 		return false;
 	}
-	if(songFlags & ITP_EMBEDMIDICFG)	m_SongFlags.set(SONG_EMBEDMIDICFG);
 	if(songFlags & ITP_ITOLDEFFECTS)	m_SongFlags.set(SONG_ITOLDEFFECTS);
 	if(songFlags & ITP_ITCOMPATGXX)		m_SongFlags.set(SONG_ITCOMPATGXX);
 	if(songFlags & ITP_LINEARSLIDES)	m_SongFlags.set(SONG_LINEARSLIDES);
@@ -124,7 +198,7 @@ bool CSoundFile::ReadITProject(FileReader &file, ModLoadingFlags loadFlags)
 	}
 
 	// MIDI Macro config
-	file.ReadStructPartial(m_MidiCfg, file.ReadUint32LE());
+	file.ReadStructPartial<MIDIMacroConfigData>(m_MidiCfg, file.ReadUint32LE());
 	m_MidiCfg.Sanitize();
 
 	// Song Instruments
@@ -150,18 +224,29 @@ bool CSoundFile::ReadITProject(FileReader &file, ModLoadingFlags loadFlags)
 		}
 		std::string path;
 		file.ReadString<mpt::String::maybeNullTerminated>(path, size);
+#ifdef MODPLUG_TRACKER
 		if(version <= 0x00000102)
 		{
 			instrPaths[ins] = mpt::PathString::FromLocaleSilent(path);
 		} else
+#endif // MODPLUG_TRACKER
 		{
 			instrPaths[ins] = mpt::PathString::FromUTF8(path);
 		}
+#ifdef MODPLUG_TRACKER
+		if(!file.GetFileName().empty())
+		{
+			instrPaths[ins] = instrPaths[ins].RelativePathToAbsolute(file.GetFileName().GetPath());
+		} else if(GetpModDoc() != nullptr)
+		{
+			instrPaths[ins] = instrPaths[ins].RelativePathToAbsolute(GetpModDoc()->GetPathNameMpt().GetPath());
+		}
+#endif // MODPLUG_TRACKER
 	}
 
 	// Song Orders
 	size = file.ReadUint32LE();
-	Order.ReadAsByte(file, size, size, 0xFF, 0xFE);
+	ReadOrderFromFile<uint8>(Order(), file, size, 0xFF, 0xFE);
 
 	// Song Patterns
 	const PATTERNINDEX numPats = static_cast<PATTERNINDEX>(file.ReadUint32LE());
@@ -176,6 +261,8 @@ bool CSoundFile::ReadITProject(FileReader &file, ModLoadingFlags loadFlags)
 		return false;
 	}
 
+	if(loadFlags & loadPatternData)
+		Patterns.ResizeArray(numPats);
 	for(PATTERNINDEX pat = 0; pat < numPats; pat++)
 	{
 		const ROWINDEX numRows = file.ReadUint32LE();
@@ -198,17 +285,13 @@ bool CSoundFile::ReadITProject(FileReader &file, ModLoadingFlags loadFlags)
 		// Pattern data
 		size_t numCommands = GetNumChannels() * numRows;
 
-		if(patternChunk.CanRead(sizeof(MODCOMMAND_ORIGINAL) * numCommands))
+		if(patternChunk.CanRead(sizeof(ITPModCommand) * numCommands))
 		{
 			ModCommand *target = Patterns[pat].GetpModCommand(0, 0);
 			while(numCommands-- != 0)
 			{
-				STATIC_ASSERT(sizeof(MODCOMMAND_ORIGINAL) == 6);
-				MODCOMMAND_ORIGINAL data;
+				ITPModCommand data;
 				patternChunk.ReadStruct(data);
-				if(data.command >= MAX_EFFECTS) data.command = CMD_NONE;
-				if(data.volcmd >= MAX_VOLCMDS) data.volcmd = VOLCMD_NONE;
-				if(data.note > NOTE_MAX && data.note < NOTE_MIN_SPECIAL) data.note = NOTE_NONE;
 				*(target++) = data;
 			}
 		}
@@ -232,7 +315,7 @@ bool CSoundFile::ReadITProject(FileReader &file, ModLoadingFlags loadFlags)
 	{
 		uint32 realSample = file.ReadUint32LE();
 		ITSample sampleHeader;
-		file.ReadConvertEndianness(sampleHeader);
+		file.ReadStruct(sampleHeader);
 		FileReader sampleData = file.ReadChunk(file.ReadUint32LE());
 
 		if(realSample >= 1 && realSample <= GetNumSamples() && !memcmp(sampleHeader.id, "IMPS", 4) && (loadFlags & loadSampleData))
@@ -251,23 +334,16 @@ bool CSoundFile::ReadITProject(FileReader &file, ModLoadingFlags loadFlags)
 		if(instrPaths[ins].empty())
 			continue;
 
-		if(!file.GetFileName().empty())
-		{
-			instrPaths[ins] = instrPaths[ins].RelativePathToAbsolute(file.GetFileName().GetPath());
-		}
-#ifdef MODPLUG_TRACKER
-		else if(GetpModDoc() != nullptr)
-		{
-			instrPaths[ins] = instrPaths[ins].RelativePathToAbsolute(GetpModDoc()->GetPathNameMpt().GetPath());
-		}
-#endif // MODPLUG_TRACKER
-
+#ifdef MPT_EXTERNAL_SAMPLES
 		InputFile f(instrPaths[ins]);
 		FileReader instrFile = GetFileReader(f);
 		if(!ReadInstrumentFromFile(ins + 1, instrFile, true))
 		{
 			AddToLog(LogWarning, MPT_USTRING("Unable to open instrument: ") + instrPaths[ins].ToUnicode());
 		}
+#else
+		AddToLog(LogWarning, mpt::format(MPT_USTRING("Loading external instrument %1 ('%2') failed: External instruments are not supported."))(ins, instrPaths[ins].ToUnicode()));
+#endif // MPT_EXTERNAL_SAMPLES
 	}
 
 	// Extra info data
@@ -308,15 +384,12 @@ bool CSoundFile::ReadITProject(FileReader &file, ModLoadingFlags loadFlags)
 	m_nMinPeriod = 8;
 
 	// Before OpenMPT 1.20.01.09, the MIDI macros were always read from the file, even if the "embed" flag was not set.
-	if(m_dwLastSavedWithVersion >= MAKE_VERSION_NUMERIC(1,20,01,09) && !m_SongFlags[SONG_EMBEDMIDICFG])
+	if(m_dwLastSavedWithVersion >= MAKE_VERSION_NUMERIC(1,20,01,09) && !(songFlags & ITP_EMBEDMIDICFG))
 	{
 		m_MidiCfg.Reset();
-	} else if(!m_MidiCfg.IsMacroDefaultSetupUsed())
-	{
-		m_SongFlags.set(SONG_EMBEDMIDICFG);
 	}
 
-	m_madeWithTracker = "OpenMPT " + MptVersion::ToStr(m_dwLastSavedWithVersion);
+	m_madeWithTracker = MPT_USTRING("OpenMPT ") + MptVersion::ToUString(m_dwLastSavedWithVersion);
 
 	return true;
 #endif // MPT_EXTERNAL_SAMPLES

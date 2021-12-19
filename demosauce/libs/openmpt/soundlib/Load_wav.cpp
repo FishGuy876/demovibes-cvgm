@@ -12,7 +12,8 @@
 #include "stdafx.h"
 #include "Loaders.h"
 #include "WAVTools.h"
-#include "SampleFormatConverters.h"
+#include "../soundbase/SampleFormatConverters.h"
+#include "../soundbase/SampleFormatCopy.h"
 
 
 OPENMPT_NAMESPACE_BEGIN
@@ -24,7 +25,6 @@ OPENMPT_NAMESPACE_BEGIN
 
 template <typename SampleConversion>
 bool CopyWavChannel(ModSample &sample, const FileReader &file, size_t channelIndex, size_t numChannels, SampleConversion conv = SampleConversion())
-//-------------------------------------------------------------------------------------------------------------------------------------------------
 {
 	MPT_ASSERT(sample.GetNumChannels() == 1);
 	MPT_ASSERT(sample.GetElementarySampleSize() == sizeof(typename SampleConversion::output_t));
@@ -43,7 +43,6 @@ bool CopyWavChannel(ModSample &sample, const FileReader &file, size_t channelInd
 
 
 bool CSoundFile::ReadWav(FileReader &file, ModLoadingFlags loadFlags)
-//-------------------------------------------------------------------
 {
 	WAVReader wavFile(file);
 
@@ -60,8 +59,10 @@ bool CSoundFile::ReadWav(FileReader &file, ModLoadingFlags loadFlags)
 		return true;
 	}
 
-	InitializeGlobals(MOD_TYPE_WAV);
+	InitializeGlobals(MOD_TYPE_MPT);
+	m_ContainerType = MOD_CONTAINERTYPE_WAV;
 	m_nChannels = std::max(wavFile.GetNumChannels(), uint16(2));
+	Patterns.ResizeArray(2);
 	if(!Patterns.Insert(0, 64) || !Patterns.Insert(1, 64))
 	{
 		return false;
@@ -75,20 +76,14 @@ bool CSoundFile::ReadWav(FileReader &file, ModLoadingFlags loadFlags)
 	const uint32 sampleTicks = mpt::saturate_cast<uint32>(((sampleLength * 50) / sampleRate) + 1);
 	uint32 ticksPerRow = std::max((sampleTicks + 63u) / 63u, 1u);
 
-	Order.clear();
-	Order.Append(0);
+	Order().assign(1, 0);
 	ORDERINDEX numOrders = 1;
-	while(ticksPerRow >= 32)
+	while(ticksPerRow >= 32 && numOrders < MAX_ORDERS)
 	{
-		Order.Append(1);
-
 		numOrders++;
 		ticksPerRow = (sampleTicks + (64 * numOrders - 1)) / (64 * numOrders);
-		if(numOrders == MAX_ORDERS)
-		{
-			break;
-		}
 	}
+	Order().resize(numOrders, 1);
 
 	m_nSamples = wavFile.GetNumChannels();
 	m_nInstruments = 0;

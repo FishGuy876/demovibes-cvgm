@@ -5,14 +5,13 @@ LD  = em++
 AR  = emar
 
 CPPFLAGS += 
-CXXFLAGS += -std=c++11 -fPIC -O2 -s DISABLE_EXCEPTION_CATCHING=0 -s PRECISE_F32=1 -ffast-math 
-CFLAGS   += -std=c99   -fPIC -O2 -s DISABLE_EXCEPTION_CATCHING=0 -s PRECISE_F32=1 -ffast-math -fno-strict-aliasing 
-LDFLAGS  += -O2 -s DISABLE_EXCEPTION_CATCHING=0 -s PRECISE_F32=1
+CXXFLAGS += -std=c++11 -fPIC -O2 -s DISABLE_EXCEPTION_CATCHING=0 -s PRECISE_F32=1 -s ERROR_ON_UNDEFINED_SYMBOLS=1 -ffast-math 
+CFLAGS   += -std=c99   -fPIC -O2 -s DISABLE_EXCEPTION_CATCHING=0 -s PRECISE_F32=1 -s ERROR_ON_UNDEFINED_SYMBOLS=1 -ffast-math -fno-strict-aliasing 
+LDFLAGS  += -O2 -s DISABLE_EXCEPTION_CATCHING=0 -s PRECISE_F32=1 -s ERROR_ON_UNDEFINED_SYMBOLS=1 -s EXPORT_NAME="'libopenmpt'"
 LDLIBS   += 
 ARFLAGS  := rcs
 
-# help older and slower compilers with huge functions
-#LDFLAGS += -s OUTLINING_LIMIT=16000
+CFLAGS_SILENT += -Wno-unused-parameter -Wno-unused-function -Wno-cast-qual
 
 # allow growing heap (might be slower, especially with V8 (as used by Chrome))
 #LDFLAGS += -s ALLOW_MEMORY_GROWTH=1
@@ -58,3 +57,4 @@ NO_SDL=1
 NO_SDL2=1
 NO_FLAC=1
 NO_SNDFILE=1
+

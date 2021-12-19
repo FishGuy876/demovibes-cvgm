@@ -36,15 +36,15 @@ typedef uint16 INSTRUMENTINDEX;
 typedef uint8 SEQUENCEINDEX;
 	const SEQUENCEINDEX SEQUENCEINDEX_INVALID = uint8_max;
 
-typedef uintptr_t SmpLength;
+typedef uint32 SmpLength;
 
 
-const SmpLength MAX_SAMPLE_LENGTH	= 0x10000000;	// Sample length in *samples*
+const SmpLength MAX_SAMPLE_LENGTH	= 0x10000000;	// Sample length in *frames*
 													// Note: Sample size in bytes can be more than this (= 256 MB).
 
 const ROWINDEX MAX_PATTERN_ROWS			= 1024;
-const ORDERINDEX MAX_ORDERS				= 256;
-const PATTERNINDEX MAX_PATTERNS			= 240;
+const ORDERINDEX MAX_ORDERS				= ORDERINDEX_MAX + 1;
+const PATTERNINDEX MAX_PATTERNS			= 4000;
 const SAMPLEINDEX MAX_SAMPLES			= 4000;
 const INSTRUMENTINDEX MAX_INSTRUMENTS	= 256;
 const PLUGINDEX MAX_MIXPLUGINS			= 250;
@@ -77,7 +77,7 @@ enum MODTYPE
 	MOD_TYPE_ULT	= 0x80,
 	MOD_TYPE_STM	= 0x100,
 	MOD_TYPE_FAR	= 0x200,
-	MOD_TYPE_WAV	= 0x400, // PCM as module
+	MOD_TYPE_DTM	= 0x400,
 	MOD_TYPE_AMF	= 0x800,
 	MOD_TYPE_AMS	= 0x1000,
 	MOD_TYPE_DSM	= 0x2000,
@@ -95,7 +95,7 @@ enum MODTYPE
 	MOD_TYPE_IMF	= 0x2000000,
 	MOD_TYPE_AMS2	= 0x4000000,
 	MOD_TYPE_DIGI	= 0x8000000,
-	MOD_TYPE_UAX	= 0x10000000, // sampleset as module
+	MOD_TYPE_STP	= 0x10000000,
 	MOD_TYPE_PLM	= 0x20000000,
 	MOD_TYPE_SFX	= 0x40000000,
 };
@@ -111,10 +111,12 @@ enum MODCONTAINERTYPE
 	MOD_CONTAINERTYPE_XPK  = 0x4,
 	MOD_CONTAINERTYPE_PP20 = 0x5,
 	MOD_CONTAINERTYPE_MMCMP= 0x6,
+	MOD_CONTAINERTYPE_WAV  = 0x7, // WAV as module
+	MOD_CONTAINERTYPE_UAX  = 0x8, // Unreal sample set as module
 };
 
 
-// Channel flags:
+// Module channel / sample flags
 enum ChannelFlags
 {
 	// Sample Flags
@@ -132,15 +134,15 @@ enum ChannelFlags
 	CHN_KEYOFF			= 0x200,		// exit sustain
 	CHN_NOTEFADE		= 0x400,		// fade note (instrument mode)
 	CHN_SURROUND		= 0x800,		// use surround channel
-	// UNUSED			= 0x1000,
-	// UNUSED			= 0x2000,
+	CHN_WRAPPED_LOOP	= 0x1000,		// loop just wrapped around to loop start (required for correct interpolation around loop points)
+	CHN_AMIGAFILTER		= 0x2000,		// Apply Amiga low-pass filter
 	CHN_FILTER			= 0x4000,		// Apply resonant filter on sample
 	CHN_VOLUMERAMP		= 0x8000,		// Apply volume ramping
 	CHN_VIBRATO			= 0x10000,		// Apply vibrato
 	CHN_TREMOLO			= 0x20000,		// Apply tremolo
 	//CHN_PANBRELLO		= 0x40000,		// Apply panbrello
 	CHN_PORTAMENTO		= 0x80000,		// Apply portamento
-	CHN_GLISSANDO		= 0x100000,		// Glissando mode
+	CHN_GLISSANDO		= 0x100000,		// Glissando (force portamento to semitones) mode
 	CHN_FASTVOLRAMP		= 0x200000,		// Force usage of global ramping settings instead of ramping over the complete render buffer length
 	CHN_EXTRALOUD		= 0x400000,		// Force sample to play at 0dB
 	CHN_REVERB			= 0x800000,		// Apply reverb on this channel
@@ -149,9 +151,10 @@ enum ChannelFlags
 	CHN_NOFX			= 0x4000000,	// dry channel -> CODE#0015 -> DESC="channels management dlg" -! NEW_FEATURE#0015
 	CHN_SYNCMUTE		= 0x8000000,	// keep sample sync on mute
 
-	// Sample storage flags (also saved in ModSample::uFlags, but are not relevant to mixing)
+	// Sample flags (only present in ModSample::uFlags, may overlap with CHN_CHANNELFLAGS)
 	SMP_MODIFIED		= 0x1000,	// Sample data has been edited in the tracker
 	SMP_KEEPONDISK		= 0x2000,	// Sample is not saved to file, data is restored from original sample file
+	SMP_NODEFAULTVOLUME	= 0x4000,	// Ignore default volume setting
 };
 DECLARE_FLAGSET(ChannelFlags)
 
@@ -196,6 +199,8 @@ enum EnvelopeType
 	ENV_VOLUME = 0,
 	ENV_PANNING,
 	ENV_PITCH,
+
+	ENV_MAXTYPES
 };
 
 // Filter Modes
@@ -226,7 +231,7 @@ enum EnvelopeType
 // Module flags - contains both song configuration and playback state... Use SONG_FILE_FLAGS and SONG_PLAY_FLAGS distinguish between the two.
 enum SongFlags
 {
-	SONG_EMBEDMIDICFG	= 0x0001,		// Embed macros in file
+	//SONG_EMBEDMIDICFG	= 0x0001,		// Embed macros in file
 	SONG_FASTVOLSLIDES	= 0x0002,		// Old Scream Tracker 3.0 volume slides
 	SONG_ITOLDEFFECTS	= 0x0004,		// Old Impulse Tracker effect implementations
 	SONG_ITCOMPATGXX	= 0x0008,		// IT "Compatible Gxx" (IT's flag to behave more like other trackers w/r/t portamento effects)
@@ -249,10 +254,11 @@ enum SongFlags
 	SONG_POSJUMP		= 0x100000,		// Position jump encountered (internal flag, do not touch)
 	SONG_PT_MODE		= 0x200000,		// ProTracker 1/2 playback mode
 	SONG_PLAYALLSONGS	= 0x400000,		// Play all subsongs consecutively (libopenmpt)
+	SONG_ISAMIGA		= 0x800000,		// Is an Amiga module and thus qualifies to be played using the Paula BLEP resampler
 };
 DECLARE_FLAGSET(SongFlags)
 
-#define SONG_FILE_FLAGS	(SONG_EMBEDMIDICFG|SONG_FASTVOLSLIDES|SONG_ITOLDEFFECTS|SONG_ITCOMPATGXX|SONG_LINEARSLIDES|SONG_EXFILTERRANGE|SONG_AMIGALIMITS|SONG_PT_MODE)
+#define SONG_FILE_FLAGS (SONG_FASTVOLSLIDES|SONG_ITOLDEFFECTS|SONG_ITCOMPATGXX|SONG_LINEARSLIDES|SONG_EXFILTERRANGE|SONG_AMIGALIMITS|SONG_S3MOLDVIBRATO|SONG_PT_MODE|SONG_ISAMIGA)
 #define SONG_PLAY_FLAGS (~SONG_FILE_FLAGS)
 
 // Global Options (Renderer)
@@ -290,6 +296,8 @@ enum ResamplingMode
 	SRCMODE_POLYPHASE = 3,
 	SRCMODE_FIRFILTER = 4,
 	SRCMODE_DEFAULT   = 5,
+
+	SRCMODE_AMIGA = 0xFF,	// Not explicitely user-selectable
 };
 
 static inline bool IsKnownResamplingMode(int mode)
@@ -444,10 +452,20 @@ enum PlayBehaviour
 	kST3PortaSampleChange,			// Portamento plus instrument number applies the volume settings of the new sample, but not the new sample itself.
 	kST3VibratoMemory,				// Do not remember vibrato type in effect memory
 	kST3LimitPeriod,				// Cut note instead of limiting  final period (ModPlug Tracker style)
+	KST3PortaAfterArpeggio,			// Portamento after arpeggio continues at the note where the arpeggio left off
 
 	kMODOneShotLoops,				// Allow ProTracker-like oneshot loops
 	kMODIgnorePanning,				// Do not process any panning commands
 	kMODSampleSwap,					// On-the-fly sample swapping
+
+	kFT2NoteOffFlags,				// Set and reset the correct fade/key-off flags with note-off and instrument number after note-off
+	kITMultiSampleInstrumentNumber,	// After portamento to different sample within multi-sampled instrument, lone instrument numbers in patterns always recall the new sample's default settings
+	kRowDelayWithNoteDelay,			// Retrigger note delays on every reptition of a row
+	kFT2TremoloRampWaveform,		// FT2-compatible tremolo ramp down / triangle waveform
+	kFT2PortaUpDownMemory,			// Portamento up and down have separate memory
+
+	kMODOutOfRangeNoteDelay,		// ProTracker behaviour for out-of-range note delays
+	kMODTempoOnSecondTick,			// ProTracker sets tempo after the first tick
 
 	// Add new play behaviours here.
 
@@ -462,57 +480,133 @@ public:
 	enum { Unity = 1u << 24 };
 	// Normalize the tempo swing coefficients so that they add up to exactly the specified tempo again
 	void Normalize();
-	void resize(size_type _Newsize, value_type val = Unity) { std::vector<uint32>::resize(_Newsize, val); Normalize(); }
+	void resize(size_type newSize, value_type val = Unity) { std::vector<uint32>::resize(newSize, val); Normalize(); }
 
 	static void Serialize(std::ostream &oStrm, const TempoSwing &swing);
 	static void Deserialize(std::istream &iStrm, TempoSwing &swing, const size_t);
 };
 
 
-// Fixed-point type, e.g. used for fractional tempos
+// Sample position and sample position increment value
+struct SamplePosition
+{
+	typedef int64 value_t;
+	typedef uint64 unsigned_value_t;
+
+protected:
+	value_t v;
+
+public:
+	static const uint32 fractMax = 0xFFFFFFFFu;
+	static MPT_FORCEINLINE uint32 GetFractMax() { return fractMax; }
+
+	SamplePosition() : v(0) { }
+	explicit SamplePosition(value_t pos) : v(pos) { }
+	SamplePosition(int32 intPart, uint32 fractPart) : v((static_cast<value_t>(intPart) * (1ll<<32)) | fractPart) { }
+	static SamplePosition Ratio(uint32 dividend, uint32 divisor) { return SamplePosition((static_cast<int64>(dividend) << 32) / divisor); }
+	static SamplePosition FromDouble(double pos) { return SamplePosition(static_cast<value_t>(pos * 4294967296.0)); }
+
+	// Set integer and fractional part
+	MPT_FORCEINLINE SamplePosition &Set(int32 intPart, uint32 fractPart = 0) { v = (static_cast<int64>(intPart) << 32) | fractPart; return *this; }
+	// Set integer part, keep fractional part
+	MPT_FORCEINLINE SamplePosition &SetInt(int32 intPart) { v = (static_cast<value_t>(intPart) << 32) | GetFract(); return *this; }
+	// Get integer part (as sample length / position)
+	MPT_FORCEINLINE SmpLength GetUInt() const { return static_cast<SmpLength>(static_cast<unsigned_value_t>(v) >> 32); }
+	// Get integer part
+	MPT_FORCEINLINE int32 GetInt() const { return static_cast<int32>(static_cast<unsigned_value_t>(v) >> 32); }
+	// Get fractional part
+	MPT_FORCEINLINE uint32 GetFract() const { return static_cast<uint32>(v); }
+	// Get the inverted fractional part
+	MPT_FORCEINLINE SamplePosition GetInvertedFract() const { return SamplePosition(0x100000000ll - GetFract()); }
+	// Get the raw fixed-point value
+	MPT_FORCEINLINE int64 GetRaw() const { return v; }
+	// Negate the current value
+	MPT_FORCEINLINE SamplePosition &Negate() { v = -v; return *this; }
+	// Multiply and divide by given integer scalars
+	MPT_FORCEINLINE SamplePosition &MulDiv(uint32 mul, uint32 div) { v = (v * mul) / div; return *this; }
+	// Removes the integer part, only keeping fractions
+	MPT_FORCEINLINE SamplePosition &RemoveInt() { v &= fractMax; return *this; }
+	// Check if value is 1.0
+	MPT_FORCEINLINE bool IsUnity() const { return v == 0x100000000ll; }
+	// Check if value is 0
+	MPT_FORCEINLINE bool IsZero() const { return v == 0; }
+	// Check if value is > 0
+	MPT_FORCEINLINE bool IsPositive() const { return v > 0; }
+	// Check if value is < 0
+	MPT_FORCEINLINE bool IsNegative() const { return v < 0; }
+
+	// Addition / subtraction of another fixed-point number
+	SamplePosition operator+ (const SamplePosition &other) const { return SamplePosition(v + other.v); }
+	SamplePosition operator- (const SamplePosition &other) const { return SamplePosition(v - other.v); }
+	void operator+= (const SamplePosition &other) { v += other.v; }
+	void operator-= (const SamplePosition &other) { v -= other.v; }
+
+	// Multiplication with integer scalar
+	template<typename T>
+	SamplePosition operator* (T other) const { return SamplePosition(static_cast<value_t>(v * other)); }
+	template<typename T>
+	void operator*= (T other) { v = static_cast<value_t>(v *other); }
+
+	// Division by other fractional point number; returns scalar
+	value_t operator/ (SamplePosition other) const { return v / other.v; }
+	// Division by scalar; returns fractional point number
+	SamplePosition operator/ (int div) const { return SamplePosition(v / div); }
+
+	bool operator== (const SamplePosition &other) const { return v == other.v; }
+	bool operator!= (const SamplePosition &other) const { return v != other.v; }
+	bool operator<= (const SamplePosition &other) const { return v <= other.v; }
+	bool operator>= (const SamplePosition &other) const { return v >= other.v; }
+	bool operator< (const SamplePosition &other) const { return v < other.v; }
+	bool operator> (const SamplePosition &other) const { return v > other.v; }
+};
+
+
+// Aaaand another fixed-point type, e.g. used for fractional tempos
 // Note that this doesn't use classical bit shifting for the fixed point part.
 // This is mostly for the clarity of stored values and to be able to represent any value .0000 to .9999 properly.
+// For easier debugging, use the Debugger Visualizers available in build/vs/debug/
+// to easily display the stored values.
 template<size_t FFact, typename T>
 struct FPInt
 {
 protected:
 	T v;
-	FPInt(T rawValue) : v(rawValue) { }
+	MPT_CONSTEXPR11_FUN FPInt(T rawValue) : v(rawValue) { }
 
 public:
 	static const size_t fractFact = FFact;
 	typedef T store_t;
 
-	FPInt() : v(0) { }
-	FPInt(const FPInt<fractFact, T> &other) : v(other.v) { }
-	FPInt(T intPart, T fractPart) : v((intPart * fractFact) + (fractPart % fractFact)) { }
-	explicit FPInt(float f) : v(static_cast<T>(f * float(fractFact))) { }
-	explicit FPInt(double f) : v(static_cast<T>(f * double(fractFact))) { }
+	MPT_CONSTEXPR11_FUN FPInt() : v(0) { }
+	MPT_CONSTEXPR11_FUN FPInt(const FPInt<fractFact, T> &other) : v(other.v) { }
+	MPT_CONSTEXPR11_FUN FPInt(T intPart, T fractPart) : v((intPart * fractFact) + (fractPart % fractFact)) { }
+	explicit MPT_CONSTEXPR11_FUN FPInt(float f) : v(static_cast<T>(f * float(fractFact))) { }
+	explicit MPT_CONSTEXPR11_FUN FPInt(double f) : v(static_cast<T>(f * double(fractFact))) { }
 
 	// Set integer and fractional part
-	FPInt<fractFact, T> &Set(T intPart, T fractPart = 0) { v = (intPart * fractFact) + (fractPart % fractFact); return *this; }
+	MPT_CONSTEXPR14_FUN FPInt<fractFact, T> &Set(T intPart, T fractPart = 0) { v = (intPart * fractFact) + (fractPart % fractFact); return *this; }
 	// Set raw internal representation directly
-	FPInt<fractFact, T> &SetRaw(T value) { v = value; return *this; }
+	MPT_CONSTEXPR14_FUN FPInt<fractFact, T> &SetRaw(T value) { v = value; return *this; }
 	// Retrieve the integer part of the stored value
-	T GetInt() const { return v / fractFact; }
+	MPT_CONSTEXPR11_FUN T GetInt() const { return v / fractFact; }
 	// Retrieve the fractional part of the stored value
-	T GetFract() const { return v % fractFact; }
+	MPT_CONSTEXPR11_FUN T GetFract() const { return v % fractFact; }
 	// Retrieve the raw internal representation of the stored value
-	T GetRaw() const { return v; }
+	MPT_CONSTEXPR11_FUN T GetRaw() const { return v; }
 	// Formats the stored value as a floating-point value
-	double ToDouble() const { return v / double(fractFact); }
+	MPT_CONSTEXPR11_FUN double ToDouble() const { return v / double(fractFact); }
 
-	FPInt<fractFact, T> operator+ (const FPInt<fractFact, T> &other) const { return FPInt<fractFact, T>(v + other.v); }
-	FPInt<fractFact, T> operator- (const FPInt<fractFact, T> &other) const { return FPInt<fractFact, T>(v - other.v); }
-	void operator+= (const FPInt<fractFact, T> &other) { v += other.v; }
-	void operator-= (const FPInt<fractFact, T> &other) { v -= other.v; }
+	MPT_CONSTEXPR11_FUN FPInt<fractFact, T> operator+ (const FPInt<fractFact, T> &other) const { return FPInt<fractFact, T>(v + other.v); }
+	MPT_CONSTEXPR11_FUN FPInt<fractFact, T> operator- (const FPInt<fractFact, T> &other) const { return FPInt<fractFact, T>(v - other.v); }
+	MPT_CONSTEXPR14_FUN FPInt<fractFact, T> operator+= (const FPInt<fractFact, T> &other) { v += other.v; return *this; }
+	MPT_CONSTEXPR14_FUN FPInt<fractFact, T> operator-= (const FPInt<fractFact, T> &other) { v -= other.v; return *this; }
 
-	bool operator== (const FPInt<fractFact, T> &other) const { return v == other.v; }
-	bool operator!= (const FPInt<fractFact, T> &other) const { return v != other.v; }
-	bool operator<= (const FPInt<fractFact, T> &other) const { return v <= other.v; }
-	bool operator>= (const FPInt<fractFact, T> &other) const { return v >= other.v; }
-	bool operator< (const FPInt<fractFact, T> &other) const { return v < other.v; }
-	bool operator> (const FPInt<fractFact, T> &other) const { return v > other.v; }
+	MPT_CONSTEXPR11_FUN bool operator== (const FPInt<fractFact, T> &other) const { return v == other.v; }
+	MPT_CONSTEXPR11_FUN bool operator!= (const FPInt<fractFact, T> &other) const { return v != other.v; }
+	MPT_CONSTEXPR11_FUN bool operator<= (const FPInt<fractFact, T> &other) const { return v <= other.v; }
+	MPT_CONSTEXPR11_FUN bool operator>= (const FPInt<fractFact, T> &other) const { return v >= other.v; }
+	MPT_CONSTEXPR11_FUN bool operator< (const FPInt<fractFact, T> &other) const { return v < other.v; }
+	MPT_CONSTEXPR11_FUN bool operator> (const FPInt<fractFact, T> &other) const { return v > other.v; }
 };
 
 typedef FPInt<10000, uint32> TEMPO;

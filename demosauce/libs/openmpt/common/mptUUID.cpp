@@ -20,9 +20,9 @@
 #if MPT_OS_WINDOWS
 #include <windows.h>
 #include <rpc.h>
-#if defined(MODPLUG_TRACKER) || !defined(NO_DMO)
+#if defined(MODPLUG_TRACKER) || !defined(NO_DMO) || MPT_OS_WINDOWS_WINRT
 #include <objbase.h>
-#endif // MODPLUG_TRACKER || !NO_DMO
+#endif // MODPLUG_TRACKER || !NO_DMO || MPT_OS_WINDOWS_WINRT
 #endif // MPT_OS_WINDOWS
 
 
@@ -40,136 +40,310 @@ namespace Util
 
 
 std::wstring CLSIDToString(CLSID clsid)
-//-------------------------------------
 {
 	std::wstring str;
 	LPOLESTR tmp = nullptr;
-	::StringFromCLSID(clsid, &tmp);
-	if(tmp)
+	switch(::StringFromCLSID(clsid, &tmp))
+	{
+	case S_OK:
+		break;
+	case E_OUTOFMEMORY:
+		if(tmp)
+		{
+			::CoTaskMemFree(tmp);
+			tmp = nullptr;
+		}
+		MPT_EXCEPTION_THROW_OUT_OF_MEMORY();
+		break;
+	default:
+		if(tmp)
+		{
+			::CoTaskMemFree(tmp);
+			tmp = nullptr;
+		}
+		throw std::logic_error("StringFromCLSID() failed.");
+		break;
+	}
+	if(!tmp)
+	{
+		throw std::logic_error("StringFromCLSID() failed.");
+	}
+	try
 	{
 		str = tmp;
+	} MPT_EXCEPTION_CATCH_OUT_OF_MEMORY(e)
+	{
 		::CoTaskMemFree(tmp);
 		tmp = nullptr;
+		MPT_UNUSED_VARIABLE(e);
+		MPT_EXCEPTION_RETHROW_OUT_OF_MEMORY();
 	}
+	::CoTaskMemFree(tmp);
+	tmp = nullptr;
 	return str;
 }
 
 
 CLSID StringToCLSID(const std::wstring &str)
-//------------------------------------------
 {
 	CLSID clsid = CLSID();
 	std::vector<OLECHAR> tmp(str.c_str(), str.c_str() + str.length() + 1);
-	if(::CLSIDFromString(&tmp[0], &clsid) != S_OK)
+	switch(::CLSIDFromString(tmp.data(), &clsid))
 	{
-		return CLSID();
+	case NOERROR:
+		// nothing
+		break;
+	case E_INVALIDARG:
+		clsid = CLSID();
+		break;
+	case CO_E_CLASSSTRING:
+		clsid = CLSID();
+		break;
+	case REGDB_E_CLASSNOTREG:
+		clsid = CLSID();
+		break;
+	case REGDB_E_READREGDB:
+		clsid = CLSID();
+		throw std::runtime_error("CLSIDFromString() failed: REGDB_E_READREGDB.");
+		break;
+	default:
+		clsid = CLSID();
+		throw std::logic_error("CLSIDFromString() failed.");
+		break;
 	}
 	return clsid;
 }
 
 
 bool VerifyStringToCLSID(const std::wstring &str, CLSID &clsid)
-//-------------------------------------------------------------
 {
+	bool result = false;
+	clsid = CLSID();
 	std::vector<OLECHAR> tmp(str.c_str(), str.c_str() + str.length() + 1);
-	return (::CLSIDFromString(&tmp[0], &clsid) == S_OK);
+	switch(::CLSIDFromString(tmp.data(), &clsid))
+	{
+	case NOERROR:
+		result = true;
+		break;
+	case E_INVALIDARG:
+		result = false;
+		break;
+	case CO_E_CLASSSTRING:
+		result = false;
+		break;
+	case REGDB_E_CLASSNOTREG:
+		result = false;
+		break;
+	case REGDB_E_READREGDB:
+		throw std::runtime_error("CLSIDFromString() failed: REGDB_E_READREGDB.");
+		break;
+	default:
+		throw std::logic_error("CLSIDFromString() failed.");
+		break;
+	}
+	return result;
 }
 
 
 bool IsCLSID(const std::wstring &str)
-//-----------------------------------
 {
+	bool result = false;
 	CLSID clsid = CLSID();
 	std::vector<OLECHAR> tmp(str.c_str(), str.c_str() + str.length() + 1);
-	return (::CLSIDFromString(&tmp[0], &clsid) == S_OK);
+	switch(::CLSIDFromString(tmp.data(), &clsid))
+	{
+	case NOERROR:
+		result = true;
+		break;
+	case E_INVALIDARG:
+		result = false;
+		break;
+	case CO_E_CLASSSTRING:
+		result = false;
+		break;
+	case REGDB_E_CLASSNOTREG:
+		result = false;
+		break;
+	case REGDB_E_READREGDB:
+		result = false;
+		throw std::runtime_error("CLSIDFromString() failed: REGDB_E_READREGDB.");
+		break;
+	default:
+		result = false;
+		throw std::logic_error("CLSIDFromString() failed.");
+		break;
+	}
+	return result;
 }
 
 
 std::wstring IIDToString(IID iid)
-//-------------------------------
 {
 	std::wstring str;
 	LPOLESTR tmp = nullptr;
-	::StringFromIID(iid, &tmp);
-	if(tmp)
+	switch(::StringFromIID(iid, &tmp))
+	{
+	case S_OK:
+		break;
+	case E_OUTOFMEMORY:
+		if(tmp)
+		{
+			::CoTaskMemFree(tmp);
+			tmp = nullptr;
+		}
+		MPT_EXCEPTION_THROW_OUT_OF_MEMORY();
+		break;
+	default:
+		if(tmp)
+		{
+			::CoTaskMemFree(tmp);
+			tmp = nullptr;
+		}
+		throw std::logic_error("StringFromIID() failed.");
+		break;
+	}
+	if(!tmp)
+	{
+		throw std::logic_error("StringFromIID() failed.");
+	}
+	try
 	{
 		str = tmp;
+	} MPT_EXCEPTION_CATCH_OUT_OF_MEMORY(e)
+	{
 		::CoTaskMemFree(tmp);
 		tmp = nullptr;
+		MPT_UNUSED_VARIABLE(e);
+		MPT_EXCEPTION_RETHROW_OUT_OF_MEMORY();
 	}
 	return str;
 }
 
 
 IID StringToIID(const std::wstring &str)
-//--------------------------------------
 {
 	IID iid = IID();
 	std::vector<OLECHAR> tmp(str.c_str(), str.c_str() + str.length() + 1);
-	::IIDFromString(&tmp[0], &iid);
+	switch(::IIDFromString(tmp.data(), &iid))
+	{
+	case S_OK:
+		// nothing
+		break;
+	case E_OUTOFMEMORY:
+		iid = IID();
+		MPT_EXCEPTION_THROW_OUT_OF_MEMORY();
+		break;
+	case E_INVALIDARG:
+		iid = IID();
+		break;
+	default:
+		iid = IID();
+		throw std::logic_error("IIDFromString() failed.");
+		break;
+	}
 	return iid;
 }
 
 
 std::wstring GUIDToString(GUID guid)
-//----------------------------------
 {
 	std::vector<OLECHAR> tmp(256);
-	::StringFromGUID2(guid, &tmp[0], static_cast<int>(tmp.size()));
-	return &tmp[0];
+	if(::StringFromGUID2(guid, tmp.data(), static_cast<int>(tmp.size())) <= 0)
+	{
+		throw std::logic_error("StringFromGUID2() failed.");
+	}
+	return tmp.data();
 }
 
 
 GUID StringToGUID(const std::wstring &str)
-//----------------------------------------
 {
 	return StringToIID(str);
 }
 
 
 GUID CreateGUID()
-//---------------
 {
 	GUID guid = GUID();
-	if(::CoCreateGuid(&guid) != S_OK)
+	switch(::CoCreateGuid(&guid))
 	{
-		return GUID();
+	case S_OK:
+		// nothing
+		break;
+	default:
+		guid = GUID();
+		throw std::runtime_error("CoCreateGuid() failed.");
 	}
 	return guid;
 }
 
 
+#if !MPT_OS_WINDOWS_WINRT
+
 UUID StringToUUID(const mpt::ustring &str)
-//----------------------------------------
 {
 	UUID uuid = UUID();
 	std::wstring wstr = mpt::ToWide(str);
 	std::vector<wchar_t> tmp(wstr.c_str(), wstr.c_str() + wstr.length() + 1);
-	if(::UuidFromStringW((RPC_WSTR)(&(tmp[0])), &uuid) != RPC_S_OK)
+	switch(::UuidFromStringW((RPC_WSTR)(&(tmp[0])), &uuid))
 	{
-		return UUID();
+	case RPC_S_OK:
+		// nothing
+		break;
+	case RPC_S_INVALID_STRING_UUID:
+		uuid = UUID();
+		break;
+	default:
+		throw std::logic_error("UuidFromStringW() failed.");
+		break;
 	}
 	return uuid;
 }
 
 
 mpt::ustring UUIDToString(UUID uuid)
-//----------------------------------
 {
 	std::wstring wstr;
 	RPC_WSTR tmp = nullptr;
-	if(::UuidToStringW(&uuid, &tmp) != RPC_S_OK)
+	switch(::UuidToStringW(&uuid, &tmp))
 	{
-		return mpt::ustring();
+	case RPC_S_OK:
+		// nothing
+		break;
+	case RPC_S_OUT_OF_MEMORY:
+		if(tmp)
+		{
+			::RpcStringFreeW(&tmp);
+			tmp = nullptr;
+		}
+		MPT_EXCEPTION_THROW_OUT_OF_MEMORY();
+		break;
+	default:
+		throw std::logic_error("UuidToStringW() failed.");
+		break;
 	}
-	wstr = (wchar_t*)tmp;
-	::RpcStringFreeW(&tmp);
+	try
+	{
+		std::size_t len = 0;
+		for(len = 0; tmp[len] != 0; ++len)
+		{
+			// nothing
+		}
+		wstr = std::wstring(tmp, tmp + len);
+	} MPT_EXCEPTION_CATCH_OUT_OF_MEMORY(e)
+	{
+		::RpcStringFreeW(&tmp);
+		tmp = nullptr;
+		MPT_UNUSED_VARIABLE(e);
+		MPT_EXCEPTION_RETHROW_OUT_OF_MEMORY();
+	}
 	return mpt::ToUnicode(wstr);
 }
 
+#endif // !MPT_OS_WINDOWS_WINRT
+
 
 bool IsValid(UUID uuid)
-//---------------------
 {
 	return false
 		|| uuid.Data1 != 0
@@ -237,13 +411,9 @@ mpt::UUID UUIDFromWin32(::UUID uuid)
 	return result;
 }
 
-#if defined(MODPLUG_TRACKER)
+#if defined(MODPLUG_TRACKER) || !defined(NO_DMO)
 
 UUID::UUID(::UUID uuid)
-	: Data1(0)
-	, Data2(0)
-	, Data3(0)
-	, Data4(0)
 {
 	*this = UUIDFromWin32(uuid);
 }
@@ -253,13 +423,36 @@ UUID::operator ::UUID () const
 	return UUIDToWin32(*this);
 }
 
-#endif // MODPLUG_TRACKER
+mpt::UUID UUID::FromGroups(uint32 group1, uint16 group2, uint16 group3, uint16 group4, uint64 group5)
+{
+	MPT_ASSERT((group5 & 0xffff000000000000ull) == 0ull);
+	return mpt::UUID
+		( group1
+		, group2
+		, group3
+		, (static_cast<uint64>(group4) << 48) | group5
+		);
+}
+
+#endif // MODPLUG_TRACKER || !NO_DMO
 
 #endif // MPT_OS_WINDOWS
 
 UUID UUID::Generate()
 {
-	#if MPT_OS_WINDOWS
+	#if MPT_OS_WINDOWS && MPT_OS_WINDOWS_WINRT
+		#if (_WIN32_WINNT >= 0x0602)
+			::GUID guid = ::GUID();
+			HRESULT result = CoCreateGuid(&guid);
+			if(result != S_OK)
+			{
+				return mpt::UUID::RFC4122Random();
+			}
+			return mpt::UUIDFromWin32(guid);
+		#else
+			return mpt::UUID::RFC4122Random();
+		#endif
+	#elif MPT_OS_WINDOWS && !MPT_OS_WINDOWS_WINRT
 		::UUID uuid = ::UUID();
 		RPC_STATUS status = ::UuidCreate(&uuid);
 		if(status != RPC_S_OK && status != RPC_S_UUID_LOCAL_ONLY)
@@ -283,7 +476,19 @@ UUID UUID::Generate()
 
 UUID UUID::GenerateLocalUseOnly()
 {
-	#if MPT_OS_WINDOWS
+	#if MPT_OS_WINDOWS && MPT_OS_WINDOWS_WINRT
+		#if (_WIN32_WINNT >= 0x0602)
+			::GUID guid = ::GUID();
+			HRESULT result = CoCreateGuid(&guid);
+			if(result != S_OK)
+			{
+				return mpt::UUID::RFC4122Random();
+			}
+			return mpt::UUIDFromWin32(guid);
+		#else
+			return mpt::UUID::RFC4122Random();
+		#endif
+	#elif MPT_OS_WINDOWS && !MPT_OS_WINDOWS_WINRT
 		#if _WIN32_WINNT >= 0x0501
 			// Available since Win2000, but we check for WinXP in order to not use this
 			// function in Win32old builds. It is not available on some non-fully
@@ -398,30 +603,20 @@ void UUID::MakeRFC4122(uint8 version)
 	Data3 |= static_cast<uint16>(Mm) << 8;
 }
 
-void UUID::ConvertEndianness()
-{
-	SwapBytesBE(Data1);
-	SwapBytesBE(Data2);
-	SwapBytesBE(Data3);
-	SwapBytesBE(Data4);
-}
-
 UUID::UUID()
-	: Data1(0)
-	, Data2(0)
-	, Data3(0)
-	, Data4(0)
 {
-	return;
+	Data1 = 0;
+	Data2 = 0;
+	Data3 = 0;
+	Data4 = 0;
 }
 
 UUID::UUID(uint32 Data1, uint16 Data2, uint16 Data3, uint64 Data4)
-	: Data1(Data1)
-	, Data2(Data2)
-	, Data3(Data3)
-	, Data4(Data4)
 {
-	return;
+	this->Data1 = Data1;
+	this->Data2 = Data2;
+	this->Data3 = Data3;
+	this->Data4 = Data4;
 }
 
 bool operator==(const mpt::UUID & a, const mpt::UUID & b)
@@ -432,6 +627,41 @@ bool operator==(const mpt::UUID & a, const mpt::UUID & b)
 bool operator!=(const mpt::UUID & a, const mpt::UUID & b)
 {
 	return (a.Data1 != b.Data1) || (a.Data2 != b.Data2) || (a.Data3 != b.Data3) || (a.Data4 != b.Data4);
+}
+
+UUID UUID::FromString(const std::string &str)
+{
+	std::vector<std::string> segments = mpt::String::Split<std::string>(str, std::string("-"));
+	if(segments.size() != 5)
+	{
+		return UUID();
+	}
+	if(segments[0].length() != 8)
+	{
+		return UUID();
+	}
+	if(segments[1].length() != 4)
+	{
+		return UUID();
+	}
+	if(segments[2].length() != 4)
+	{
+		return UUID();
+	}
+	if(segments[3].length() != 4)
+	{
+		return UUID();
+	}
+	if(segments[4].length() != 12)
+	{
+		return UUID();
+	}
+	UUID result;
+	result.Data1 = mpt::String::Parse::Hex<uint32>(segments[0]);
+	result.Data2 = mpt::String::Parse::Hex<uint16>(segments[1]);
+	result.Data3 = mpt::String::Parse::Hex<uint16>(segments[2]);
+	result.Data4 = mpt::String::Parse::Hex<uint64>(segments[3] + segments[4]);
+	return result;
 }
 
 UUID UUID::FromString(const mpt::ustring &str)
@@ -469,21 +699,56 @@ UUID UUID::FromString(const mpt::ustring &str)
 	return result;
 }
 
+std::string UUID::ToString() const
+{
+	return std::string()
+		+ mpt::fmt::hex0<8>(GetData1())
+		+ std::string("-")
+		+ mpt::fmt::hex0<4>(GetData2())
+		+ std::string("-")
+		+ mpt::fmt::hex0<4>(GetData3())
+		+ std::string("-")
+		+ mpt::fmt::hex0<4>(static_cast<uint16>(GetData4() >> 48))
+		+ std::string("-")
+		+ mpt::fmt::hex0<4>(static_cast<uint16>(GetData4() >> 32))
+		+ mpt::fmt::hex0<8>(static_cast<uint32>(GetData4() >>  0))
+		;
+}
+
 mpt::ustring UUID::ToUString() const
 {
 	return mpt::ustring()
-		+ mpt::ufmt::hex0<8>(Data1)
+		+ mpt::ufmt::hex0<8>(GetData1())
 		+ MPT_USTRING("-")
-		+ mpt::ufmt::hex0<4>(Data2)
+		+ mpt::ufmt::hex0<4>(GetData2())
 		+ MPT_USTRING("-")
-		+ mpt::ufmt::hex0<4>(Data3)
+		+ mpt::ufmt::hex0<4>(GetData3())
 		+ MPT_USTRING("-")
-		+ mpt::ufmt::hex0<4>(static_cast<uint16>(Data4 >> 48))
+		+ mpt::ufmt::hex0<4>(static_cast<uint16>(GetData4() >> 48))
 		+ MPT_USTRING("-")
-		+ mpt::ufmt::hex0<4>(static_cast<uint16>(Data4 >> 32))
-		+ mpt::ufmt::hex0<8>(static_cast<uint32>(Data4 >>  0))
+		+ mpt::ufmt::hex0<4>(static_cast<uint16>(GetData4() >> 32))
+		+ mpt::ufmt::hex0<8>(static_cast<uint32>(GetData4() >>  0))
 		;
 }
+
+UUID::UUID(GUIDms guid)
+{
+	Data1 = guid.Data1.get();
+	Data2 = guid.Data2.get();
+	Data3 = guid.Data3.get();
+	Data4 = guid.Data4.get();
+}
+
+UUID::operator GUIDms() const
+{
+	GUIDms result;
+	result.Data1 = GetData1();
+	result.Data2 = GetData2();
+	result.Data3 = GetData3();
+	result.Data4 = GetData4();
+	return result;
+}
+
 
 } // namespace mpt
 

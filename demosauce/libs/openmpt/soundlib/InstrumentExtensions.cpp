@@ -181,7 +181,7 @@ bool IsNegative(const T &val)
 	if(only_this_code == fcode || only_this_code == Util::MaxValueOfType(only_this_code)) \
 	{ \
 		type tmp = input-> name; \
-		tmp = SwapBytesReturnLE(tmp); \
+		tmp = SwapBytesLE(tmp); \
 		fwrite(&tmp , 1 , fsize , file); \
 	} \
 /**/
@@ -198,7 +198,7 @@ bool IsNegative(const T &val)
 		mpt::IO::WriteIntLE<uint32>(file, fcode); \
 		mpt::IO::WriteIntLE<uint16>(file, fsize); \
 		type tmp = (type)(input-> name ); \
-		tmp = SwapBytesReturnLE(tmp); \
+		tmp = SwapBytesLE(tmp); \
 		fwrite(&tmp , 1 , fsize , file); \
 	} else if(only_this_code == fcode)\
 	{ \
@@ -207,7 +207,7 @@ bool IsNegative(const T &val)
 		/* This worked fine on little-endian, on big-endian not so much. Thus support writing size-mismatched fields. */ \
 		MPT_ASSERT(fixedsize >= fsize); \
 		type tmp = (type)(input-> name ); \
-		tmp = SwapBytesReturnLE(tmp); \
+		tmp = SwapBytesLE(tmp); \
 		fwrite(&tmp , 1 , fsize , file); \
 		if(fixedsize > fsize) \
 		{ \
@@ -243,7 +243,7 @@ bool IsNegative(const T &val)
 		{ \
 			type tmp; \
 			tmp = input-> name [i]; \
-			tmp = SwapBytesReturnLE(tmp); \
+			tmp = SwapBytesLE(tmp); \
 			fwrite(&tmp, 1, sizeof(type), file); \
 		} \
 	} \
@@ -275,14 +275,14 @@ bool IsNegative(const T &val)
 			{ \
 				type tmp; \
 				tmp = env[i]. envField; \
-				tmp = SwapBytesReturnLE(tmp); \
+				tmp = SwapBytesLE(tmp); \
 				fwrite(&tmp, 1, sizeof(type), file); \
 			} \
 			/* Not every instrument's envelope will be the same length. fill up with zeros. */ \
 			for(uint32 i = maxNodes; i < fsize/sizeof(type); ++i) \
 			{ \
 				type tmp = 0; \
-				tmp = SwapBytesReturnLE(tmp); \
+				tmp = SwapBytesLE(tmp); \
 				fwrite(&tmp, 1, sizeof(type), file); \
 			} \
 		} \
@@ -344,7 +344,6 @@ if(!writeAll)
 // whereas ITP saves [code][size][ins1.Value][code][size][ins2.Value]...
 // too late to turn back....
 void CSoundFile::SaveExtendedInstrumentProperties(INSTRUMENTINDEX nInstruments, FILE *f) const
-//--------------------------------------------------------------------------------------------
 {
 	uint32 code = MAGIC4BE('M','P','T','X');	// write extension header code
 	mpt::IO::WriteIntLE<uint32>(f, code);
@@ -409,7 +408,6 @@ void CSoundFile::SaveExtendedInstrumentProperties(INSTRUMENTINDEX nInstruments, 
 }
 
 void CSoundFile::WriteInstrumentPropertyForAllInstruments(uint32 code, uint16 size, FILE *f, INSTRUMENTINDEX nInstruments) const
-//------------------------------------------------------------------------------------------------------------------------------
 {
 	mpt::IO::WriteIntLE<uint32>(f, code);		//write code
 	mpt::IO::WriteIntLE<uint16>(f, size);		//write size
@@ -441,14 +439,16 @@ void CSoundFile::WriteInstrumentPropertyForAllInstruments(uint32 code, uint16 si
 			/* hackish workaround to resolve mismatched size values: */ \
 			/* nResampling was a long time declared as uint32 but these macro tables used uint16 and UINT. */ \
 			/* This worked fine on little-endian, on big-endian not so much. Thus support reading size-mismatched fields. */ \
-			type tmp; \
-			if(!file.CanRead(fsize)) return false; \
-			tmp = file.ReadTruncatedIntLE<type>(fsize); \
-			STATIC_ASSERT(sizeof(tmp) == sizeof(input-> name )); \
-			memcpy(&(input-> name ), &tmp, sizeof(type)); \
-			return true; \
+			if(file.CanRead(fsize)) \
+			{ \
+				type tmp; \
+				tmp = file.ReadTruncatedIntLE<type>(fsize); \
+				STATIC_ASSERT(sizeof(tmp) == sizeof(input-> name )); \
+				memcpy(&(input-> name ), &tmp, sizeof(type)); \
+				result = true; \
+			} \
 		} \
-	}
+	} break;
 
 // --------------------------------------------------------------------------------------------
 // Convenient macro to help GET_HEADER declaration for array members ONLY
@@ -463,9 +463,9 @@ void CSoundFile::WriteInstrumentPropertyForAllInstruments(uint32 code, uint16 si
 			{ \
 				input-> name [i] = arrayChunk.ReadIntLE<type>(); \
 			} \
-			return true; \
+			result = true; \
 		} \
-	}
+	} break;
 
 // --------------------------------------------------------------------------------------------
 // Convenient macro to help GET_HEADER declaration for envelope tick/value members
@@ -479,14 +479,16 @@ void CSoundFile::WriteInstrumentPropertyForAllInstruments(uint32 code, uint16 si
 		{ \
 			env[i]. envField = arrayChunk.ReadIntLE<type>(); \
 		} \
-		return true; \
-	}
+		result = true; \
+	} break;
 
 
 // Return a pointer on the wanted field in 'input' ModInstrument given field code & size
 bool ReadInstrumentHeaderField(ModInstrument *input, uint32 fcode, uint16 fsize, FileReader &file)
 {
 	if(input == nullptr) return false;
+
+	bool result = false;
 
 	// Members which can be found in this table but not in the write table are only required in the legacy ITP format.
 	switch(fcode)
@@ -549,34 +551,35 @@ bool ReadInstrumentHeaderField(ModInstrument *input, uint32 fcode, uint16 fsize,
 		// Integer part of pitch/tempo lock
 		uint16 tmp = file.ReadTruncatedIntLE<uint16>(fsize);
 		input->pitchToTempoLock.Set(tmp, input->pitchToTempoLock.GetFract());
-		return true;
-	}
+		result = true;
+	} break;
 	case MAGIC4LE('P','T','T','F'):
 	{
 		// Fractional part of pitch/tempo lock
 		uint16 tmp = file.ReadTruncatedIntLE<uint16>(fsize);
 		input->pitchToTempoLock.Set(input->pitchToTempoLock.GetInt(), tmp);
-		return true;
-	}
-
+		result = true;
+	} break;
 	case MAGIC4BE('V','E','.','.'):
 		input->VolEnv.resize(std::min<uint32>(MAX_ENVPOINTS, file.ReadTruncatedIntLE<uint32>(fsize)));
-		return true;
+		result = true;
+		break;
 	case MAGIC4BE('P','E','.','.'):
 		input->PanEnv.resize(std::min<uint32>(MAX_ENVPOINTS, file.ReadTruncatedIntLE<uint32>(fsize)));
-		return true;
+		result = true;
+		break;
 	case MAGIC4BE('P','i','E','.'):
 		input->PitchEnv.resize(std::min<uint32>(MAX_ENVPOINTS, file.ReadTruncatedIntLE<uint32>(fsize)));
-		return true;
+		result = true;
+		break;
 	}
 
-	return false;
+	return result;
 }
 
 
 // Convert instrument flags which were read from 'dF..' extension to proper internal representation.
 static void ConvertReadExtendedFlags(ModInstrument *pIns)
-//-------------------------------------------------------
 {
 	// Flags of 'dF..' datafield in extended instrument properties.
 	enum
@@ -623,7 +626,6 @@ static void ConvertReadExtendedFlags(ModInstrument *pIns)
 
 
 void ReadInstrumentExtensionField(ModInstrument* pIns, const uint32 code, const uint16 size, FileReader &file)
-//------------------------------------------------------------------------------------------------------------
 {
 	if(code == MAGIC4BE('K','[','.','.'))
 	{
@@ -651,7 +653,6 @@ void ReadInstrumentExtensionField(ModInstrument* pIns, const uint32 code, const 
 
 
 void ReadExtendedInstrumentProperty(ModInstrument* pIns, const uint32 code, FileReader &file)
-//-------------------------------------------------------------------------------------------
 {
 	uint16 size = file.ReadUint16LE();
 	if(!file.CanRead(size))
@@ -663,7 +664,6 @@ void ReadExtendedInstrumentProperty(ModInstrument* pIns, const uint32 code, File
 
 
 void ReadExtendedInstrumentProperties(ModInstrument* pIns, FileReader &file)
-//--------------------------------------------------------------------------
 {
 	if(!file.ReadMagic("XTPM"))	// 'MPTX'
 	{
@@ -678,7 +678,6 @@ void ReadExtendedInstrumentProperties(ModInstrument* pIns, FileReader &file)
 
 
 void CSoundFile::LoadExtendedInstrumentProperties(FileReader &file, bool *pInterpretMptMade)
-//------------------------------------------------------------------------------------------
 {
 	if(!file.ReadMagic("XTPM"))	// 'MPTX'
 	{

@@ -85,6 +85,9 @@ bool XFadeSample(ModSample &smp, SmpLength fadeLength, int fadeLaw, bool afterlo
 // Silence parts of the sample data
 bool SilenceSample(ModSample &smp, SmpLength start, SmpLength end, CSoundFile &sndFile);
 
+// Modify stereo separation of the sample data. separation is in range [-200, 200]
+bool StereoSepSample(ModSample &smp, SmpLength start, SmpLength end, double separation, CSoundFile &sndFile);
+
 enum StereoToMonoMode
 {
 	mixChannels,
@@ -111,7 +114,7 @@ namespace ctrlChn
 {
 
 // Replaces sample from sound channels by given sample.
-void ReplaceSample( ModChannel (&Chn)[MAX_CHANNELS],
+void ReplaceSample( CSoundFile &sndFile,
 					const ModSample &sample,
 					const void * const pNewSample,
 					const SmpLength nNewLength,

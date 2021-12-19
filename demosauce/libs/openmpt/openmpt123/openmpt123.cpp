@@ -10,7 +10,7 @@
 static const char * const license =
 "The OpenMPT code is licensed under the BSD license." "\n"
 "" "\n"
-"Copyright (c) 2004-2017, OpenMPT contributors" "\n"
+"Copyright (c) 2004-2018, OpenMPT contributors" "\n"
 "Copyright (c) 1997-2003, Olivier Lapicque" "\n"
 "All rights reserved." "\n"
 "" "\n"
@@ -47,15 +47,14 @@ static const char * const license =
 #include <iterator>
 #include <limits>
 #include <map>
+#include <random>
 #include <set>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include <cmath>
-#if !defined(OPENMPT123_ANCIENT_COMPILER_STDINT)
 #include <cstdint>
-#endif
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -100,35 +99,35 @@ static const char * const license =
 namespace openmpt123 {
 
 struct silent_exit_exception : public std::exception {
-	silent_exit_exception() throw() { }
+	silent_exit_exception() { }
 };
 
 struct show_license_exception : public std::exception {
-	show_license_exception() throw() { }
+	show_license_exception() { }
 };
 
 struct show_credits_exception : public std::exception {
-	show_credits_exception() throw() { }
+	show_credits_exception() { }
 };
 
 struct show_man_version_exception : public std::exception {
-	show_man_version_exception() throw() { }
+	show_man_version_exception() { }
 };
 
 struct show_man_help_exception : public std::exception {
-	show_man_help_exception() throw() { }
+	show_man_help_exception() { }
 };
 
 struct show_short_version_number_exception : public std::exception {
-	show_short_version_number_exception() throw() { }
+	show_short_version_number_exception() { }
 };
 
 struct show_version_number_exception : public std::exception {
-	show_version_number_exception() throw() { }
+	show_version_number_exception() { }
 };
 
 struct show_long_version_number_exception : public std::exception {
-	show_long_version_number_exception() throw() { }
+	show_long_version_number_exception() { }
 };
 
 bool IsTerminal( int fd ) {
@@ -174,11 +173,7 @@ public:
 		: impl(0)
 	{
 		if ( !flags.force_overwrite ) {
-#if defined(OPENMPT123_ANCIENT_COMPILER_FSTREAM)
-			std::ifstream testfile( filename.c_str(), std::ios::binary );
-#else
 			std::ifstream testfile( filename, std::ios::binary );
-#endif
 			if ( testfile ) {
 				throw exception( "file already exists" );
 			}
@@ -307,17 +302,99 @@ static std::string replace( std::string str, const std::string & oldstr, const s
 	return str;
 }
 
-#if defined( WIN32 )
-static const char path_sep = '\\';
+static bool begins_with( const std::string & str, const std::string & match ) {
+	return ( str.find( match ) == 0 );
+}
+
+static bool ends_with( const std::string & str, const std::string & match ) {
+	return ( str.rfind( match ) == ( str.length() - match.length() ) );
+}
+
+static std::string trim_left(std::string str, const std::string &whitespace = std::string()) {
+	std::string::size_type pos = str.find_first_not_of(whitespace);
+	if(pos != std::string::npos) {
+		str.erase(str.begin(), str.begin() + pos);
+	} else if(pos == std::string::npos && str.length() > 0 && str.find_last_of(whitespace) == str.length() - 1) {
+		return std::string();
+	}
+	return str;
+}
+
+static std::string trim_right(std::string str, const std::string &whitespace = std::string()) {
+	std::string::size_type pos = str.find_last_not_of(whitespace);
+	if(pos != std::string::npos) {
+		str.erase(str.begin() + pos + 1, str.end());
+	} else if(pos == std::string::npos && str.length() > 0 && str.find_first_of(whitespace) == 0) {
+		return std::string();
+	}
+	return str;
+}
+
+static std::string trim(std::string str, const std::string &whitespace = std::string()) {
+	return trim_right(trim_left(str, whitespace), whitespace);
+}
+
+static std::string trim_eol( const std::string & str ) {
+	return trim( str, "\r\n" );
+}
+
+static std::string default_path_separator() {
+#if defined(WIN32)
+	return "\\";
 #else
-static const char path_sep = '/';
+	return "/";
 #endif
+}
+
+static std::string path_separators() {
+#if defined(WIN32)
+	return "\\/";
+#else
+	return "/";
+#endif
+}
+
+static bool is_path_separator( char c ) {
+#if defined(WIN32)
+	return ( c == '\\' ) || ( c == '/' );
+#else
+	return c == '/';
+#endif
+}
+
+static std::string get_basepath( std::string filename ) {
+	std::string::size_type pos = filename.find_last_of( path_separators() );
+	if ( pos == std::string::npos ) {
+		return std::string();
+	}
+	return filename.substr( 0, pos ) + default_path_separator();
+}
+
+static bool is_absolute( std::string filename ) {
+#if defined(WIN32)
+	if ( begins_with( filename, "\\\\?\\UNC\\" ) ) {
+		return true;
+	}
+	if ( begins_with( filename, "\\\\?\\" ) ) {
+		return true;
+	}
+	if ( begins_with( filename, "\\\\" ) ) {
+		return true; // UNC
+	}
+	if ( begins_with( filename, "//" ) ) {
+		return true; // UNC
+	}
+	return ( filename.length() ) >= 3 && ( filename[1] == ':' ) && is_path_separator( filename[2] );
+#else
+	return ( filename.length() >= 1 ) && is_path_separator( filename[0] );
+#endif
+}
 
 static std::string get_filename( const std::string & filepath ) {
-	if ( filepath.find_last_of( std::string(1,path_sep) ) == std::string::npos ) {
+	if ( filepath.find_last_of( path_separators() ) == std::string::npos ) {
 		return filepath;
 	}
-	return filepath.substr( filepath.find_last_of( std::string(1,path_sep) ) + 1 );
+	return filepath.substr( filepath.find_last_of( path_separators() ) + 1 );
 }
 
 static std::string prepend_lines( std::string str, const std::string & prefix ) {
@@ -365,13 +442,43 @@ static std::string seconds_to_string( double time ) {
 
 static void show_info( std::ostream & log, bool verbose ) {
 	log << "openmpt123" << " v" << OPENMPT123_VERSION_STRING << ", libopenmpt " << openmpt::string::get( "library_version" ) << " (" << "OpenMPT " << openmpt::string::get( "core_version" ) << ")" << std::endl;
-	log << "Copyright (c) 2013-2017 OpenMPT developers <https://lib.openmpt.org/>" << std::endl;
+	log << "Copyright (c) 2013-2018 OpenMPT developers <https://lib.openmpt.org/>" << std::endl;
 	if ( !verbose ) {
 		log << std::endl;
 		return;
 	}
 	log << "  libopenmpt source..: " << openmpt::string::get( "source_url" ) << std::endl;
 	log << "  libopenmpt date....: " << openmpt::string::get( "source_date" ) << std::endl;
+	log << "  libopenmpt srcinfo.: ";
+	{
+		std::vector<std::string> fields;
+		if ( openmpt::string::get( "source_is_package" ) == "1" ) {
+			fields.push_back( "package" );
+		}
+		if ( openmpt::string::get( "source_is_release" ) == "1" ) {
+			fields.push_back( "release" );
+		}
+		if ( ( !openmpt::string::get( "source_revision" ).empty() ) && ( openmpt::string::get( "source_revision" ) != "0" ) ) {
+			std::string field = "rev" + openmpt::string::get( "source_revision" );
+			if ( openmpt::string::get( "source_has_mixed_revisions" ) == "1" ) {
+				field += "+mixed";
+			}
+			if ( openmpt::string::get( "source_is_modified" ) == "1" ) {
+				field += "+modified";
+			}
+			fields.push_back( field );
+		}
+		bool first = true;
+		for ( std::vector<std::string>::const_iterator it = fields.begin(); it != fields.end(); ++it ) {
+			if ( first ) {
+				first = false;
+			} else {
+				log << ", ";
+			}
+			log << (*it);
+		}
+	}
+	log << std::endl;
 	log << "  libopenmpt compiler: " << openmpt::string::get( "build_compiler" ) << std::endl;
 	log << "  libopenmpt features: " << openmpt::string::get( "library_features" ) << std::endl;
 #ifdef MPT_WITH_SDL2
@@ -403,7 +510,7 @@ static void show_info( std::ostream & log, bool verbose ) {
 	log << " <https://libsdl.org/>" << std::endl;
 #endif
 #ifdef MPT_WITH_PULSEAUDIO
-	log << " " << "libpulse, libpulse-simple" << " (headers " << pa_get_headers_version()  << ", API " << PA_API_VERSION << ", PROTOCOL " << PA_PROTOCOL_VERSION << ", library " << ( pa_get_library_version() ? pa_get_library_version() : "unkown" ) << ") <https://www.freedesktop.org/wiki/Software/PulseAudio/>" << std::endl;
+	log << " " << "libpulse, libpulse-simple" << " (headers " << pa_get_headers_version()  << ", API " << PA_API_VERSION << ", PROTOCOL " << PA_PROTOCOL_VERSION << ", library " << ( pa_get_library_version() ? pa_get_library_version() : "unknown" ) << ") <https://www.freedesktop.org/wiki/Software/PulseAudio/>" << std::endl;
 #endif
 #ifdef MPT_WITH_PORTAUDIO
 	log << " " << Pa_GetVersionText() << " (" << Pa_GetVersion() << ") <http://portaudio.com/>" << std::endl;
@@ -424,7 +531,7 @@ static void show_info( std::ostream & log, bool verbose ) {
 static void show_man_version( textout & log ) {
 	log << "openmpt123" << " v" << OPENMPT123_VERSION_STRING << std::endl;
 	log << std::endl;
-	log << "Copyright (c) 2013-2017 OpenMPT developers <https://lib.openmpt.org/>" << std::endl;
+	log << "Copyright (c) 2013-2018 OpenMPT developers <https://lib.openmpt.org/>" << std::endl;
 }
 
 static void show_short_version( textout & log ) {
@@ -494,10 +601,11 @@ static void show_help( textout & log, bool with_info = true, bool longhelp = fal
 		log << "     --credits              Show elaborate contributors list" << std::endl;
 		log << "     --license              Show license" << std::endl;
 		log << std::endl;
+		log << "     --probe                Probe each file whether it is a supported file format" << std::endl;
 		log << "     --info                 Display information about each file" << std::endl;
 		log << "     --ui                   Interactively play each file" << std::endl;
 		log << "     --batch                Play each file" << std::endl;
-		log << "     --render               Render each file to PCM data" << std::endl;
+		log << "     --render               Render each file to individual PCM data files" << std::endl;
 		if ( !longhelp ) {
 			log << std::endl;
 			log.writeout();
@@ -529,6 +637,7 @@ static void show_help( textout & log, bool with_info = true, bool longhelp = fal
 		log << "     --pitch f              Set pitch factor f [default: " << pitch_flag_to_double( commandlineflags().pitch ) << "]" << std::endl;
 		log << "     --dither n             Dither type to use (if applicable for selected output format): [0=off,1=auto,2=0.5bit,3=1bit] [default: " << commandlineflags().dither << "]" << std::endl;
 		log << std::endl;
+		log << "     --playlist file        Load playlist from file" << std::endl;
 		log << "     --[no-]randomize       Randomize playlist [default: " << commandlineflags().randomize << "]" << std::endl;
 		log << "     --[no-]shuffle         Shuffle through playlist [default: " << commandlineflags().shuffle << "]" << std::endl;
 		log << "     --[no-]restart         Restart playlist when finished [default: " << commandlineflags().restart << "]" << std::endl;
@@ -546,8 +655,8 @@ static void show_help( textout & log, bool with_info = true, bool longhelp = fal
 		log << "     --buffer n             Set output buffer size to n ms [default: " << commandlineflags().buffer << "]" << std::endl;
 		log << "     --period n             Set output period size to n ms [default: " << commandlineflags().period  << "]" << std::endl;
 		log << "     --stdout               Write raw audio data to stdout [default: " << commandlineflags().use_stdout << "]" << std::endl;
-		log << "     --output-type t        Use output format t when writing to a PCM file [default: " << commandlineflags().output_extension << "]" << std::endl;
-		log << " -o, --output f             Write PCM output to file f instead of streaming to audio device [default: " << commandlineflags().output_filename << "]" << std::endl;
+		log << "     --output-type t        Use output format t when writing to a individual PCM files (only applies to --render mode) [default: " << commandlineflags().output_extension << "]" << std::endl;
+		log << " -o, --output f             Write PCM output to file f instead of streaming to audio device (only applies to --ui and --batch modes) [default: " << commandlineflags().output_filename << "]" << std::endl;
 		log << "     --force                Force overwriting of output file [default: " << commandlineflags().force_overwrite << "]" << std::endl;
 		log << std::endl;
 		log << "     --                     Interpret further arguments as filenames" << std::endl;
@@ -779,10 +888,16 @@ static const char * const channel_tags[4][4] = {
 };
 
 static std::string channel_to_string( int channels, int channel, const meter_channel & meter, bool tiny = false ) {
-	float db = 20.0f * std::log10( meter.peak );
-	float db_hold = 20.0f * std::log10( meter.hold );
-	int val = static_cast<int>( db + 48.0f );
-	int hold_pos = static_cast<int>( db_hold + 48.0f );
+	int val = std::numeric_limits<int>::min();
+	int hold_pos = std::numeric_limits<int>::min();
+	if ( meter.peak > 0.0f ) {
+		float db = 20.0f * std::log10( meter.peak );
+		val = static_cast<int>( db + 48.0f );
+	}
+	if ( meter.hold > 0.0f ) {
+		float db_hold = 20.0f * std::log10( meter.hold );
+		hold_pos = static_cast<int>( db_hold + 48.0f );
+	}
 	if ( val < 0 ) {
 		val = 0;
 	}
@@ -802,13 +917,13 @@ static std::string channel_to_string( int channels, int channel, const meter_cha
 		headroom = 0;
 	}
 	if ( tiny ) {
-		if ( meter.clip != 0.0f || db >= 0.0f ) {
+		if ( meter.clip != 0.0f || meter.peak >= 1.0f ) {
 			return "#";
-		} else if ( db > -6.0f ) {
+		} else if ( meter.peak > std::pow( 10.0f, -6.0f / 20.0f ) ) {
 			return "O";
-		} else if ( db > -12.0f ) {
+		} else if ( meter.peak > std::pow( 10.0f, -12.0f / 20.0f ) ) {
 			return "o";
-		} else if ( db > -18.0f ) {
+		} else if ( meter.peak > std::pow( 10.0f, -18.0f / 20.0f ) ) {
 			return ".";
 		} else {
 			return " ";
@@ -938,17 +1053,10 @@ void render_loop( commandlineflags & flags, Tmod & mod, double & duration, texto
 	std::vector<Tsample> rear_left( bufsize );
 	std::vector<Tsample> rear_right( bufsize );
 	std::vector<Tsample*> buffers( 4 ) ;
-#if defined(OPENMPT123_ANCIENT_COMPILER_VECTOR)
-	buffers[0] = &left[0];
-	buffers[1] = &right[0];
-	buffers[2] = &rear_left[0];
-	buffers[3] = &rear_right[0];
-#else
 	buffers[0] = left.data();
 	buffers[1] = right.data();
 	buffers[2] = rear_left.data();
 	buffers[3] = rear_right.data();
-#endif
 	buffers.resize( flags.channels );
 	
 	meter_type meter;
@@ -1063,15 +1171,9 @@ void render_loop( commandlineflags & flags, Tmod & mod, double & duration, texto
 		std::size_t count = 0;
 
 		switch ( flags.channels ) {
-#if defined(OPENMPT123_ANCIENT_COMPILER_VECTOR)
-			case 1: count = mod.read( flags.samplerate, bufsize, &left[0] ); break;
-			case 2: count = mod.read( flags.samplerate, bufsize, &left[0], &right[0] ); break;
-			case 4: count = mod.read( flags.samplerate, bufsize, &left[0], &right[0], &rear_left[0], &rear_right[0] ); break;
-#else
 			case 1: count = mod.read( flags.samplerate, bufsize, left.data() ); break;
 			case 2: count = mod.read( flags.samplerate, bufsize, left.data(), right.data() ); break;
 			case 4: count = mod.read( flags.samplerate, bufsize, left.data(), right.data(), rear_left.data(), rear_right.data() ); break;
-#endif
 		}
 		
 		char cpu_str[64] = "";
@@ -1088,11 +1190,7 @@ void render_loop( commandlineflags & flags, Tmod & mod, double & duration, texto
 		}
 
 		if ( flags.show_meters ) {
-#if defined(OPENMPT123_ANCIENT_COMPILER_VECTOR)
-			update_meter( meter, flags, count, &buffers[0] );
-#else
 			update_meter( meter, flags, count, buffers.data() );
-#endif
 		}
 
 		if ( count > 0 ) {
@@ -1343,12 +1441,64 @@ static void show_fields( textout & log, const std::vector<field> & fields ) {
 	}
 }
 
+static void probe_mod_file( commandlineflags & flags, const std::string & filename, std::uint64_t filesize, std::istream & data_stream, textout & log ) {
+
+	log.writeout();
+
+	std::vector<field> fields;
+
+	if ( flags.filenames.size() > 1 ) {
+		set_field( fields, "Playlist" ).ostream() << flags.playlist_index + 1 << "/" << flags.filenames.size();
+		set_field( fields, "Prev/Next" ).ostream()
+		    << "'"
+		    << ( flags.playlist_index > 0 ? get_filename( flags.filenames[ flags.playlist_index - 1 ] ) : std::string() )
+		    << "'"
+		    << " / "
+		    << "['" << get_filename( filename ) << "']"
+		    << " / "
+		    << "'"
+		    << ( flags.playlist_index + 1 < flags.filenames.size() ? get_filename( flags.filenames[ flags.playlist_index + 1 ] ) : std::string() )
+		    << "'"
+		   ;
+	}
+	if ( flags.verbose ) {
+		set_field( fields, "Path" ).ostream() << filename;
+	}
+	if ( flags.show_details ) {
+		set_field( fields, "Filename" ).ostream() << get_filename( filename );
+		set_field( fields, "Size" ).ostream() << bytes_to_string( filesize );
+	}
+	
+	int probe_result = openmpt::probe_file_header( openmpt::probe_file_header_flags_default, data_stream );
+	std::string probe_result_string;
+	switch ( probe_result ) {
+		case openmpt::probe_file_header_result_success:
+			probe_result_string = "Success";
+			break;
+		case openmpt::probe_file_header_result_failure:
+			probe_result_string = "Failure";
+			break;
+		case openmpt::probe_file_header_result_wantmoredata:
+			probe_result_string = "Insufficient Data";
+			break;
+		default:
+			probe_result_string = "Internal Error";
+			break;
+	}
+	set_field( fields, "Probe" ).ostream() << probe_result_string;
+
+	show_fields( log, fields );
+
+	log.writeout();
+
+}
+
 template < typename Tmod >
 void render_mod_file( commandlineflags & flags, const std::string & filename, std::uint64_t filesize, Tmod & mod, textout & log, write_buffers_interface & audio_stream ) {
 
 	log.writeout();
 
-	if ( flags.mode != ModeInfo ) {
+	if ( flags.mode != ModeProbe && flags.mode != ModeInfo ) {
 		mod.set_repeat_count( flags.repeatcount );
 		apply_mod_settings( flags, mod );
 	}
@@ -1421,7 +1571,7 @@ void render_mod_file( commandlineflags & flags, const std::string & filename, st
 		audio_stream.write_updated_metadata( get_metadata( mod ) );
 	}
 
-	if ( flags.mode == ModeInfo ) {
+	if ( flags.mode == ModeProbe || flags.mode == ModeInfo ) {
 		return;
 	}
 
@@ -1444,6 +1594,82 @@ void render_mod_file( commandlineflags & flags, const std::string & filename, st
 		}
 		throw;
 	}
+
+	log.writeout();
+
+}
+
+static void probe_file( commandlineflags & flags, const std::string & filename, textout & log ) {
+
+	log.writeout();
+
+	std::ostringstream silentlog;
+
+	try {
+
+#if defined(WIN32) && defined(UNICODE) && !defined(_MSC_VER)
+		std::istringstream file_stream;
+#else
+		std::ifstream file_stream;
+#endif
+		std::uint64_t filesize = 0;
+		bool use_stdin = ( filename == "-" );
+		if ( !use_stdin ) {
+			#if defined(WIN32) && defined(UNICODE) && !defined(_MSC_VER)
+				// Only MSVC has std::ifstream::ifstream(std::wstring).
+				// Fake it for other compilers using _wfopen().
+				std::string data;
+				FILE * f = _wfopen( utf8_to_wstring( filename ).c_str(), L"rb" );
+				if ( f ) {
+					while ( !feof( f ) ) {
+						static const std::size_t BUFFER_SIZE = 4096;
+						char buffer[BUFFER_SIZE];
+						size_t data_read = fread( buffer, 1, BUFFER_SIZE, f );
+						std::copy( buffer, buffer + data_read, std::back_inserter( data ) );
+					}
+					fclose( f );
+					f = NULL;
+				}
+				file_stream.str( data );
+				filesize = data.length();
+			#elif defined(_MSC_VER) && defined(UNICODE)
+				file_stream.open( utf8_to_wstring( filename ), std::ios::binary );
+				file_stream.seekg( 0, std::ios::end );
+				filesize = file_stream.tellg();
+				file_stream.seekg( 0, std::ios::beg );
+			#else
+				file_stream.open( filename, std::ios::binary );
+				file_stream.seekg( 0, std::ios::end );
+				filesize = file_stream.tellg();
+				file_stream.seekg( 0, std::ios::beg );
+			#endif
+		}
+		std::istream & data_stream = use_stdin ? std::cin : file_stream;
+		if ( data_stream.fail() ) {
+			throw exception( "file open error" );
+		}
+		
+		probe_mod_file( flags, filename, filesize, data_stream, log );
+
+	} catch ( silent_exit_exception & ) {
+		throw;
+	} catch ( std::exception & e ) {
+		if ( !silentlog.str().empty() ) {
+			log << "errors probing '" << filename << "': " << silentlog.str() << std::endl;
+		} else {
+			log << "errors probing '" << filename << "'" << std::endl;
+		}
+		log << "error probing '" << filename << "': " << e.what() << std::endl;
+	} catch ( ... ) {
+		if ( !silentlog.str().empty() ) {
+			log << "errors probing '" << filename << "': " << silentlog.str() << std::endl;
+		} else {
+			log << "errors probing '" << filename << "'" << std::endl;
+		}
+		log << "unknown error probing '" << filename << "'" << std::endl;
+	}
+
+	log << std::endl;
 
 	log.writeout();
 
@@ -1483,20 +1709,12 @@ static void render_file( commandlineflags & flags, const std::string & filename,
 				file_stream.str( data );
 				filesize = data.length();
 			#elif defined(_MSC_VER) && defined(UNICODE)
-#if defined(OPENMPT123_ANCIENT_COMPILER_FSTREAM)
-				file_stream.open( utf8_to_wstring( filename ).c_str(), std::ios::binary );
-#else
 				file_stream.open( utf8_to_wstring( filename ), std::ios::binary );
-#endif
 				file_stream.seekg( 0, std::ios::end );
 				filesize = file_stream.tellg();
 				file_stream.seekg( 0, std::ios::beg );
 			#else
-#if defined(OPENMPT123_ANCIENT_COMPILER_FSTREAM)
-				file_stream.open( filename.c_str(), std::ios::binary );
-#else
 				file_stream.open( filename, std::ios::binary );
-#endif
 				file_stream.seekg( 0, std::ios::end );
 				filesize = file_stream.tellg();
 				file_stream.seekg( 0, std::ios::beg );
@@ -1543,18 +1761,17 @@ static void render_file( commandlineflags & flags, const std::string & filename,
 }
 
 
-static std::string get_random_filename(std::set<std::string> & filenames) {
-	// TODO: actually use a useful random distribution
-	std::size_t index = std::rand() % filenames.size();
+static std::string get_random_filename( std::set<std::string> & filenames, std::default_random_engine & prng ) {
+	std::size_t index = std::uniform_int_distribution<std::size_t>( 0, filenames.size() - 1 )( prng );
 	std::set<std::string>::iterator it = filenames.begin();
 	std::advance( it, index );
 	return *it;
 }
 
 
-static void render_files( commandlineflags & flags, textout & log, write_buffers_interface & audio_stream ) {
+static void render_files( commandlineflags & flags, textout & log, write_buffers_interface & audio_stream, std::default_random_engine & prng ) {
 	if ( flags.randomize ) {
-		std::random_shuffle( flags.filenames.begin(), flags.filenames.end() );
+		std::shuffle( flags.filenames.begin(), flags.filenames.end(), prng );
 	}
 	try {
 		while ( true ) {
@@ -1566,7 +1783,7 @@ static void render_files( commandlineflags & flags, textout & log, write_buffers
 					if ( shuffle_set.empty() ) {
 						break;
 					}
-					std::string filename = get_random_filename( shuffle_set );
+					std::string filename = get_random_filename( shuffle_set, prng );
 					try {
 						flags.playlist_index = std::find( flags.filenames.begin(), flags.filenames.end(), filename ) - flags.filenames.begin();
 						render_file( flags, filename, log, audio_stream );
@@ -1620,6 +1837,126 @@ static void render_files( commandlineflags & flags, textout & log, write_buffers
 }
 
 
+static bool parse_playlist( commandlineflags & flags, std::string filename, std::ostream & log ) {
+	log.flush();
+	bool is_playlist = false;
+	bool m3u8 = false;
+	if ( ends_with( filename, ".m3u") || ends_with( filename, ".m3U") || ends_with( filename, ".M3u") || ends_with( filename, ".M3U") ) {
+		is_playlist = true;
+	}
+	if ( ends_with( filename, ".m3u8") || ends_with( filename, ".m3U8") || ends_with( filename, ".M3u8") || ends_with( filename, ".M3U8") ) {
+		is_playlist = true;
+		m3u8 = true;
+	}
+	if ( ends_with( filename, ".pls") || ends_with( filename, ".plS") || ends_with( filename, ".pLs") || ends_with( filename, ".pLS") || ends_with( filename, ".Pls")  || ends_with( filename, ".PlS")  || ends_with( filename, ".PLs")  || ends_with( filename, ".PLS") ) {
+		is_playlist = true;
+	}
+	std::string basepath = get_basepath( filename );
+	try {
+#if defined(WIN32) && defined(UNICODE) && !defined(_MSC_VER)
+		std::istringstream file_stream;
+#else
+		std::ifstream file_stream;
+#endif
+		#if defined(WIN32) && defined(UNICODE) && !defined(_MSC_VER)
+			// Only MSVC has std::ifstream::ifstream(std::wstring).
+			// Fake it for other compilers using _wfopen().
+			std::string data;
+			FILE * f = _wfopen( utf8_to_wstring( filename ).c_str(), L"rb" );
+			if ( f ) {
+				while ( !feof( f ) ) {
+					static const std::size_t BUFFER_SIZE = 4096;
+					char buffer[BUFFER_SIZE];
+					size_t data_read = fread( buffer, 1, BUFFER_SIZE, f );
+					std::copy( buffer, buffer + data_read, std::back_inserter( data ) );
+				}
+				fclose( f );
+				f = NULL;
+			}
+			file_stream.str( data );
+		#elif defined(_MSC_VER) && defined(UNICODE)
+			file_stream.open( utf8_to_wstring( filename ), std::ios::binary );
+		#else
+			file_stream.open( filename, std::ios::binary );
+		#endif
+		std::string line;
+		bool first = true;
+		bool extm3u = false;
+		bool pls = false;
+		while ( std::getline( file_stream, line ) ) {
+			std::string newfile;
+			line = trim_eol( line );
+			if ( first ) {
+				first = false;
+				if ( line == "#EXTM3U" ) {
+					extm3u = true;
+					continue;
+				} else if ( line == "[playlist]" ) {
+					pls = true;
+				}
+			}
+			if ( line.empty() ) {
+				continue;
+			}
+			if ( pls ) {
+				if ( begins_with( line, "File" ) ) {
+					if ( line.find( "=" ) != std::string::npos ) {
+						flags.filenames.push_back( line.substr( line.find( "=" ) + 1 ) );
+					}
+				} else if ( begins_with( line, "Title" ) ) {
+					continue;
+				} else if ( begins_with( line, "Length" ) ) {
+					continue;
+				} else if ( begins_with( line, "NumberOfEntries" ) ) {
+					continue;
+				} else if ( begins_with( line, "Version" ) ) {
+					continue;
+				} else {
+					continue;
+				}
+			} else if ( extm3u ) {
+				if ( begins_with( line, "#EXTINF" ) ) {
+					continue;
+				} else if ( begins_with( line, "#" ) ) {
+					continue;
+				}
+				if ( m3u8 ) {
+					newfile = line;
+				} else {
+#if defined(WIN32)
+					newfile = wstring_to_utf8( locale_to_wstring( line ) );
+#else
+					newfile = line;
+#endif
+				}
+			} else {
+				if ( m3u8 ) {
+					newfile = line;
+				} else {
+#if defined(WIN32)
+					newfile = wstring_to_utf8( locale_to_wstring( line ) );
+#else
+					newfile = line;
+#endif
+				}
+			}
+			if ( !newfile.empty() ) {
+				if ( !is_absolute( newfile ) ) {
+					newfile = basepath + newfile;
+				}
+				flags.filenames.push_back( newfile );
+			}
+		}
+	} catch ( std::exception & e ) {
+		log << "error loading '" << filename << "': " << e.what() << std::endl;
+	} catch ( ... ) {
+		log << "unknown error loading '" << filename << "'" << std::endl;
+	}
+	log.flush();
+	return is_playlist;
+}
+
+
 static commandlineflags parse_openmpt123( const std::vector<std::string> & args, std::ostream & log ) {
 
 	log.flush();
@@ -1667,6 +2004,8 @@ static commandlineflags parse_openmpt123( const std::vector<std::string> & args,
 				throw show_credits_exception();
 			} else if ( arg == "--license" ) {
 				throw show_license_exception();
+			} else if ( arg == "--probe" ) {
+				flags.mode = ModeProbe;
 			} else if ( arg == "--info" ) {
 				flags.mode = ModeInfo;
 			} else if ( arg == "--ui" ) {
@@ -1829,6 +2168,9 @@ static commandlineflags parse_openmpt123( const std::vector<std::string> & args,
 			} else if ( arg == "--dither" && nextarg != "" ) {
 				std::istringstream istr( nextarg );
 				istr >> flags.dither;
+				++i;
+			} else if ( arg == "--playlist" && nextarg != "" ) {
+				parse_playlist( flags, nextarg, log );
 				++i;
 			} else if ( arg == "--randomize" ) {
 				flags.randomize = true;
@@ -2046,6 +2388,10 @@ static int main( int argc, char * argv [] ) {
 		textout & log = flags.quiet ? *static_cast<textout*>( &dummy_log ) : *static_cast<textout*>( stdout_can_ui ? &std_out : &std_err );
 
 		show_info( log, flags.verbose );
+		
+		if ( !flags.warnings.empty() ) {
+			log << flags.warnings << std::endl;
+		}
 
 		if ( flags.verbose ) {
 			log << flags;
@@ -2053,47 +2399,56 @@ static int main( int argc, char * argv [] ) {
 
 		log.writeout();
 
-		std::srand( static_cast<unsigned int>( std::time( NULL ) ) );
+		std::random_device rd;
+		std::seed_seq seq{ rd(), static_cast<unsigned int>( std::time( NULL ) ) };
+		std::default_random_engine prng( seq );
+		std::srand( std::uniform_int_distribution<unsigned int>()( prng ) );
 
 		switch ( flags.mode ) {
+			case ModeProbe: {
+				for ( std::vector<std::string>::iterator filename = flags.filenames.begin(); filename != flags.filenames.end(); ++filename ) {
+					probe_file( flags, *filename, log );
+					flags.playlist_index++;
+				}
+			} break;
 			case ModeInfo: {
 				void_audio_stream dummy;
-				render_files( flags, log, dummy );
+				render_files( flags, log, dummy, prng );
 			} break;
 			case ModeUI:
 			case ModeBatch: {
 				if ( flags.use_stdout ) {
 					flags.apply_default_buffer_sizes();
 					stdout_stream_raii stdout_audio_stream;
-					render_files( flags, log, stdout_audio_stream );
+					render_files( flags, log, stdout_audio_stream, prng );
 				} else if ( !flags.output_filename.empty() ) {
 					flags.apply_default_buffer_sizes();
 					file_audio_stream_raii file_audio_stream( flags, flags.output_filename, log );
-					render_files( flags, log, file_audio_stream );
+					render_files( flags, log, file_audio_stream, prng );
 #if defined( MPT_WITH_PULSEAUDIO )
 				} else if ( flags.driver == "pulseaudio" || flags.driver.empty() ) {
 					pulseaudio_stream_raii pulseaudio_stream( flags, log );
-					render_files( flags, log, pulseaudio_stream );
+					render_files( flags, log, pulseaudio_stream, prng );
 #endif
 #if defined( MPT_WITH_SDL2 )
 				} else if ( flags.driver == "sdl2" || flags.driver.empty() ) {
 					sdl2_stream_raii sdl2_stream( flags, log );
-					render_files( flags, log, sdl2_stream );
+					render_files( flags, log, sdl2_stream, prng );
 #endif
 #if defined( MPT_WITH_SDL )
 				} else if ( flags.driver == "sdl" || flags.driver.empty() ) {
 					sdl_stream_raii sdl_stream( flags, log );
-					render_files( flags, log, sdl_stream );
+					render_files( flags, log, sdl_stream, prng );
 #endif
 #if defined( MPT_WITH_PORTAUDIO )
 				} else if ( flags.driver == "portaudio" || flags.driver.empty() ) {
 					portaudio_stream_raii portaudio_stream( flags, log );
-					render_files( flags, log, portaudio_stream );
+					render_files( flags, log, portaudio_stream, prng );
 #endif
 #if defined( WIN32 )
 				} else if ( flags.driver == "waveout" || flags.driver.empty() ) {
 					waveout_stream_raii waveout_stream( flags );
-					render_files( flags, log, waveout_stream );
+					render_files( flags, log, waveout_stream, prng );
 #endif
 				} else {
 					if ( flags.driver.empty() ) {

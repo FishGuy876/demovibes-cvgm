@@ -1,11 +1,10 @@
 #!/bin/sh -eu
-CC='gcc'
-MAKE='make'
-INPUT=
+CC=${CC:='gcc'}
+CFLAGS=${CFLAGS:='-ffast-math -O2'}
+CPPFLAGS=${CPPFLAGS:=}
+LDFLAGS=${LDFLAGS:=}
+SOURCES=
 LIBS=
-CFLAGS=
-CPPFLAGS=
-LDFLAGS=
 
 # remove old output files
 rm -f makefile.conf config.mk
@@ -75,8 +74,8 @@ ask() {
 }
 
 # in case there is local stuff
-test -d "/usr/local/include" && CPPFLAGS="$CPPFLAGS -I/usr/local/include"
-test -d '/usr/local/lib' && LDFLAGS="$LDFLAGS -L/usr/local/lib"
+test -d "/usr/local/include" && CPPFLAGS="-I/usr/local/include $CPPFLAGS"
+test -d '/usr/local/lib' && LDFLAGS="-L/usr/local/lib $LDFLAGS"
 
 # build environment
 assert_exe 'make'
@@ -91,29 +90,33 @@ assert_lib 'libavformat'
 assert_lib 'libavutil'
 assert_lib 'libswresample'
 
+# pthraed
+test $(uname) != 'Darwin' && LDFLAGS="-pthread -Wl,-rpath='$$ORIGIN/libs' $LDFLAGS"
+
 # bass
-if test $(uname -s) = 'Linux' && (have_file 'libs/libbass.so' || ask '==> use BASS for module playback?'); then
-    assert_exe 'wget'
+if test $(uname) = 'Linux' -o $(uname) = 'Darwin' && (have_file 'libs/libbass.so' || ask '>>> Use BASS for module playback?'); then
+    assert_exe 'curl'
     assert_exe 'unzip'
     CPPFLAGS="-DENABLE_BASS $CPPFLAGS"
     LDFLAGS="-lbass $LDFLAGS"
-    INPUT="bassdecoder.c $INPUT"
+    SOURCES="bassdecoder.c $SOURCES"
     LIBS="libbass.so $LIBS"
 fi
 
 # git version
-have_exe "git" && have_file ".git" && CPPFLAGS="$CPPFLAGS -DBUILD_ID=\$(shell git describe --always)"
+have_exe "git" && have_file ".git" && CPPFLAGS="-DBUILD_ID=\$(shell git describe --always) $CPPFLAGS"
 
 # generate makefile
 cat <<EOF >makefile.conf
 CC            = $CC
-CFLAGS        = -ffast-math -O2
+CXX           = ${CXX:=g++}
+CFLAGS        = $CFLAGS
 CPPFLAGS      = $CPPFLAGS
 LDFLAGS       = $LDFLAGS
-DEMOSAUCE_SRC = $INPUT
-DSCAN_SRC     = $INPUT
+DEMOSAUCE_SRC = $SOURCES
+DSCAN_SRC     = $SOURCES
 LIBS          = $LIBS
 EOF
 
 echo "done."
-echo "run 'make clobber' to rebuild libraries."
+echo "run 'make' to build demosauce."

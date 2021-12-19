@@ -132,22 +132,10 @@ bool IsValid(std::istream & f) { return !f.fail(); }
 bool IsValid(std::iostream & f) { return !f.fail(); }
 IO::Offset TellRead(std::istream & f)
 {
-	#if MPT_MSVC_BEFORE(2010, 0)
-		if(StreamIsStringStreamAndValidAndEmpty(f))
-		{
-			return 0;
-		}
-	#endif
 	return f.tellg();
 }
 IO::Offset TellWrite(std::ostream & f)
 {
-	#if MPT_MSVC_BEFORE(2010, 0)
-		if(StreamIsStringStreamAndValidAndEmpty(f))
-		{
-			return 0;
-		}
-	#endif
 	return f.tellp();
 }
 bool SeekBegin(std::ostream & f)
@@ -373,11 +361,16 @@ void FileDataContainerSeekable::CacheStream() const
 		return;
 	}
 	cache.resize(streamLength);
-	InternalRead(&cache[0], 0, streamLength);
+	InternalRead(cache.data(), 0, streamLength);
 	cached = true;
 }
 
 bool FileDataContainerSeekable::IsValid() const
+{
+	return true;
+}
+
+bool FileDataContainerSeekable::HasFastGetLength() const
 {
 	return true;
 }
@@ -390,7 +383,7 @@ bool FileDataContainerSeekable::HasPinnedView() const
 const mpt::byte *FileDataContainerSeekable::GetRawData() const
 {
 	CacheStream();
-	return &cache[0];
+	return cache.data();
 }
 
 IFileDataContainer::off_t FileDataContainerSeekable::GetLength() const
@@ -568,6 +561,11 @@ bool FileDataContainerUnseekable::IsValid() const
 	return true;
 }
 
+bool FileDataContainerUnseekable::HasFastGetLength() const
+{
+	return false;
+}
+
 bool FileDataContainerUnseekable::HasPinnedView() const
 {
 	return true; // we have the cache which is required for seeking anyway
@@ -576,7 +574,7 @@ bool FileDataContainerUnseekable::HasPinnedView() const
 const mpt::byte *FileDataContainerUnseekable::GetRawData() const
 {
 	CacheStream();
-	return &cache[0];
+	return cache.data();
 }
 
 IFileDataContainer::off_t FileDataContainerUnseekable::GetLength() const

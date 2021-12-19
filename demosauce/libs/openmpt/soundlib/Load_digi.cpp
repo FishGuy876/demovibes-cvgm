@@ -13,49 +13,29 @@
 
 OPENMPT_NAMESPACE_BEGIN
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(push, 1)
-#endif
-
 // DIGI File Header
-struct PACKED DIGIFileHeader
+struct DIGIFileHeader
 {
-	char   signature[20];
-	char   versionStr[4];	// Supposed to be "V1.6" or similar, but other values like "TAP!" have been found as well.
-	uint8  versionInt;		// e.g. 0x16 = 1.6
-	uint8  numChannels;
-	uint8  packEnable;
-	char   unknown[19];
-	uint8  lastPatIndex;
-	uint8  lastOrdIndex;
-	uint8  orders[128];
-	uint32 smpLength[31];
-	uint32 smpLoopStart[31];
-	uint32 smpLoopLength[31];
-	uint8  smpVolume[31];
-	uint8  smpFinetune[31];
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		for(SAMPLEINDEX i = 0; i < 31; i++)
-		{
-			SwapBytesBE(smpLength[i]);
-			SwapBytesBE(smpLoopStart[i]);
-			SwapBytesBE(smpLoopLength[i]);
-		}
-	}
+	char     signature[20];
+	char     versionStr[4];	// Supposed to be "V1.6" or similar, but other values like "TAP!" have been found as well.
+	uint8be  versionInt;	// e.g. 0x16 = 1.6
+	uint8be  numChannels;
+	uint8be  packEnable;
+	char     unknown[19];
+	uint8be  lastPatIndex;
+	uint8be  lastOrdIndex;
+	uint8be  orders[128];
+	uint32be smpLength[31];
+	uint32be smpLoopStart[31];
+	uint32be smpLoopLength[31];
+	uint8be  smpVolume[31];
+	uint8be  smpFinetune[31];
 };
 
-STATIC_ASSERT(sizeof(DIGIFileHeader) == 610);
-
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(pop)
-#endif
+MPT_BINARY_STRUCT(DIGIFileHeader, 610)
 
 
 static void ReadDIGIPatternEntry(FileReader &file, ModCommand &m)
-//---------------------------------------------------------------
 {
 	CSoundFile::ReadMODPatternEntry(file, m);
 	CSoundFile::ConvertModCommand(m);
@@ -92,20 +72,49 @@ static void ReadDIGIPatternEntry(FileReader &file, ModCommand &m)
 }
 
 
-bool CSoundFile::ReadDIGI(FileReader &file, ModLoadingFlags loadFlags)
-//--------------------------------------------------------------------
+static bool ValidateHeader(const DIGIFileHeader &fileHeader)
 {
-	file.Rewind();
-
-	DIGIFileHeader fileHeader;
-	if(!file.ReadConvertEndianness(fileHeader)
-		|| memcmp(fileHeader.signature, "DIGI Booster module\0", 20)
+	if(std::memcmp(fileHeader.signature, "DIGI Booster module\0", 20)
 		|| !fileHeader.numChannels
 		|| fileHeader.numChannels > 8
 		|| fileHeader.lastOrdIndex > 127)
 	{
 		return false;
-	} else if(loadFlags == onlyVerifyHeader)
+	}
+	return true;
+}
+
+
+CSoundFile::ProbeResult CSoundFile::ProbeFileHeaderDIGI(MemoryFileReader file, const uint64 *pfilesize)
+{
+	DIGIFileHeader fileHeader;
+	if(!file.ReadStruct(fileHeader))
+	{
+		return ProbeWantMoreData;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return ProbeFailure;
+	}
+	MPT_UNREFERENCED_PARAMETER(pfilesize);
+	return ProbeSuccess;
+}
+
+
+bool CSoundFile::ReadDIGI(FileReader &file, ModLoadingFlags loadFlags)
+{
+	file.Rewind();
+
+	DIGIFileHeader fileHeader;
+	if(!file.ReadStruct(fileHeader))
+	{
+		return false;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return false;
+	}
+	if(loadFlags == onlyVerifyHeader)
 	{
 		return true;
 	}
@@ -117,9 +126,9 @@ bool CSoundFile::ReadDIGI(FileReader &file, ModLoadingFlags loadFlags)
 	m_nChannels = fileHeader.numChannels;
 	m_nSamples = 31;
 	m_nSamplePreAmp = 256 / m_nChannels;
-	m_madeWithTracker = mpt::String::Print("Digi Booster %1.%2", fileHeader.versionInt >> 4, fileHeader.versionInt & 0x0F);
+	m_madeWithTracker = mpt::format(MPT_USTRING("Digi Booster %1.%2"))(fileHeader.versionInt >> 4, fileHeader.versionInt & 0x0F);
 
-	Order.ReadFromArray(fileHeader.orders, fileHeader.lastOrdIndex + 1);
+	ReadOrderFromArray(Order(), fileHeader.orders, fileHeader.lastOrdIndex + 1);
 
 	// Read sample headers
 	for(SAMPLEINDEX smp = 0; smp < 31; smp++)
@@ -135,7 +144,7 @@ bool CSoundFile::ReadDIGI(FileReader &file, ModLoadingFlags loadFlags)
 		}
 		sample.SanitizeLoops();
 	
-		sample.nVolume = std::min(fileHeader.smpVolume[smp], uint8(64)) * 4;
+		sample.nVolume = std::min<uint8>(fileHeader.smpVolume[smp], 64) * 4;
 		sample.nFineTune = MOD2XMFineTune(fileHeader.smpFinetune[smp]);
 	}
 
@@ -146,6 +155,9 @@ bool CSoundFile::ReadDIGI(FileReader &file, ModLoadingFlags loadFlags)
 		file.ReadString<mpt::String::maybeNullTerminated>(m_szNames[smp], 30);
 	}
 
+
+	if(loadFlags & loadPatternData)
+		Patterns.ResizeArray(fileHeader.lastPatIndex + 1);
 	for(PATTERNINDEX pat = 0; pat <= fileHeader.lastPatIndex; pat++)
 	{
 		FileReader patternChunk;
@@ -164,8 +176,8 @@ bool CSoundFile::ReadDIGI(FileReader &file, ModLoadingFlags loadFlags)
 
 		if(fileHeader.packEnable)
 		{
-			std::vector<uint8> eventMask;
-			patternChunk.ReadVector(eventMask, 64);
+			uint8 eventMask[64];
+			patternChunk.ReadArray(eventMask);
 
 			// Compressed patterns are stored in row-major order...
 			for(ROWINDEX row = 0; row < 64; row++)

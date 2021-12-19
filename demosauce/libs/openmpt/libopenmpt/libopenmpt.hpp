@@ -19,24 +19,7 @@
 #include <string>
 #include <vector>
 
-#ifndef LIBOPENMPT_QUIRK_NO_CSTDINT
 #include <cstdint>
-#else
-#include <stdint.h>
-namespace openmpt {
-namespace std {
-typedef ::int8_t   int8_t;
-typedef ::int16_t  int16_t;
-typedef ::int32_t  int32_t;
-typedef ::int64_t  int64_t;
-typedef ::uint8_t  uint8_t; 
-typedef ::uint16_t uint16_t; 
-typedef ::uint32_t uint32_t;
-typedef ::uint64_t uint64_t;
-using namespace ::std;
-}
-}
-#endif
 
 /*!
  * \page libopenmpt_cpp_overview C++ API
@@ -112,7 +95,7 @@ using namespace ::std;
  *
  * \section libopenmpt_cpp_threads libopenmpt in multi-threaded environments
  *
- * - libopenmpt is tread-aware.
+ * - libopenmpt is thread-aware.
  * - Individual libopenmpt objects are not thread-safe.
  * - libopenmpt itself does not spawn any user-visible threads but may spawn
  * threads for internal use.
@@ -148,19 +131,36 @@ using namespace ::std;
 
 namespace openmpt {
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable:4275)
+#endif
+//! libopenmpt exception base class
+/*!
+  Base class used for all exceptions that are thrown by libopenmpt itself. Libopenmpt may additionally throw any exception thrown by the standard library which are all derived from std::exception.
+  \sa \ref libopenmpt_cpp_error
+*/
 class LIBOPENMPT_CXX_API exception : public std::exception {
 private:
 	char * text;
 public:
-	exception( const std::string & text ) LIBOPENMPT_NOEXCEPT;
-	virtual ~exception() LIBOPENMPT_NOEXCEPT;
-	virtual const char * what() const LIBOPENMPT_NOEXCEPT;
+	exception( const std::string & text ) noexcept;
+	exception( const exception & other ) noexcept;
+	exception( exception && other ) noexcept;
+	exception & operator = ( const exception & other ) noexcept;
+	exception & operator = ( exception && other ) noexcept;
+	virtual ~exception() noexcept;
+	virtual const char * what() const noexcept;
 }; // class exception
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 //! Get the libopenmpt version number
 /*!
   Returns the libopenmpt version number.
-  \return The value represents (major << 24 + minor << 16 + revision).
+  \return The value represents (major << 24 + minor << 16 + patch << 0).
+  \remarks libopenmpt < 0.3.0-pre used the following scheme: (major << 24 + minor << 16 + revision).
 */
 LIBOPENMPT_CXX_API std::uint32_t get_library_version();
 
@@ -193,10 +193,19 @@ LIBOPENMPT_DEPRECATED static const char license          LIBOPENMPT_ATTR_DEPRECA
   \param key Key to query.
          Possible keys are:
           -  "library_version": verbose library version string
+          -  "library_version_major": libopenmpt major version number
+          -  "library_version_minor": libopenmpt minor version number
+          -  "library_version_patch": libopenmpt patch version number
+          -  "library_version_prerel": libopenmpt pre-release version string
+          -  "library_version_is_release": "1" if the version is an officially released version
           -  "library_features": verbose library features string
           -  "core_version": verbose OpenMPT core version string
           -  "source_url": original source code URL
           -  "source_date": original source code date
+          -  "source_revision": original source code revision
+          -  "source_is_modified": "1" if the original source has been modified
+          -  "source_has_mixed_revisions": "1" if the original source has been compiled from different various revision
+          -  "source_is_package": "1" if the original source has been obtained from a source pacakge instead of source code version control
           -  "build": information about the current build (e.g. the build date or compiler used)
           -  "build_compiler": information about the compiler used to build libopenmpt
           -  "credits": all contributors
@@ -231,11 +240,95 @@ LIBOPENMPT_CXX_API bool is_extension_supported( const std::string & extension );
   \param effort Effort to make when validating stream. Effort 0.0 does not even look at stream at all and effort 1.0 completely loads the file from stream. A lower effort requires less data to be loaded but only gives a rough estimate answer. Use an effort of 0.25 to only verify the header data of the module file.
   \param log Log where warning and errors are written.
   \return Probability between 0.0 and 1.0.
-  \remarks openmpt::could_open_propability() can return any value between 0.0 and 1.0. Only 0.0 and 1.0 are definitive answers, all values in between are just estimates. In general, any return value >0.0 means that you should try loading the file, and any value below 1.0 means that loading may fail. If you want a threshold above which you can be reasonably sure that libopenmpt will be able to load the file, use >=0.5. If you see the need for a threshold below which you could reasonably outright reject a file, use <0.25 (Note: Such a threshold for rejecting on the lower end is not recommended, but may be required for better integration into some other framework's probe scoring.).
-  \remarks openmpt::could_open_propability() expects the complete file data to be eventually available to it, even if it is asked to just parse the header. Verification will be unreliable (both false positives and false negatives), if you pretend that the file is just some few bytes of initial data threshold in size. In order to really just access the first bytes of a file, check in your std::istream implementation whether data or seeking is requested beyond your initial data threshold, and in that case, return an error. openmpt::could_open_propability() will treat this as any other I/O error and return 0.0. You must not expect the correct result in this case. You instead must remember that it asked for more data than you currently want to provide to it and treat this situation as if openmpt::could_open_propability() returned 0.5.
+  \remarks openmpt::probe_file_header() provides a simpler and faster interface that fits almost all use cases better. It is recommended to use openmpt::probe_file_header() instead of openmpt::could_open_probability().
+  \remarks openmpt::could_open_probability() can return any value between 0.0 and 1.0. Only 0.0 and 1.0 are definitive answers, all values in between are just estimates. In general, any return value >0.0 means that you should try loading the file, and any value below 1.0 means that loading may fail. If you want a threshold above which you can be reasonably sure that libopenmpt will be able to load the file, use >=0.5. If you see the need for a threshold below which you could reasonably outright reject a file, use <0.25 (Note: Such a threshold for rejecting on the lower end is not recommended, but may be required for better integration into some other framework's probe scoring.).
+  \remarks openmpt::could_open_probability() expects the complete file data to be eventually available to it, even if it is asked to just parse the header. Verification will be unreliable (both false positives and false negatives), if you pretend that the file is just some few bytes of initial data threshold in size. In order to really just access the first bytes of a file, check in your std::istream implementation whether data or seeking is requested beyond your initial data threshold, and in that case, return an error. openmpt::could_open_probability() will treat this as any other I/O error and return 0.0. You must not expect the correct result in this case. You instead must remember that it asked for more data than you currently want to provide to it and treat this situation as if openmpt::could_open_probability() returned 0.5.
   \sa \ref libopenmpt_c_fileio
+  \sa openmpt::probe_file_header()
+  \since 0.3.0
 */
-LIBOPENMPT_CXX_API double could_open_propability( std::istream & stream, double effort = 1.0, std::ostream & log = std::clog );
+LIBOPENMPT_CXX_API double could_open_probability( std::istream & stream, double effort = 1.0, std::ostream & log = std::clog );
+
+//! Roughly scan the input stream to find out whether libopenmpt might be able to open it
+/*!
+  \deprecated Please use openmpt::module::could_open_probability().
+*/
+LIBOPENMPT_ATTR_DEPRECATED LIBOPENMPT_CXX_API LIBOPENMPT_DEPRECATED double could_open_propability( std::istream & stream, double effort = 1.0, std::ostream & log = std::clog );
+
+//! Get recommended header size for successfull format probing
+/*!
+  \sa openmpt::probe_file_header()
+  \since 0.3.0
+*/
+LIBOPENMPT_CXX_API std::size_t probe_file_header_get_recommended_size();
+
+//! Probe for module formats in openmpt::probe_file_header(). \since 0.3.0
+static const std::uint64_t probe_file_header_flags_modules    = 0x1ul;
+
+//! Probe for module-specific container formats in openmpt::probe_file_header(). \since 0.3.0
+static const std::uint64_t probe_file_header_flags_containers = 0x2ul;
+
+//! Probe for the default set of formats in openmpt::probe_file_header(). \since 0.3.0
+static const std::uint64_t probe_file_header_flags_default    = probe_file_header_flags_modules | probe_file_header_flags_containers;
+
+//! Probe for no formats in openmpt::probe_file_header(). \since 0.3.0
+static const std::uint64_t probe_file_header_flags_none       = 0x0ul;
+
+//! Possible return values for openmpt::probe_file_header(). \since 0.3.0
+enum probe_file_header_result {
+	probe_file_header_result_success      =  1,
+	probe_file_header_result_failure      =  0,
+	probe_file_header_result_wantmoredata = -1
+};
+
+//! Probe the provided bytes from the beginning of a file for supported file format headers to find out whether libopenmpt might be able to open it
+/*!
+  \param flags Ored mask of openmpt::probe_file_header_flags_modules and openmpt::probe_file_header_flags_containers, or openmpt::probe_file_header_flags_default.
+  \param data Beginning of the file data.
+  \param size Size of the beginning of the file data.
+  \param filesize Full size of the file data on disk.
+  \remarks It is recommended to provide openmpt::probe_file_header_get_recommended_size() bytes of data for data and size. If the file is smaller, only provide the filesize amount and set size and filesize to the file's size. 
+  \remarks openmpt::could_open_probability() provides a more elaborate interface that might be required for special use cases. It is recommended to use openmpt::probe_file_header() though, if possible.
+  \retval probe_file_header_result_success The file will most likely be supported by libopenmpt.
+  \retval probe_file_header_result_failure The file is not supported by libopenmpt.
+  \retval probe_file_header_result_wantmoredata An answer could not be determined with the amount of data provided.
+  \sa openmpt::probe_file_header_get_recommended_size()
+  \sa openmpt::could_open_probability()
+  \since 0.3.0
+*/
+LIBOPENMPT_CXX_API int probe_file_header( std::uint64_t flags, const std::uint8_t * data, std::size_t size, std::uint64_t filesize );
+
+//! Probe the provided bytes from the beginning of a file for supported file format headers to find out whether libopenmpt might be able to open it
+/*!
+  \param flags Ored mask of openmpt::probe_file_header_flags_modules and openmpt::probe_file_header_flags_containers, or openmpt::probe_file_header_flags_default.
+  \param data Beginning of the file data.
+  \param size Size of the beginning of the file data.
+  \remarks It is recommended to use the overload of this function that also takes the filesize as parameter if at all possile. libopenmpt can provide more accurate answers if the filesize is known.
+  \remarks It is recommended to provide openmpt::probe_file_header_get_recommended_size() bytes of data for data and size. If the file is smaller, only provide the filesize amount and set size to the file's size. 
+  \remarks openmpt::could_open_probability() provides a more elaborate interface that might be required for special use cases. It is recommended to use openmpt::probe_file_header() though, if possible.
+  \retval probe_file_header_result_success The file will most likely be supported by libopenmpt.
+  \retval probe_file_header_result_failure The file is not supported by libopenmpt.
+  \retval probe_file_header_result_wantmoredata An answer could not be determined with the amount of data provided.
+  \sa openmpt::probe_file_header_get_recommended_size()
+  \sa openmpt::could_open_probability()
+  \since 0.3.0
+*/
+LIBOPENMPT_CXX_API int probe_file_header( std::uint64_t flags, const std::uint8_t * data, std::size_t size );
+
+//! Probe the provided bytes from the beginning of a file for supported file format headers to find out whether libopenmpt might be able to open it
+/*!
+  \param flags Ored mask of openmpt::probe_file_header_flags_modules and openmpt::probe_file_header_flags_containers, or openmpt::probe_file_header_flags_default.
+  \param stream Input stream to scan.
+  \remarks stream is left in an unspecified state when this function returns.
+  \remarks openmpt::could_open_probability() provides a more elaborate interface that might be required for special use cases. It is recommended to use openmpt::probe_file_header() though, if possible.
+  \retval probe_file_header_result_success The file will most likely be supported by libopenmpt.
+  \retval probe_file_header_result_failure The file is not supported by libopenmpt.
+  \retval probe_file_header_result_wantmoredata An answer could not be determined with the amount of data provided.
+  \sa openmpt::probe_file_header_get_recommended_size()
+  \sa openmpt::could_open_probability()
+  \since 0.3.0
+*/
+LIBOPENMPT_CXX_API int probe_file_header( std::uint64_t flags, std::istream & stream );
 
 class module_impl;
 
@@ -399,10 +492,17 @@ public:
 	/*!
 	  \param subsong Index of the sub-song. -1 plays all sub-songs consecutively.
 	  \throws openmpt::exception Throws an exception derived from openmpt::exception if sub-song is not in range [-1,openmpt::module::get_num_subsongs()[
-	  \sa openmpt::module::get_num_subsongs, openmpt::module::get_subsong_names
+	  \sa openmpt::module::get_num_subsongs, openmpt::module::get_selected_subsong, openmpt::module::get_subsong_names
 	  \remarks Whether subsong -1 (all subsongs consecutively), subsong 0 or some other subsong is selected by default, is an implementation detail and subject to change. If you do not want to care about subsongs, it is recommended to just not call openmpt::module::select_subsong() at all.
 	*/
 	void select_subsong( std::int32_t subsong );
+	//! Get currently selected sub-song from a multi-song module
+	/*!
+	  \return Currently selected sub-song. -1 for all subsongs consecutively, 0 or greater for the current sub-song index.
+	  \sa openmpt::module::get_num_subsongs, openmpt::module::select_subsong, openmpt::module::get_subsong_names
+	  \since 0.3.0
+	*/
+	std::int32_t get_selected_subsong() const;
 	//! Set Repeat Count
 	/*!
 	  \param repeat_count Repeat Count
@@ -481,7 +581,7 @@ public:
 	  \return The number of frames actually rendered.
 	  \retval 0 The end of song has been reached.
 	  \remarks The output buffers are only written to up to the returned number of elements.
-	  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+	  \remarks You can freely switch between any of the "read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
 	  \remarks It is recommended to use the floating point API because of the greater dynamic range and no implied clipping.
 	  \sa \ref libopenmpt_cpp_outputformat
 	*/
@@ -495,7 +595,7 @@ public:
 	  \return The number of frames actually rendered.
 	  \retval 0 The end of song has been reached.
 	  \remarks The output buffers are only written to up to the returned number of elements.
-	  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+	  \remarks You can freely switch between any of the "read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
 	  \remarks It is recommended to use the floating point API because of the greater dynamic range and no implied clipping.
 	  \sa \ref libopenmpt_cpp_outputformat
 	*/
@@ -511,7 +611,7 @@ public:
 	  \return The number of frames actually rendered.
 	  \retval 0 The end of song has been reached.
 	  \remarks The output buffers are only written to up to the returned number of elements.
-	  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+	  \remarks You can freely switch between any of the "read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
 	  \remarks It is recommended to use the floating point API because of the greater dynamic range and no implied clipping.
 	  \sa \ref libopenmpt_cpp_outputformat
 	*/
@@ -524,7 +624,7 @@ public:
 	  \return The number of frames actually rendered.
 	  \retval 0 The end of song has been reached.
 	  \remarks The output buffers are only written to up to the returned number of elements.
-	  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+	  \remarks You can freely switch between any of the "read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
 	  \remarks Floating point samples are in the [-1.0..1.0] nominal range. They are not clipped to that range though and thus might overshoot.
 	  \sa \ref libopenmpt_cpp_outputformat
 	*/
@@ -538,7 +638,7 @@ public:
 	  \return The number of frames actually rendered.
 	  \retval 0 The end of song has been reached.
 	  \remarks The output buffers are only written to up to the returned number of elements.
-	  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+	  \remarks You can freely switch between any of the "read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
 	  \remarks Floating point samples are in the [-1.0..1.0] nominal range. They are not clipped to that range though and thus might overshoot.
 	  \sa \ref libopenmpt_cpp_outputformat
 	*/
@@ -554,7 +654,7 @@ public:
 	  \return The number of frames actually rendered.
 	  \retval 0 The end of song has been reached.
 	  \remarks The output buffers are only written to up to the returned number of elements.
-	  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+	  \remarks You can freely switch between any of the "read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
 	  \remarks Floating point samples are in the [-1.0..1.0] nominal range. They are not clipped to that range though and thus might overshoot.
 	  \sa \ref libopenmpt_cpp_outputformat
 	*/
@@ -567,7 +667,7 @@ public:
 	  \return The number of frames actually rendered.
 	  \retval 0 The end of song has been reached.
 	  \remarks The output buffers are only written to up to the returned number of elements.
-	  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+	  \remarks You can freely switch between any of the "read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
 	  \remarks It is recommended to use the floating point API because of the greater dynamic range and no implied clipping.
 	  \sa \ref libopenmpt_cpp_outputformat
 	*/
@@ -580,7 +680,7 @@ public:
 	  \return The number of frames actually rendered.
 	  \retval 0 The end of song has been reached.
 	  \remarks The output buffers are only written to up to the returned number of elements.
-	  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+	  \remarks You can freely switch between any of the "read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
 	  \remarks It is recommended to use the floating point API because of the greater dynamic range and no implied clipping.
 	  \sa \ref libopenmpt_cpp_outputformat
 	*/
@@ -593,7 +693,7 @@ public:
 	  \return The number of frames actually rendered.
 	  \retval 0 The end of song has been reached.
 	  \remarks The output buffers are only written to up to the returned number of elements.
-	  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+	  \remarks You can freely switch between any of the "read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
 	  \remarks Floating point samples are in the [-1.0..1.0] nominal range. They are not clipped to that range though and thus might overshoot.
 	  \sa \ref libopenmpt_cpp_outputformat
 	*/
@@ -606,7 +706,7 @@ public:
 	  \return The number of frames actually rendered.
 	  \retval 0 The end of song has been reached.
 	  \remarks The output buffers are only written to up to the returned number of elements.
-	  \remarks You can freely switch between any of these function if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
+	  \remarks You can freely switch between any of the "read*" variants if you see a need to do so. libopenmpt tries to introduce as little switching annoyances as possible. Normally, you would only use a single one of these functions for rendering a particular module.
 	  \remarks Floating point samples are in the [-1.0..1.0] nominal range. They are not clipped to that range though and thus might overshoot.
 	  \sa \ref libopenmpt_cpp_outputformat
 	*/
@@ -709,7 +809,7 @@ public:
 	//! Get the number of sub-songs
 	/*!
 	  \return The number of sub-songs in the module. This includes any "hidden" songs (songs that share the same sequence, but start at different order indices) and "normal" sub-songs or "sequences" (if the format supports them).
-	  \sa openmpt::module::get_subsong_names, openmpt::module::select_subsong
+	  \sa openmpt::module::get_subsong_names, openmpt::module::select_subsong, openmpt::module::get_selected_subsong
 	*/
 	std::int32_t get_num_subsongs() const;
 	//! Get the number of pattern channels
@@ -742,7 +842,7 @@ public:
 	//! Get a list of sub-song names
 	/*!
 	  \return All sub-song names.
-	  \sa openmpt::module::get_num_subsongs, openmpt::module::select_subsong
+	  \sa openmpt::module::get_num_subsongs, openmpt::module::select_subsong, openmpt::module::get_selected_subsong
 	*/
 	std::vector<std::string> get_subsong_names() const;
 	//! Get a list of channel names
@@ -868,6 +968,7 @@ public:
 	           - subsong: The current subsong. Setting it has identical semantics as openmpt::module::select_subsong(), getting it returns the currently selected subsong.
 	           - play.tempo_factor: Set a floating point tempo factor. "1.0" is the default tempo.
 	           - play.pitch_factor: Set a floating point pitch factor. "1.0" is the default pitch.
+	           - render.resampler.emulate_amiga: Set to "1" to enable the Amiga resampler for Amiga modules. This emulates the sound characteristics of the Paula chip and overrides the selected interpolation filter. Non-Amiga module formats are not affected by this setting. 
 	           - dither: Set the dither algorithm that is used for the 16 bit versions of openmpt::module::read. Supported values are:
 	                     - 0: No dithering.
 	                     - 1: Default mode. Chosen by OpenMPT code, might change.
@@ -889,6 +990,7 @@ public:
 	/*!
 	  \param ctl The ctl key whose value should be set.
 	  \param value The value that should be set.
+	  \throws openmpt::exception Throws an exception derived from openmpt::exception in case the value is not sensible (e.g. negative tempo factor) or under the circumstances outlined in openmpt::module::get_ctls.
 	  \sa openmpt::module::get_ctls
 	*/
 	void ctl_set( const std::string & ctl, const std::string & value );

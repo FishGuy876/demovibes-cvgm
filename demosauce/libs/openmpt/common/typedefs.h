@@ -16,62 +16,60 @@ OPENMPT_NAMESPACE_BEGIN
 
 
 
-// Platform has native IEEE floating point representation.
-// (Currently always assumed)
-#define MPT_PLATFORM_IEEE_FLOAT 1
-
-
-
-#if MPT_COMPILER_MSVC
-
-#if MPT_MSVC_BEFORE(2010,0)
-#define nullptr 0
-#endif
-
-#elif MPT_COMPILER_GCC
-
-#if MPT_GCC_BEFORE(4,6,0)
-#define nullptr 0
-#endif
-
-#endif
-
-
-
-//  CountOf macro computes the number of elements in a statically-allocated array.
-#if MPT_COMPILER_MSVC
-	#define CountOf(x) _countof(x)
-#else
-	#define CountOf(x) (sizeof((x))/sizeof((x)[0]))
-#endif
-
-
-
-#if MPT_COMPILER_MSVC
-#define PACKED __declspec(align(1))
-#define NEEDS_PRAGMA_PACK
-#elif MPT_COMPILER_GCC || MPT_COMPILER_CLANG || MPT_COMPILER_MSVCCLANGC2
-#if MPT_COMPILER_GCC && MPT_OS_WINDOWS
-// Some versions of mingw64 need this when windows-hosted. Strange.
-#define NEEDS_PRAGMA_PACK
-#endif
-#define PACKED __attribute__((packed)) __attribute__((aligned(1)))
-#else
-#define PACKED alignas(1)
-#endif
-
-
-
 // Advanced inline attributes
 #if MPT_COMPILER_MSVC
-#define forceinline __forceinline
-#define MPT_NOINLINE __declspec(noinline)
+#define MPT_FORCEINLINE __forceinline
+#define MPT_NOINLINE    __declspec(noinline)
 #elif MPT_COMPILER_GCC || MPT_COMPILER_CLANG || MPT_COMPILER_MSVCCLANGC2
-#define forceinline __attribute__((always_inline)) inline
-#define MPT_NOINLINE __attribute__((noinline))
+#define MPT_FORCEINLINE __attribute__((always_inline)) inline
+#define MPT_NOINLINE    __attribute__((noinline))
 #else
-#define forceinline inline
+#define MPT_FORCEINLINE inline
 #define MPT_NOINLINE
+#endif
+
+
+
+// constexpr
+#define MPT_CONSTEXPR11_FUN constexpr MPT_FORCEINLINE
+#define MPT_CONSTEXPR11_VAR constexpr
+#if MPT_CXX_AT_LEAST(14)
+#define MPT_CONSTEXPR14_FUN constexpr MPT_FORCEINLINE
+#define MPT_CONSTEXPR14_VAR constexpr
+#else
+#define MPT_CONSTEXPR14_FUN MPT_FORCEINLINE
+#define MPT_CONSTEXPR14_VAR const
+#endif
+
+
+
+// C++17 std::size
+OPENMPT_NAMESPACE_END
+#include <cstddef>
+OPENMPT_NAMESPACE_BEGIN
+namespace mpt {
+template <typename T>
+MPT_CONSTEXPR11_FUN auto size(const T & v) -> decltype(v.size())
+{
+	return v.size();
+}
+template <typename T, std::size_t N>
+MPT_CONSTEXPR11_FUN std::size_t size(const T(&)[N]) noexcept
+{
+	return N;
+}
+} // namespace mpt
+
+
+
+// MPT_ARRAY_COUNT macro computes the number of elements in a statically-allocated array.
+#if MPT_COMPILER_MSVC
+OPENMPT_NAMESPACE_END
+#include <cstdlib>
+OPENMPT_NAMESPACE_BEGIN
+#define MPT_ARRAY_COUNT(x) _countof(x)
+#else
+#define MPT_ARRAY_COUNT(x) (sizeof((x))/sizeof((x)[0]))
 #endif
 
 
@@ -107,151 +105,26 @@ OPENMPT_NAMESPACE_BEGIN
 
 
 
-// Exception type that is used to catch "operator new" exceptions.
-#if defined(_MFC_VER)
-typedef CMemoryException * MPTMemoryException;
-#else
-OPENMPT_NAMESPACE_END
-#include <new>
-OPENMPT_NAMESPACE_BEGIN
-typedef std::bad_alloc & MPTMemoryException;
-#endif
-
-
-
-// For mpt::make_shared<T>, we sacrifice perfect forwarding in order to keep things simple here.
-// Templated for up to 4 parameters. Add more when required.
-
 OPENMPT_NAMESPACE_END
 #include <memory>
+#include <utility>
 OPENMPT_NAMESPACE_BEGIN
 
-#if MPT_COMPILER_GCC && MPT_GCC_BEFORE(4,3,0)
-OPENMPT_NAMESPACE_END
-#include <tr1/memory>
-OPENMPT_NAMESPACE_BEGIN
-#endif
 
-#if (MPT_COMPILER_MSVC && MPT_MSVC_BEFORE(2010,0)) || (MPT_COMPILER_GCC && MPT_GCC_BEFORE(4,3,0))
 
-#define MPT_SHARED_PTR std::tr1::shared_ptr
-#define MPT_CONST_POINTER_CAST std::tr1::const_pointer_cast
-#define MPT_STATIC_POINTER_CAST std::tr1::static_pointer_cast
-#define MPT_DYNAMIC_POINTER_CAST std::tr1::dynamic_pointer_cast
+#if MPT_CXX_AT_LEAST(14)
 namespace mpt {
-template <typename T> inline MPT_SHARED_PTR<T> make_shared() { return MPT_SHARED_PTR<T>(new T()); }
-template <typename T, typename T1> inline MPT_SHARED_PTR<T> make_shared(const T1 &x1) { return MPT_SHARED_PTR<T>(new T(x1)); }
-template <typename T, typename T1, typename T2> inline MPT_SHARED_PTR<T> make_shared(const T1 &x1, const T2 &x2) { return MPT_SHARED_PTR<T>(new T(x1, x2)); }
-template <typename T, typename T1, typename T2, typename T3> inline MPT_SHARED_PTR<T> make_shared(const T1 &x1, const T2 &x2, const T3 &x3) { return MPT_SHARED_PTR<T>(new T(x1, x2, x3)); }
-template <typename T, typename T1, typename T2, typename T3, typename T4> inline MPT_SHARED_PTR<T> make_shared(const T1 &x1, const T2 &x2, const T3 &x3, const T4 &x4) { return MPT_SHARED_PTR<T>(new T(x1, x2, x3, x4)); }
+using std::make_unique;
 } // namespace mpt
-
 #else
-
-#define MPT_SHARED_PTR std::shared_ptr
-#define MPT_CONST_POINTER_CAST std::const_pointer_cast
-#define MPT_STATIC_POINTER_CAST std::static_pointer_cast
-#define MPT_DYNAMIC_POINTER_CAST std::dynamic_pointer_cast
 namespace mpt {
-template <typename T> inline MPT_SHARED_PTR<T> make_shared() { return std::make_shared<T>(); }
-template <typename T, typename T1> inline MPT_SHARED_PTR<T> make_shared(const T1 &x1) { return std::make_shared<T>(x1); }
-template <typename T, typename T1, typename T2> inline MPT_SHARED_PTR<T> make_shared(const T1 &x1, const T2 &x2) { return std::make_shared<T>(x1, x2); }
-template <typename T, typename T1, typename T2, typename T3> inline MPT_SHARED_PTR<T> make_shared(const T1 &x1, const T2 &x2, const T3 &x3) { return std::make_shared<T>(x1, x2, x3); }
-template <typename T, typename T1, typename T2, typename T3, typename T4> inline MPT_SHARED_PTR<T> make_shared(const T1 &x1, const T2 &x2, const T3 &x3, const T4 &x4) { return std::make_shared<T>(x1, x2, x3, x4); }
-} // namespace mpt
-
-#endif
-
-// We cannot provide unique_ptr as it does require move semantics.
-// However, we can provide a simple scoped_ptr which is also very useful.
-namespace mpt {
-template<typename T> class scoped_ptr
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args)
 {
-private:
-	// Copying is not supported.
-	MPT_DEPRECATED scoped_ptr(const scoped_ptr & other) : m_p(other.m_p) {} // = delete
-	// Copying is not supported.
-	MPT_DEPRECATED scoped_ptr & operator=(const scoped_ptr & other) { m_p = other.m_p; return *this; } // = delete
-public:
-	typedef T element_type;
-	class initializer_impl
-	{
-		friend class scoped_ptr<element_type>;
-	private:
-		element_type * m_p;
-	private:
-		inline initializer_impl(const initializer_impl & other) : m_p(other.m_p) {}
-		inline initializer_impl & operator=(const initializer_impl & other) { m_p = other.m_p; return *this; }
-	public:
-		explicit initializer_impl(T * p) : m_p(p) {}
-	public:
-		template <typename Tobj> static inline typename mpt::scoped_ptr<T>::initializer_impl make() { return mpt::scoped_ptr<T>::initializer_impl(new Tobj()); }
-		template <typename Tobj, typename T1> static inline typename mpt::scoped_ptr<T>::initializer_impl make(const T1 &x1) { return mpt::scoped_ptr<T>::initializer_impl(new Tobj(x1)); }
-		template <typename Tobj, typename T1, typename T2> static inline typename mpt::scoped_ptr<T>::initializer_impl make(const T1 &x1, const T2 &x2) { return mpt::scoped_ptr<T>::initializer_impl(new Tobj(x1, x2)); }
-		template <typename Tobj, typename T1, typename T2, typename T3> static inline typename mpt::scoped_ptr<T>::initializer_impl make(const T1 &x1, const T2 &x2, const T3 &x3) { return mpt::scoped_ptr<T>::initializer_impl(new Tobj(x1, x2, x3)); }
-		template <typename Tobj, typename T1, typename T2, typename T3, typename T4> static inline typename mpt::scoped_ptr<T>::initializer_impl make(const T1 &x1, const T2 &x2, const T3 &x3, const T4 &x4) { return mpt::scoped_ptr<T>::initializer_impl(new Tobj(x1, x2, x3, x4)); }
-	};
-	class initializer_impl_result
-	{
-		friend class scoped_ptr<element_type>;
-	private:
-		element_type * m_p;
-	public:
-		inline initializer_impl_result(const initializer_impl_result & other) : m_p(other.m_p) {}
-	private:
-		MPT_DEPRECATED initializer_impl_result & operator=(const initializer_impl_result & other ) { m_p = other.m_p; return *this; } // = delete
-	public:
-		inline initializer_impl_result(const initializer_impl & other) : m_p(other.m_p) {}
-		inline initializer_impl_result & operator=(const initializer_impl & other) { m_p = other.m_p; return *this; }
-	public:
-		explicit initializer_impl_result(T * p) : m_p(p) {}
-	};
-	class initializer
-	{
-		friend class scoped_ptr<element_type>;
-	private:
-		element_type * m_p;
-	private:
-		MPT_DEPRECATED initializer(const initializer & /* other */ ) {} // = delete
-		MPT_DEPRECATED initializer & operator=(const initializer & /* other */ ) {return *this;} // = delete
-	public:
-		inline initializer(const initializer_impl_result & other) : m_p(other.m_p) {}
-		inline initializer & operator=(const initializer_impl_result & other) { m_p = other.m_p; return *this; }
-	public:
-		explicit initializer(T * p) : m_p(p) {}
-	};
-private:
-	element_type * m_p;
-public:
-	// Creates a scoped_ptr without any owned object.
-	scoped_ptr() : m_p(nullptr) {}
-	// Creates a scoped_ptr and assumes ownership of p (if p != nulltr).
-	explicit scoped_ptr(T * p) : m_p(p) {}
-	// Deletes the currently owned object (if any).
-	~scoped_ptr() { if(m_p) { delete m_p; m_p = nullptr; } }
-	// Deletes the currently owned object (if any), and assumes ownership of the passed object p (if any).
-	void reset(T * p = nullptr) { if(m_p) { delete m_p; m_p = nullptr; } m_p = p; }
-	// Returns a reference to the owned object. Behaviour is undefined if there is no owned object.
-	T & operator*() const { return *m_p; }
-	// Returns a pointer to the owned object, or nullptr if there is not any owned object. Ownership is not transferred.
-	T * operator->() const { return m_p; }
-	// Returns a pointer to the owned object, or nullptr if there is not any owned object. Ownership is not transferred.
-	T * get() const { return m_p; }
-	// Give away ownership of the owned object.
-	T * release() { T * ret = m_p; m_p = nullptr; return ret; }
-	// Creates a scoped_ptr and assumes ownership of the passed object init (if any).
-	scoped_ptr (const initializer & init) : m_p(init.m_p) {}
-	// Deletes the currently owned object (if any), and assumes ownership of the passed object init (if any).
-	scoped_ptr & operator=(const initializer & init) { if(m_p) { delete m_p; m_p = nullptr; } m_p = init.m_p; return *this; }
-	// Returns true iff the scoped_ptr currently owns an object (i.e. same as (bool)p).
-	operator bool() const { return m_p ? true : false; }
-};
-template <typename T> inline typename mpt::scoped_ptr<T>::initializer_impl_result make_scoped() { typedef typename mpt::scoped_ptr<T>::initializer_impl init; return init::template make<T>(); }
-template <typename T, typename T1> inline typename mpt::scoped_ptr<T>::initializer_impl_result make_scoped(const T1 &x1) { typedef typename mpt::scoped_ptr<T>::initializer_impl init; return init::template make<T>(x1); }
-template <typename T, typename T1, typename T2> inline typename mpt::scoped_ptr<T>::initializer_impl_result make_scoped(const T1 &x1, const T2 &x2) { typedef typename mpt::scoped_ptr<T>::initializer_impl init; return init::template make<T>(x1, x2); }
-template <typename T, typename T1, typename T2, typename T3> inline typename mpt::scoped_ptr<T>::initializer_impl_result make_scoped(const T1 &x1, const T2 &x2, const T3 &x3) { typedef typename mpt::scoped_ptr<T>::initializer_impl init; return init::template make<T>(x1, x2, x3); }
-template <typename T, typename T1, typename T2, typename T3, typename T4> inline typename mpt::scoped_ptr<T>::initializer_impl_result make_scoped(const T1 &x1, const T2 &x2, const T3 &x3, const T4 &x4) { typedef typename mpt::scoped_ptr<T>::initializer_impl init; return init::template make<T>(x1, x2, x3, x4); }
+	return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
 } // namespace mpt
+#endif
 
 
 
@@ -271,24 +144,12 @@ template <typename T, typename T1, typename T2, typename T3, typename T4> inline
 #endif
 
 #if MPT_COMPILER_GCC
-#if MPT_GCC_AT_LEAST(4,6,0)
 #define MPT_MAYBE_CONSTANT_IF(x) \
   _Pragma("GCC diagnostic push") \
   _Pragma("GCC diagnostic ignored \"-Wtype-limits\"") \
   if(x) \
   _Pragma("GCC diagnostic pop") \
 /**/
-#elif MPT_GCC_AT_LEAST(4,5,0)
-#define MPT_MAYBE_CONSTANT_IF(x) \
-  _Pragma("GCC diagnostic ignored \"-Wtype-limits\"") \
-  if(x) \
-/**/
-#elif MPT_GCC_AT_LEAST(4,4,0)
-// GCC 4.4 does not like _Pragma diagnostic inside functions.
-// As GCC 4.4 is one of our major compilers, we do not want a noisy build.
-// Thus, just disable this warning globally. (not required for now)
-//#pragma GCC diagnostic ignored "-Wtype-limits"
-#endif
 #endif
 
 #if MPT_COMPILER_CLANG || MPT_COMPILER_MSVCCLANGC2
@@ -331,6 +192,40 @@ template <typename T, typename T1, typename T2, typename T3, typename T4> inline
 
 
 
+#if MPT_COMPILER_MSVC && defined(UNREFERENCED_PARAMETER)
+#define MPT_UNREFERENCED_PARAMETER(x) UNREFERENCED_PARAMETER(x)
+#else
+#define MPT_UNREFERENCED_PARAMETER(x) (void)(x)
+#endif
+
+#define MPT_UNUSED_VARIABLE(x) MPT_UNREFERENCED_PARAMETER(x)
+
+
+
+// Exception handling helpers, because MFC requires explicit deletion of the exception object,
+// Thus, always call exactly one of MPT_EXCEPTION_RETHROW_OUT_OF_MEMORY() or MPT_EXCEPTION_DELETE_OUT_OF_MEMORY(e).
+
+#if defined(_MFC_VER)
+
+#define MPT_EXCEPTION_THROW_OUT_OF_MEMORY()   MPT_DO { AfxThrowMemoryException(); } MPT_WHILE_0
+#define MPT_EXCEPTION_CATCH_OUT_OF_MEMORY(e)  catch ( CMemoryException * e )
+#define MPT_EXCEPTION_RETHROW_OUT_OF_MEMORY() MPT_DO { throw; } MPT_WHILE_0
+#define MPT_EXCEPTION_DELETE_OUT_OF_MEMORY(e) MPT_DO { if(e) { e->Delete(); e = nullptr; } } MPT_WHILE_0
+
+#else // !_MFC_VER
+
+OPENMPT_NAMESPACE_END
+#include <new>
+OPENMPT_NAMESPACE_BEGIN
+#define MPT_EXCEPTION_THROW_OUT_OF_MEMORY()   MPT_DO { throw std::bad_alloc(); } MPT_WHILE_0
+#define MPT_EXCEPTION_CATCH_OUT_OF_MEMORY(e)  catch ( const std::bad_alloc & e )
+#define MPT_EXCEPTION_RETHROW_OUT_OF_MEMORY() MPT_DO { throw; } MPT_WHILE_0
+#define MPT_EXCEPTION_DELETE_OUT_OF_MEMORY(e) MPT_DO { MPT_UNUSED_VARIABLE(e); } MPT_WHILE_0
+
+#endif // _MFC_VER
+
+
+
 // Static code checkers might need to get the knowledge of our assertions transferred to them.
 #define MPT_CHECKER_ASSUME_ASSERTIONS 1
 //#define MPT_CHECKER_ASSUME_ASSERTIONS 0
@@ -347,7 +242,7 @@ template <typename T, typename T1, typename T2, typename T3, typename T4> inline
 
 #if MPT_CHECKER_ASSUME_ASSERTIONS
 #ifdef NDEBUG
-#error "Builds for static analyzers depend on std::asert being enabled, but the current build has #define NDEBUG. This makes no sense."
+#error "Builds for static analyzers depend on std::assert being enabled, but the current build has #define NDEBUG. This makes no sense."
 #endif
 OPENMPT_NAMESPACE_END
 #include <cassert>
@@ -445,48 +340,37 @@ MPT_NOINLINE void AssertHandler(const char *file, int line, const char *function
 #endif // MPT_ASSERT_HANDLER_NEEDED
 
 
+
 // Compile time assert.
-#if (MPT_COMPILER_GCC && MPT_GCC_BEFORE(4,3,0))
-	#define MPT_SA_CONCAT(x, y) x ## y
-	#define MPT_SA_HELPER(x) MPT_SA_CONCAT(OPENMPT_STATIC_ASSERT_, x)
-	#define OPENMPT_STATIC_ASSERT MPT_SA_HELPER(__LINE__)
-	#define static_assert(expr, msg) typedef char OPENMPT_STATIC_ASSERT[(expr)?1:-1]
-#elif (MPT_COMPILER_MSVC && MPT_MSVC_BEFORE(2010,0))
-	#define static_assert(expr, msg) typedef char OPENMPT_STATIC_ASSERT[(expr)?1:-1]
-#endif
-#define STATIC_ASSERT(expr) static_assert((expr), "compile time assertion failed: " #expr)
+#define MPT_STATIC_ASSERT(expr) static_assert((expr), "compile time assertion failed: " #expr)
+
 
 
 // Macro for marking intentional fall-throughs in switch statements - can be used for static analysis if supported.
-#if MPT_COMPILER_MSVC
-#define MPT_FALLTHROUGH __fallthrough
+#if (MPT_CXX >= 17)
+	#define MPT_FALLTHROUGH [[fallthrough]]
+#elif MPT_COMPILER_MSVC
+	#define MPT_FALLTHROUGH __fallthrough
 #elif MPT_COMPILER_CLANG || MPT_COMPILER_MSVCCLANGC2
-#define MPT_FALLTHROUGH [[clang::fallthrough]]
+	#define MPT_FALLTHROUGH [[clang::fallthrough]]
+#elif MPT_COMPILER_GCC && MPT_GCC_AT_LEAST(7,1,0)
+	#define MPT_FALLTHROUGH __attribute__((fallthrough))
+#elif defined(__has_cpp_attribute)
+	#if __has_cpp_attribute(fallthrough)
+		#define MPT_FALLTHROUGH [[fallthrough]]
+	#else
+		#define MPT_FALLTHROUGH MPT_DO { } MPT_WHILE_0
+	#endif
 #else
-#define MPT_FALLTHROUGH MPT_DO { } MPT_WHILE_0
+	#define MPT_FALLTHROUGH MPT_DO { } MPT_WHILE_0
 #endif
 
 
 
-#if (MPT_COMPILER_MSVC && MPT_MSVC_BEFORE(2010,0)) || (MPT_COMPILER_GCC && MPT_GCC_BEFORE(4,3,0))
-
 OPENMPT_NAMESPACE_END
-#include "stdint.h"
-OPENMPT_NAMESPACE_BEGIN
-
-typedef int8_t   int8;
-typedef int16_t  int16;
-typedef int32_t  int32;
-typedef int64_t  int64;
-typedef uint8_t  uint8;
-typedef uint16_t uint16;
-typedef uint32_t uint32;
-typedef uint64_t uint64;
-
-#else
-
-OPENMPT_NAMESPACE_END
+#include <climits>
 #include <cstdint>
+#include <stdint.h>
 OPENMPT_NAMESPACE_BEGIN
 
 typedef std::int8_t   int8;
@@ -497,12 +381,6 @@ typedef std::uint8_t  uint8;
 typedef std::uint16_t uint16;
 typedef std::uint32_t uint32;
 typedef std::uint64_t uint64;
-
-#endif
-
-OPENMPT_NAMESPACE_END
-#include <stdint.h>
-OPENMPT_NAMESPACE_BEGIN
 
 const int8 int8_min     = INT8_MIN;
 const int16 int16_min   = INT16_MIN;
@@ -525,6 +403,7 @@ struct int24
 {
 	uint8 bytes[3];
 	int24() { bytes[0] = bytes[1] = bytes[2] = 0; }
+#if MPT_PLATFORM_ENDIAN_KNOWN
 	explicit int24(int other)
 	{
 		#ifdef MPT_PLATFORM_BIG_ENDIAN
@@ -545,28 +424,85 @@ struct int24
 			return (static_cast<int8>(bytes[2]) * 65536) + (bytes[1] * 256) + bytes[0];
 		#endif
 	}
+#else
+	explicit int24(int other);
+	operator int() const;
+#endif
 };
-STATIC_ASSERT(sizeof(int24) == 3);
+MPT_STATIC_ASSERT(sizeof(int24) == 3);
 #define int24_min (0-0x00800000)
 #define int24_max (0+0x007fffff)
 
 
 typedef float float32;
-STATIC_ASSERT(sizeof(float32) == 4);
+MPT_STATIC_ASSERT(sizeof(float32) == 4);
 
 typedef double float64;
-STATIC_ASSERT(sizeof(float64) == 8);
+MPT_STATIC_ASSERT(sizeof(float64) == 8);
 
+
+MPT_STATIC_ASSERT(sizeof(std::uintptr_t) == sizeof(void*));
 
 
 namespace mpt {
 
-STATIC_ASSERT(sizeof(char) == 1);
+MPT_STATIC_ASSERT(CHAR_BIT == 8);
+
+MPT_STATIC_ASSERT(sizeof(char) == 1);
 
 typedef unsigned char byte;
-STATIC_ASSERT(sizeof(mpt::byte) == 1);
+MPT_STATIC_ASSERT(sizeof(mpt::byte) == 1);
 
 } // namespace mpt
+
+
+
+#if MPT_COMPILER_MSVC
+
+	#if defined(_M_X64)
+		#define MPT_ARCH_BITS 64
+		#define MPT_ARCH_BITS_32 0
+		#define MPT_ARCH_BITS_64 1
+	#elif defined(_M_IX86)
+		#define MPT_ARCH_BITS 32
+		#define MPT_ARCH_BITS_32 1
+		#define MPT_ARCH_BITS_64 0
+	#endif
+
+#elif MPT_COMPILER_GCC || MPT_COMPILER_CLANG || MPT_COMPILER_MSVCCLANGC2
+
+	#if defined(__SIZEOF_POINTER__)
+		#if (__SIZEOF_POINTER__ == 8)
+			#define MPT_ARCH_BITS 64
+			#define MPT_ARCH_BITS_32 0
+			#define MPT_ARCH_BITS_64 1
+		#elif (__SIZEOF_POINTER__ == 4)
+			#define MPT_ARCH_BITS 32
+			#define MPT_ARCH_BITS_32 1
+			#define MPT_ARCH_BITS_64 0
+		#endif
+	#endif
+
+#endif // MPT_COMPILER
+
+// fallback
+
+#if !defined(MPT_ARCH_BITS)
+#include <cstdint>
+#include <stdint.h>
+MPT_STATIC_ASSERT(sizeof(std::uintptr_t) == sizeof(void*));
+#if defined(UINTPTR_MAX)
+	#if (UINTPTR_MAX == 0xffffffffffffffffull)
+		#define MPT_ARCH_BITS 64
+		#define MPT_ARCH_BITS_32 0
+		#define MPT_ARCH_BITS_64 1
+	#elif (UINTPTR_MAX == 0xffffffffu)
+		#define MPT_ARCH_BITS 32
+		#define MPT_ARCH_BITS_32 1
+		#define MPT_ARCH_BITS_64 0
+	#endif
+#endif // UINTPTR_MAX
+#endif // MPT_ARCH_BITS
 
 
 
@@ -575,16 +511,6 @@ STATIC_ASSERT(sizeof(mpt::byte) == 1);
 #else
 #define MPT_PRINTF_FUNC(formatstringindex,varargsindex)
 #endif
-
-
-
-#if MPT_COMPILER_MSVC && defined(UNREFERENCED_PARAMETER)
-#define MPT_UNREFERENCED_PARAMETER(x) UNREFERENCED_PARAMETER(x)
-#else
-#define MPT_UNREFERENCED_PARAMETER(x) (void)(x)
-#endif
-
-#define MPT_UNUSED_VARIABLE(x) MPT_UNREFERENCED_PARAMETER(x)
 
 
 
@@ -606,6 +532,12 @@ STATIC_ASSERT(sizeof(mpt::byte) == 1);
 #ifndef MPT_MSVC_WORKAROUND_LNK4221
 #define MPT_MSVC_WORKAROUND_LNK4221(x)
 #endif
+
+
+
+// legacy
+#define CountOf(x) MPT_ARRAY_COUNT(x)
+#define STATIC_ASSERT(x) MPT_STATIC_ASSERT(x)
 
 
 

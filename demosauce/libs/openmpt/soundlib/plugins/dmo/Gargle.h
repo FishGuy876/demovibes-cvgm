@@ -8,7 +8,7 @@
  */
 
 
-#if !defined(NO_PLUGINS) && defined(NO_DMO)
+#ifndef NO_PLUGINS
 
 #include "../PlugInterface.h"
 
@@ -17,11 +17,9 @@ OPENMPT_NAMESPACE_BEGIN
 namespace DMO
 {
 
-//===============================
 class Gargle : public IMixPlugin
-//===============================
 {
-public:
+protected:
 	enum Parameters
 	{
 		kGargleRate = 0,
@@ -29,7 +27,6 @@ public:
 		kEqNumParameters
 	};
 
-protected:
 	float m_param[kEqNumParameters];
 
 	uint32 m_period, m_periodHalf, m_counter;	// In frames
@@ -38,67 +35,48 @@ public:
 	static IMixPlugin* Create(VSTPluginLib &factory, CSoundFile &sndFile, SNDMIXPLUGIN *mixStruct);
 	Gargle(VSTPluginLib &factory, CSoundFile &sndFile, SNDMIXPLUGIN *mixStruct);
 
-	virtual void Release() { delete this; }
-	virtual int32 GetUID() const { return 0xDAFD8210; }
-	virtual int32 GetVersion() const { return 0; }
-	virtual void Idle() { }
-	virtual uint32 GetLatency() const { return 0; }
+	void Release() override { delete this; }
+	int32 GetUID() const override { return 0xDAFD8210; }
+	int32 GetVersion() const override { return 0; }
+	void Idle() override { }
+	uint32 GetLatency() const override { return 0; }
 
-	virtual void Process(float *pOutL, float *pOutR, uint32 numFrames);
+	void Process(float *pOutL, float *pOutR, uint32 numFrames) override;
 
-	virtual float RenderSilence(uint32) { return 0.0f; }
-	virtual bool MidiSend(uint32) { return true; }
-	virtual bool MidiSysexSend(const void *, uint32) { return true; }
-	virtual void MidiCC(uint8, MIDIEvents::MidiCC, uint8, CHANNELINDEX) { }
-	virtual void MidiPitchBend(uint8, int32, int8) { }
-	virtual void MidiVibrato(uint8, int32, int8) { }
-	virtual void MidiCommand(uint8, uint8, uint16, uint16, uint16, CHANNELINDEX) { }
-	virtual void HardAllNotesOff() { }
-	virtual bool IsNotePlaying(uint32, uint32, uint32) { return false; }
+	float RenderSilence(uint32) override { return 0.0f; }
 
-	virtual int32 GetNumPrograms() const { return 0; }
-	virtual int32 GetCurrentProgram() { return 0; }
-	virtual void SetCurrentProgram(int32) { }
+	int32 GetNumPrograms() const override { return 0; }
+	int32 GetCurrentProgram() override { return 0; }
+	void SetCurrentProgram(int32) override { }
 
-	virtual PlugParamIndex GetNumParameters() const { return kEqNumParameters; }
-	virtual PlugParamValue GetParameter(PlugParamIndex index);
-	virtual void SetParameter(PlugParamIndex index, PlugParamValue value);
+	PlugParamIndex GetNumParameters() const override { return kEqNumParameters; }
+	PlugParamValue GetParameter(PlugParamIndex index) override;
+	void SetParameter(PlugParamIndex index, PlugParamValue value) override;
 
-	virtual void Resume();
-	virtual void Suspend() { m_isResumed = false; }
-	virtual void PositionChanged() { }
+	void Resume() override;
+	void Suspend() override { m_isResumed = false; }
+	void PositionChanged() override { m_counter = 0; }
 
-	virtual bool IsInstrument() const { return false; }
-	virtual bool CanRecieveMidiEvents() { return false; }
-	virtual bool ShouldProcessSilence() { return true; }
+	bool IsInstrument() const override { return false; }
+	bool CanRecieveMidiEvents() override { return false; }
+	bool ShouldProcessSilence() override { return true; }
 
 #ifdef MODPLUG_TRACKER
-	virtual CString GetDefaultEffectName() { return _T("Gargle"); }
+	CString GetDefaultEffectName() override { return _T("Gargle"); }
 
-	virtual void CacheProgramNames(int32, int32) { }
-	virtual void CacheParameterNames(int32, int32) { }
+	CString GetParamName(PlugParamIndex param) override;
+	CString GetParamLabel(PlugParamIndex) override;
+	CString GetParamDisplay(PlugParamIndex param) override;
 
-	virtual CString GetParamName(PlugParamIndex param);
-	virtual CString GetParamLabel(PlugParamIndex);
-	virtual CString GetParamDisplay(PlugParamIndex param);
+	CString GetCurrentProgramName() override { return CString(); }
+	void SetCurrentProgramName(const CString &) override { }
+	CString GetProgramName(int32) override { return CString(); }
 
-	virtual CString GetCurrentProgramName() { return CString(); }
-	virtual void SetCurrentProgramName(const CString &) { }
-	virtual CString GetProgramName(int32) { return CString(); }
-
-	virtual bool HasEditor() const { return false; }
+	bool HasEditor() const override { return false; }
 #endif
 
-	virtual void BeginSetProgram(int32) { }
-	virtual void EndSetProgram() { }
-
-	virtual int GetNumInputChannels() const { return 2; }
-	virtual int GetNumOutputChannels() const { return 2; }
-
-	virtual bool ProgramsAreChunks() const { return false; }
-
-	virtual size_t GetChunk(char *(&), bool) { return 0; }
-	virtual void SetChunk(size_t, char *, bool) { }
+	int GetNumInputChannels() const override { return 2; }
+	int GetNumOutputChannels() const override { return 2; }
 
 protected:
 	uint32 RateInHertz() const;
@@ -109,4 +87,4 @@ protected:
 
 OPENMPT_NAMESPACE_END
 
-#endif // !NO_PLUGINS && NO_DMO
+#endif // !NO_PLUGINS

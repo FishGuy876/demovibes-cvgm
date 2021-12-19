@@ -22,7 +22,6 @@ OPENMPT_NAMESPACE_BEGIN
 
 
 ComponentBase::ComponentBase(ComponentType type)
-//----------------------------------------------
 	: m_Type(type)
 	, m_Initialized(false)
 	, m_Available(false)
@@ -32,56 +31,48 @@ ComponentBase::ComponentBase(ComponentType type)
 
 
 ComponentBase::~ComponentBase()
-//-----------------------------
 {
 	return;
 }
 
 
 void ComponentBase::SetInitialized()
-//----------------------------------
 {
 	m_Initialized = true;
 }
 
 
 void ComponentBase::SetAvailable()
-//--------------------------------
 {
 	m_Available = true;
 }
 
 
 ComponentType ComponentBase::GetType() const
-//------------------------------------------
 {
 	return m_Type;
 }
 
 
 bool ComponentBase::IsInitialized() const
-//---------------------------------------
 {
 	return m_Initialized;
 }
 
 
 bool ComponentBase::IsAvailable() const
-//-------------------------------------
 {
 	return m_Initialized && m_Available;
 }
 
 
 mpt::ustring ComponentBase::GetVersion() const
-//--------------------------------------------
 {
 	return mpt::ustring();
 }
 
 
 void ComponentBase::Initialize()
-//------------------------------
 {
 	if(IsInitialized())
 	{
@@ -99,7 +90,6 @@ void ComponentBase::Initialize()
 
 
 ComponentLibrary::ComponentLibrary(ComponentType type)
-//----------------------------------------------------
 	: ComponentBase(type)
 	, m_BindFailed(false)
 {
@@ -108,14 +98,12 @@ ComponentLibrary::ComponentLibrary(ComponentType type)
 
 
 ComponentLibrary::~ComponentLibrary()
-//-----------------------------------
 {
 	return;
 }
 
 
 bool ComponentLibrary::AddLibrary(const std::string &libName, const mpt::LibraryPath &libPath)
-//--------------------------------------------------------------------------------------------
 {
 	if(m_Libraries[libName].IsValid())
 	{
@@ -133,37 +121,32 @@ bool ComponentLibrary::AddLibrary(const std::string &libName, const mpt::Library
 
 
 void ComponentLibrary::ClearLibraries()
-//-------------------------------------
 {
 	m_Libraries.clear();
 }
 
 
 void ComponentLibrary::SetBindFailed()
-//------------------------------------
 {
 	m_BindFailed = true;
 }
 
 
 void ComponentLibrary::ClearBindFailed()
-//--------------------------------------
 {
 	m_BindFailed = false;
 }
 
 
 bool ComponentLibrary::HasBindFailed() const
-//------------------------------------------
 {
 	return m_BindFailed;
 }
 
 
 mpt::Library ComponentLibrary::GetLibrary(const std::string &libName) const
-//-------------------------------------------------------------------------
 {
-	TLibraryMap::const_iterator it = m_Libraries.find(libName);
+	const auto it = m_Libraries.find(libName);
 	if(it == m_Libraries.end())
 	{
 		return mpt::Library();
@@ -179,7 +162,6 @@ mpt::Library ComponentLibrary::GetLibrary(const std::string &libName) const
 
 
 ComponentFactoryBase::ComponentFactoryBase(const std::string &id, const std::string &settingsKey)
-//-----------------------------------------------------------------------------------------------
 	: m_ID(id)
 	, m_SettingsKey(settingsKey)
 {
@@ -188,28 +170,24 @@ ComponentFactoryBase::ComponentFactoryBase(const std::string &id, const std::str
 
 
 ComponentFactoryBase::~ComponentFactoryBase()
-//-------------------------------------------
 {
 	return;
 }
 
 
 std::string ComponentFactoryBase::GetID() const
-//---------------------------------------------
 {
 	return m_ID;
 }
 
 
 std::string ComponentFactoryBase::GetSettingsKey() const
-//------------------------------------------------------
 {
 	return m_SettingsKey;
 }
 
 
 void ComponentFactoryBase::PreConstruct() const
-//---------------------------------------------
 {
 	MPT_LOG(LogInformation, "Components", 
 		mpt::format(MPT_USTRING("Constructing Component %1"))
@@ -219,8 +197,7 @@ void ComponentFactoryBase::PreConstruct() const
 }
 
 
-void ComponentFactoryBase::Initialize(ComponentManager &componentManager, MPT_SHARED_PTR<IComponent> component) const
-//-------------------------------------------------------------------------------------------------------------------
+void ComponentFactoryBase::Initialize(ComponentManager &componentManager, std::shared_ptr<IComponent> component) const
 {
 	if(componentManager.IsComponentBlocked(GetSettingsKey()))
 	{
@@ -243,21 +220,18 @@ void ComponentFactoryBase::Initialize(ComponentManager &componentManager, MPT_SH
 //  thus work fine for MSVC (currently).
 
 static mpt::mutex & ComponentListMutex()
-//---------------------------------------
 {
 	static mpt::mutex g_ComponentListMutex;
 	return g_ComponentListMutex;
 }
 
 static ComponentListEntry * & ComponentListHead()
-//-----------------------------------------------
 {
 	static ComponentListEntry *g_ComponentListHead = nullptr;
 	return g_ComponentListHead;
 }
 
 bool ComponentListPush(ComponentListEntry *entry)
-//-----------------------------------------------
 {
 	MPT_LOCK_GUARD<mpt::mutex> guard(ComponentListMutex());
 	entry->next = ComponentListHead();
@@ -266,35 +240,31 @@ bool ComponentListPush(ComponentListEntry *entry)
 }
 
 
-static MPT_SHARED_PTR<ComponentManager> g_ComponentManager;
+static std::shared_ptr<ComponentManager> g_ComponentManager;
 
 
 void ComponentManager::Init(const IComponentManagerSettings &settings)
-//--------------------------------------------------------------------
 {
 	MPT_LOG(LogInformation, "Components", MPT_USTRING("Init"));
 	// cannot use make_shared because the constructor is private
-	g_ComponentManager = MPT_SHARED_PTR<ComponentManager>(new ComponentManager(settings));
+	g_ComponentManager = std::shared_ptr<ComponentManager>(new ComponentManager(settings));
 }
 
 
 void ComponentManager::Release()
-//------------------------------
 {
 	MPT_LOG(LogInformation, "Components", MPT_USTRING("Release"));
-	g_ComponentManager = MPT_SHARED_PTR<ComponentManager>();
+	g_ComponentManager = nullptr;
 }
 
 
-MPT_SHARED_PTR<ComponentManager> ComponentManager::Instance()
-//-----------------------------------------------------------
+std::shared_ptr<ComponentManager> ComponentManager::Instance()
 {
 	return g_ComponentManager;
 }
 
 
 ComponentManager::ComponentManager(const IComponentManagerSettings &settings)
-//---------------------------------------------------------------------------
 	: m_Settings(settings)
 {
 	MPT_LOCK_GUARD<mpt::mutex> guard(ComponentListMutex());
@@ -306,7 +276,6 @@ ComponentManager::ComponentManager(const IComponentManagerSettings &settings)
 
 
 void ComponentManager::Register(const IComponentFactory &componentFactory)
-//------------------------------------------------------------------------
 {
 	if(m_Components.find(componentFactory.GetID()) != m_Components.end())
 	{
@@ -315,41 +284,40 @@ void ComponentManager::Register(const IComponentFactory &componentFactory)
 	RegisteredComponent registeredComponent;
 	registeredComponent.settingsKey = componentFactory.GetSettingsKey();
 	registeredComponent.factoryMethod = componentFactory.GetStaticConstructor();
-	registeredComponent.instance = MPT_SHARED_PTR<IComponent>();
+	registeredComponent.instance = nullptr;
+	registeredComponent.weakInstance = std::weak_ptr<IComponent>();
 	m_Components.insert(std::make_pair(componentFactory.GetID(), registeredComponent));
 }
 
 
 void ComponentManager::Startup()
-//------------------------------
 {
 	MPT_LOG(LogDebug, "Components", MPT_USTRING("Startup"));
 	if(m_Settings.LoadOnStartup())
 	{
-		for(TComponentMap::iterator it = m_Components.begin(); it != m_Components.end(); ++it)
+		for(auto &it : m_Components)
 		{
-			(*it).second.instance = (*it).second.factoryMethod(*this);
+			it.second.instance = it.second.factoryMethod(*this);
+			it.second.weakInstance = it.second.instance;
 		}
 	}
 	if(!m_Settings.KeepLoaded())
 	{
-		for(TComponentMap::iterator it = m_Components.begin(); it != m_Components.end(); ++it)
+		for(auto &it : m_Components)
 		{
-			(*it).second.instance = MPT_SHARED_PTR<IComponent>();
+			it.second.instance = nullptr;
 		}
 	}
 }
 
 
 bool ComponentManager::IsComponentBlocked(const std::string &settingsKey) const
-//-----------------------------------------------------------------------------
 {
 	return m_Settings.IsBlocked(settingsKey);
 }
 
 
-void ComponentManager::InitializeComponent(MPT_SHARED_PTR<IComponent> component) const
-//------------------------------------------------------------------------------------
+void ComponentManager::InitializeComponent(std::shared_ptr<IComponent> component) const
 {
 	if(!component)
 	{
@@ -363,11 +331,10 @@ void ComponentManager::InitializeComponent(MPT_SHARED_PTR<IComponent> component)
 }
 
 
-MPT_SHARED_PTR<IComponent> ComponentManager::GetComponent(const IComponentFactory &componentFactory)
-//--------------------------------------------------------------------------------------------------
+std::shared_ptr<const IComponent> ComponentManager::GetComponent(const IComponentFactory &componentFactory)
 {
-	MPT_SHARED_PTR<IComponent> component = MPT_SHARED_PTR<IComponent>();
-	TComponentMap::iterator it = m_Components.find(componentFactory.GetID());
+	std::shared_ptr<IComponent> component = nullptr;
+	auto it = m_Components.find(componentFactory.GetID());
 	if(it != m_Components.end())
 	{ // registered component
 		if((*it).second.instance)
@@ -375,11 +342,16 @@ MPT_SHARED_PTR<IComponent> ComponentManager::GetComponent(const IComponentFactor
 			component = (*it).second.instance;
 		} else
 		{ // not loaded
-			component = (*it).second.factoryMethod(*this);
+			component = (*it).second.weakInstance.lock();
+			if(!component)
+			{
+				component = (*it).second.factoryMethod(*this);
+			}
 			if(m_Settings.KeepLoaded())
 			{ // keep the component loaded
 				(*it).second.instance = component;
 			}
+			(*it).second.weakInstance = component;
 		}
 	} else
 	{ // unregistered component
@@ -390,16 +362,20 @@ MPT_SHARED_PTR<IComponent> ComponentManager::GetComponent(const IComponentFactor
 }
 
 
-MPT_SHARED_PTR<IComponent> ComponentManager::ReloadComponent(const IComponentFactory &componentFactory)
-//-----------------------------------------------------------------------------------------------------
+std::shared_ptr<const IComponent> ComponentManager::ReloadComponent(const IComponentFactory &componentFactory)
 {
-	MPT_SHARED_PTR<IComponent> component = MPT_SHARED_PTR<IComponent>();
-	TComponentMap::iterator it = m_Components.find(componentFactory.GetID());
+	std::shared_ptr<IComponent> component = nullptr;
+	auto it = m_Components.find(componentFactory.GetID());
 	if(it != m_Components.end())
 	{ // registered component
 		if((*it).second.instance)
 		{ // loaded
-			(*it).second.instance = MPT_SHARED_PTR<IComponent>();
+			(*it).second.instance = nullptr;
+			if(!(*it).second.weakInstance.expired())
+			{
+				throw std::runtime_error("Component not completely unloaded. Cannot reload.");
+			}
+			(*it).second.weakInstance = std::weak_ptr<IComponent>();
 		}
 		// not loaded
 		component = (*it).second.factoryMethod(*this);
@@ -407,6 +383,7 @@ MPT_SHARED_PTR<IComponent> ComponentManager::ReloadComponent(const IComponentFac
 		{ // keep the component loaded
 			(*it).second.instance = component;
 		}
+		(*it).second.weakInstance = component;
 	} else
 	{ // unregistered component
 		component = componentFactory.Construct(*this);
@@ -419,9 +396,10 @@ MPT_SHARED_PTR<IComponent> ComponentManager::ReloadComponent(const IComponentFac
 std::vector<std::string> ComponentManager::GetRegisteredComponents() const
 {
 	std::vector<std::string> result;
-	for(TComponentMap::const_iterator it = m_Components.begin(); it != m_Components.end(); ++it)
+	result.reserve(m_Components.size());
+	for(const auto &it : m_Components)
 	{
-		result.push_back((*it).first);
+		result.push_back(it.first);
 	}
 	return result;
 }
@@ -434,7 +412,7 @@ ComponentInfo ComponentManager::GetComponentInfo(std::string name) const
 	result.state = ComponentStateUnregistered;
 	result.settingsKey = "";
 	result.type = ComponentTypeUnknown;
-	TComponentMap::const_iterator it = m_Components.find(name);
+	const auto it = m_Components.find(name);
 	if(it == m_Components.end())
 	{
 		result.state = ComponentStateUnregistered;
@@ -446,7 +424,11 @@ ComponentInfo ComponentManager::GetComponentInfo(std::string name) const
 		result.state = ComponentStateBlocked;
 		return result;
 	}
-	MPT_SHARED_PTR<IComponent> component = ((*it).second.instance) ? it->second.instance : MPT_SHARED_PTR<IComponent>();
+	std::shared_ptr<IComponent> component = it->second.instance;
+	if(!component)
+	{
+		component = it->second.weakInstance.lock();
+	}
 	if(!component)
 	{
 		result.state = ComponentStateUnintialized;
@@ -465,6 +447,12 @@ ComponentInfo ComponentManager::GetComponentInfo(std::string name) const
 	}
 	result.state = ComponentStateAvailable;
 	return result;
+}
+
+
+mpt::PathString ComponentManager::GetComponentPath() const
+{
+	return m_Settings.Path();
 }
 
 

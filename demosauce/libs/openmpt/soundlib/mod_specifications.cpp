@@ -8,7 +8,7 @@
  */
 
 
-#include <stdafx.h>
+#include "stdafx.h"
 #include "mod_specifications.h"
 #include "../common/misc_util.h"
 #include <algorithm>
@@ -24,7 +24,7 @@ namespace ModSpecs
 #define SongFlag FlagSet<SongFlags>::store_type
 
 
-const CModSpecifications mptm =
+MPT_CONSTEXPR11_VAR CModSpecifications mptm_ =
 {
 	/*
 	TODO: Proper, less arbitrarily chosen values here.
@@ -51,10 +51,11 @@ const CModSpecifications mptm =
 	12,											// Max sample filename length
 	25,											// Max instrument name length
 	12,											// Max instrument filename length
+	0,											// Max comment line length
 	3999,										// SamplesMax
 	255,										// instrumentMax
 	mixLevels1_17RC3,							// defaultMixLevels
-	SongFlag(0) | SONG_LINEARSLIDES | SONG_EXFILTERRANGE | SONG_ITOLDEFFECTS | SONG_ITCOMPATGXX | SONG_EMBEDMIDICFG,	// Supported song flags
+	SongFlag(0) | SONG_LINEARSLIDES | SONG_EXFILTERRANGE | SONG_ITOLDEFFECTS | SONG_ITCOMPATGXX,	// Supported song flags
 	200,										// Max MIDI mapping directives
 	MAX_ENVPOINTS,								// Envelope point count
 	true,										// Has notecut.
@@ -72,13 +73,13 @@ const CModSpecifications mptm =
 	true,										// Has default resampling
 	true,										// Fixed point tempo
 	" JFEGHLKRXODB?CQATI?SMNVW?UY?P?Z\\:#???????",	// Supported Effects
-	" vpcdabuhlrgfe?o",							// Supported Volume Column commands
+	" vpcdabuh??gfe?o",							// Supported Volume Column commands
 };
 
 
 
 
-const CModSpecifications mod =
+MPT_CONSTEXPR11_VAR CModSpecifications mod_ =
 {
 	MOD_TYPE_MOD,								// Internal MODTYPE value
 	"mod",										// File extension
@@ -100,10 +101,11 @@ const CModSpecifications mod =
 	0,											// Max sample filename length
 	0,											// Max instrument name length
 	0,											// Max instrument filename length
+	0,											// Max comment line length
 	31,											// SamplesMax
 	0,											// instrumentMax
 	mixLevelsCompatible,						// defaultMixLevels
-	SongFlag(0) | SONG_PT_MODE | SONG_AMIGALIMITS,	// Supported song flags
+	SongFlag(0) | SONG_PT_MODE | SONG_AMIGALIMITS | SONG_ISAMIGA,	// Supported song flags
 	0,											// Max MIDI mapping directives
 	0,											// No instrument envelopes
 	false,										// No notecut.
@@ -125,7 +127,7 @@ const CModSpecifications mod =
 };
 
 
-const CModSpecifications xm =
+MPT_CONSTEXPR11_VAR CModSpecifications xm_ =
 {
 	MOD_TYPE_XM,								// Internal MODTYPE value
 	"xm",										// File extension
@@ -147,6 +149,7 @@ const CModSpecifications xm =
 	0,											// Max sample filename length
 	22,											// Max instrument name length
 	0,											// Max instrument filename length
+	0,											// Max comment line length
 	128 * 16,									// SamplesMax (actually 16 per instrument)
 	128,										// instrumentMax
 	mixLevelsCompatibleFT2,						// defaultMixLevels
@@ -172,7 +175,7 @@ const CModSpecifications xm =
 };
 
 // XM with MPT extensions
-const CModSpecifications xmEx =
+MPT_CONSTEXPR11_VAR CModSpecifications xmEx_ =
 {
 	MOD_TYPE_XM,								// Internal MODTYPE value
 	"xm",										// File extension
@@ -194,10 +197,11 @@ const CModSpecifications xmEx =
 	0,											// Max sample filename length
 	22,											// Max instrument name length
 	0,											// Max instrument filename length
+	0,											// Max comment line length
 	MAX_SAMPLES - 1,							// SamplesMax (actually 32 per instrument(256 * 32 = 8192), but limited to MAX_SAMPLES = 4000)
 	255,										// instrumentMax
 	mixLevelsCompatibleFT2,						// defaultMixLevels
-	SongFlag(0) | SONG_LINEARSLIDES | SONG_EXFILTERRANGE | SONG_EMBEDMIDICFG,	// Supported song flags
+	SongFlag(0) | SONG_LINEARSLIDES | SONG_EXFILTERRANGE,	// Supported song flags
 	200,										// Max MIDI mapping directives
 	12,											// Envelope point count
 	false,										// No notecut.
@@ -215,10 +219,10 @@ const CModSpecifications xmEx =
 	false,										// Doesn't have default resampling
 	false,										// Integer tempo
 	" 0123456789ABCDRFFTE???GHK?YXPLZ\\?#???????",	// Supported Effects
-	" vpcdabuhlrgfe??",							// Supported Volume Column commands
+	" vpcdabuhlrg????",							// Supported Volume Column commands
 };
 
-const CModSpecifications s3m =
+MPT_CONSTEXPR11_VAR CModSpecifications s3m_ =
 {
 	MOD_TYPE_S3M,								// Internal MODTYPE value
 	"s3m",										// File extension
@@ -240,6 +244,7 @@ const CModSpecifications s3m =
 	12,											// Max sample filename length
 	0,											// Max instrument name length
 	0,											// Max instrument filename length
+	0,											// Max comment line length
 	99,											// SamplesMax
 	0,											// instrumentMax
 	mixLevelsCompatible,						// defaultMixLevels
@@ -265,7 +270,7 @@ const CModSpecifications s3m =
 };
 
 // S3M with MPT extensions
-const CModSpecifications s3mEx =
+MPT_CONSTEXPR11_VAR CModSpecifications s3mEx_ =
 {
 	MOD_TYPE_S3M,								// Internal MODTYPE value
 	"s3m",										// File extension
@@ -287,6 +292,7 @@ const CModSpecifications s3mEx =
 	12,											// Max sample filename length
 	0,											// Max instrument name length
 	0,											// Max instrument filename length
+	0,											// Max comment line length
 	99,											// SamplesMax
 	0,											// instrumentMax
 	mixLevelsCompatible,						// defaultMixLevels
@@ -311,7 +317,7 @@ const CModSpecifications s3mEx =
 	" vp?????????????",							// Supported Volume Column commands
 };
 
-const CModSpecifications it =
+MPT_CONSTEXPR11_VAR CModSpecifications it_ =
 {
 	MOD_TYPE_IT,								// Internal MODTYPE value
 	"it",										// File extension
@@ -333,10 +339,11 @@ const CModSpecifications it =
 	12,											// Max sample filename length
 	25,											// Max instrument name length
 	12,											// Max instrument filename length
+	75,											// Max comment line length
 	99,											// SamplesMax
 	99,											// instrumentMax
 	mixLevelsCompatible,						// defaultMixLevels
-	SongFlag(0) | SONG_LINEARSLIDES | SONG_ITOLDEFFECTS | SONG_ITCOMPATGXX | SONG_EMBEDMIDICFG,	// Supported song flags
+	SongFlag(0) | SONG_LINEARSLIDES | SONG_ITOLDEFFECTS | SONG_ITCOMPATGXX,	// Supported song flags
 	0,											// Max MIDI mapping directives
 	25,											// Envelope point count
 	true,										// Has notecut.
@@ -357,7 +364,7 @@ const CModSpecifications it =
 	" vpcdab?h??gfe??",							// Supported Volume Column commands
 };
 
-const CModSpecifications itEx =
+MPT_CONSTEXPR11_VAR CModSpecifications itEx_ =
 {
 	MOD_TYPE_IT,								// Internal MODTYPE value
 	"it",										// File extension
@@ -379,10 +386,11 @@ const CModSpecifications itEx =
 	12,											// Max sample filename length
 	25,											// Max instrument name length
 	12,											// Max instrument filename length
+	75,											// Max comment line length
 	3999,										// SamplesMax
 	255,										// instrumentMax
 	mixLevelsCompatible,						// defaultMixLevels
-	SongFlag(0) | SONG_LINEARSLIDES | SONG_EXFILTERRANGE | SONG_ITOLDEFFECTS | SONG_ITCOMPATGXX | SONG_EMBEDMIDICFG,	// Supported song flags
+	SongFlag(0) | SONG_LINEARSLIDES | SONG_EXFILTERRANGE | SONG_ITOLDEFFECTS | SONG_ITCOMPATGXX,	// Supported song flags
 	200,										// Max MIDI mapping directives
 	25,											// Envelope point count
 	true,										// Has notecut.
@@ -403,13 +411,21 @@ const CModSpecifications itEx =
 	" vpcdab?h??gfe??",							// Supported Volume Column commands
 };
 
-const CModSpecifications *Collection[] = { &mptm, &mod, &s3m, &s3mEx, &xm, &xmEx, &it, &itEx };
+const CModSpecifications *Collection[8] = { &mptm_, &mod_, &s3m_, &s3mEx_, &xm_, &xmEx_, &it_, &itEx_ };
+
+const CModSpecifications & mptm = mptm_;
+const CModSpecifications & mod = mod_;
+const CModSpecifications & s3m = s3m_;
+const CModSpecifications & s3mEx = s3mEx_;
+const CModSpecifications & xm = xm_;
+const CModSpecifications & xmEx = xmEx_;
+const CModSpecifications & it = it_;
+const CModSpecifications & itEx = itEx_;
 
 } // namespace ModSpecs
 
 
 MODTYPE CModSpecifications::ExtensionToType(std::string ext)
-//----------------------------------------------------------
 {
 	if(ext == "")
 	{
@@ -417,7 +433,7 @@ MODTYPE CModSpecifications::ExtensionToType(std::string ext)
 	}
 	if(ext.length() > 0 && ext[0] == '.')
 	{
-		ext = ext.substr(1);
+		ext.erase(0, 1);
 	}
 	ext = mpt::ToLowerCaseAscii(ext);
 	for(std::size_t i = 0; i < CountOf(ModSpecs::Collection); i++)
@@ -432,7 +448,6 @@ MODTYPE CModSpecifications::ExtensionToType(std::string ext)
 
 
 bool CModSpecifications::HasNote(ModCommand::NOTE note) const
-//-----------------------------------------------------------
 {
 	if(note >= noteMin && note <= noteMax)
 		return true;
@@ -453,7 +468,6 @@ bool CModSpecifications::HasNote(ModCommand::NOTE note) const
 
 
 bool CModSpecifications::HasVolCommand(ModCommand::VOLCMD volcmd) const
-//---------------------------------------------------------------------
 {
 	if(volcmd >= MAX_VOLCMDS) return false;
 	if(volcommands[volcmd] == '?') return false;
@@ -462,7 +476,6 @@ bool CModSpecifications::HasVolCommand(ModCommand::VOLCMD volcmd) const
 
 
 bool CModSpecifications::HasCommand(ModCommand::COMMAND cmd) const
-//----------------------------------------------------------------
 {
 	if(cmd >= MAX_EFFECTS) return false;
 	if(commands[cmd] == '?') return false;
@@ -471,7 +484,6 @@ bool CModSpecifications::HasCommand(ModCommand::COMMAND cmd) const
 
 
 char CModSpecifications::GetVolEffectLetter(ModCommand::VOLCMD volcmd) const
-//--------------------------------------------------------------------------
 {
 	if(volcmd >= MAX_VOLCMDS) return '?';
 	return volcommands[volcmd];
@@ -479,7 +491,6 @@ char CModSpecifications::GetVolEffectLetter(ModCommand::VOLCMD volcmd) const
 
 
 char CModSpecifications::GetEffectLetter(ModCommand::COMMAND cmd) const
-//---------------------------------------------------------------------
 {
 	if(cmd >= MAX_EFFECTS) return '?';
 	return commands[cmd];

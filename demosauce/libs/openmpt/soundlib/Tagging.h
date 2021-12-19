@@ -15,9 +15,7 @@
 OPENMPT_NAMESPACE_BEGIN
 
 
-//=============
 struct FileTags
-//=============
 {
 
 	mpt::ustring encoder;
@@ -38,6 +36,9 @@ struct FileTags
 	FileTags();
 
 };
+
+
+mpt::ustring GetSampleNameFromTags(const FileTags &tags);
 
 
 OPENMPT_NAMESPACE_END

@@ -20,16 +20,39 @@
 
 #if MPT_OS_WINDOWS
 
-#if (MPT_COMPILER_MSVC && MPT_MSVC_AT_LEAST(2010,0)) || MPT_COMPILER_MSVCCLANGC2
+#if defined(MPT_BUILD_MSVC)
+
 #if defined(MPT_BUILD_TARGET_XP)
+
+#if defined(_M_X64)
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0502 // _WIN32_WINNT_WS03
+#endif
+#else // !_M_X64
+#ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501 // _WIN32_WINNT_WINXP
-#else
+#endif
+#endif // _M_X64
+
+#else // MPT_BUILD_TARGET
+
+#ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0601 // _WIN32_WINNT_WIN7
 #endif
-#else
-#define _WIN32_WINNT 0x0500 // _WIN32_WINNT_WIN2000
+
+#endif // MPT_BUILD_TARGET
+
+#else // !MPT_BUILD_MSVC
+
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0501 // _WIN32_WINNT_WINXP
 #endif
+
+#endif // MPT_BUILD_MSVC
+
+#ifndef WINVER
 #define WINVER       _WIN32_WINNT
+#endif
 
 #endif // MPT_OS_WINDOWS
 
@@ -63,7 +86,7 @@
 
 
 // Dependencies from the MSVC build system
-#if MPT_COMPILER_MSVC || MPT_COMPILER_MSVCCLANGC2
+#if defined(MPT_BUILD_MSVC)
 
 // This section defines which dependencies are available when building with
 // MSVC. Other build systems provide MPT_WITH_* macros via command-line or other
@@ -81,8 +104,12 @@
 #define MPT_WITH_LHASA
 #define MPT_WITH_MINIZIP
 #define MPT_WITH_OPUS
+#define MPT_WITH_OPUSENC
 #define MPT_WITH_OPUSFILE
+#define MPT_WITH_PICOJSON
 #define MPT_WITH_PORTAUDIO
+//#define MPT_WITH_PULSEAUDIO
+//#define MPT_WITH_PULSEAUDIOSIMPLE
 #define MPT_WITH_SMBPITCHSHIFT
 #define MPT_WITH_UNRAR
 #define MPT_WITH_VORBISENC
@@ -99,10 +126,9 @@
 #endif
 //#define MPT_WITH_MINIMP3
 //#define MPT_WITH_MINIZ
-//#define MPT_WITH_MPG123
+#define MPT_WITH_MPG123
 #define MPT_WITH_OGG
 //#define MPT_WITH_STBVORBIS
-//#define MPT_WITH_UNMO3
 #define MPT_WITH_VORBIS
 #define MPT_WITH_VORBISFILE
 #define MPT_WITH_ZLIB
@@ -112,23 +138,42 @@
 #if defined(LIBOPENMPT_BUILD)
 
 // OpenMPT and libopenmpt dependencies (not for openmp123, player plugins or examples)
-#if defined(LIBOPENMPT_BUILD_SMALL)
+#if defined(LIBOPENMPT_BUILD_FULL) && defined(LIBOPENMPT_BUILD_SMALL)
+#error "only one of LIBOPENMPT_BUILD_FULL or LIBOPENMPT_BUILD_SMALL can be defined"
+#endif // LIBOPENMPT_BUILD_FULL && LIBOPENMPT_BUILD_SMALL
+
+#if defined(LIBOPENMPT_BUILD_FULL)
 
 //#define MPT_WITH_DL
 //#define MPT_WITH_FLAC
 //#define MPT_WITH_ICONV
 //#define MPT_WITH_LTDL
-#if MPT_OS_WINDOWS
+#if MPT_OS_WINDOWS && !MPT_OS_WINDOWS_WINRT
 #if (_WIN32_WINNT >= 0x0601)
 #define MPT_WITH_MEDIAFOUNDATION
 #endif
 #endif
 //#define MPT_WITH_MINIMP3
+//#define MPT_WITH_MINIZ
+#define MPT_WITH_MPG123
+#define MPT_WITH_OGG
+//#define MPT_WITH_STBVORBIS
+#define MPT_WITH_VORBIS
+#define MPT_WITH_VORBISFILE
+#define MPT_WITH_ZLIB
+
+#elif defined(LIBOPENMPT_BUILD_SMALL)
+
+//#define MPT_WITH_DL
+//#define MPT_WITH_FLAC
+//#define MPT_WITH_ICONV
+//#define MPT_WITH_LTDL
+//#define MPT_WITH_MEDIAFOUNDATION
+#define MPT_WITH_MINIMP3
 #define MPT_WITH_MINIZ
 //#define MPT_WITH_MPG123
 //#define MPT_WITH_OGG
 #define MPT_WITH_STBVORBIS
-//#define MPT_WITH_UNMO3
 //#define MPT_WITH_VORBIS
 //#define MPT_WITH_VORBISFILE
 //#define MPT_WITH_ZLIB
@@ -139,17 +184,12 @@
 //#define MPT_WITH_FLAC
 //#define MPT_WITH_ICONV
 //#define MPT_WITH_LTDL
-#if MPT_OS_WINDOWS
-#if (_WIN32_WINNT >= 0x0601)
-#define MPT_WITH_MEDIAFOUNDATION
-#endif
-#endif
+//#define MPT_WITH_MEDIAFOUNDATION
 //#define MPT_WITH_MINIMP3
 //#define MPT_WITH_MINIZ
-//#define MPT_WITH_MPG123
+#define MPT_WITH_MPG123
 #define MPT_WITH_OGG
 //#define MPT_WITH_STBVORBIS
-//#define MPT_WITH_UNMO3
 #define MPT_WITH_VORBIS
 #define MPT_WITH_VORBISFILE
 #define MPT_WITH_ZLIB
@@ -158,7 +198,7 @@
 
 #endif // LIBOPENMPT_BUILD
 
-#endif // MPT_COMPILER_MSVC || MPT_COMPILER_MSVCCLANGC2
+#endif // MPT_BUILD_MSVC
 
 
 
@@ -187,9 +227,6 @@
 // Enable std::istream support in class FileReader (this is generally not needed for the tracker, local files can easily be mmapped as they have been before introducing std::istream support)
 //#define MPT_FILEREADER_STD_ISTREAM
 
-// Enable performance optimizations for seekable std::istream. Note that these probably will only payoff once FileReader::GetRawData() usage gets further reduced.
-//#define MPT_FILEREADER_STD_ISTREAM_SEEKABLE
-
 // Enable callback stream wrapper for FileReader (required by libopenmpt C API).
 //#define MPT_FILEREADER_CALLBACK_STREAM
 
@@ -208,7 +245,7 @@
 // Disable the built-in reverb effect
 //#define NO_REVERB
 
-// Disable built-in miscellaneous DSP effects (surround, mega bass, noise reduction) 
+// Disable built-in miscellaneous DSP effects (surround, mega bass, noise reduction)
 //#define NO_DSP
 
 // Disable the built-in equalizer.
@@ -225,15 +262,6 @@
 
 // (HACK) Define to build without any plugin support
 //#define NO_PLUGINS
-
-// Enable dynamic loading of libmpg123
-#define MPT_ENABLE_MPG123_DYNBIND
-
-// Enable dynamic loading of un4seen unmo3
-#define MPT_ENABLE_UNMO3_DYNBIND
-
-// Enable built-in MO3 decoder
-#define MPT_ENABLE_MO3_BUILTIN
 
 // Do not build libopenmpt C api
 #define NO_LIBOPENMPT_C
@@ -263,7 +291,6 @@
 #endif
 //#define NO_LOGGING
 #define MPT_FILEREADER_STD_ISTREAM
-#define MPT_FILEREADER_STD_ISTREAM_SEEKABLE
 #define MPT_FILEREADER_CALLBACK_STREAM
 //#define MPT_EXTERNAL_SAMPLES
 #if defined(ENABLE_TESTS) || defined(MPT_BUILD_HACK_ARCHIVE_SUPPORT)
@@ -278,31 +305,15 @@
 #else
 #define NO_ARCHIVE_SUPPORT
 #endif
-#define NO_REVERB
+//#define NO_REVERB
 #define NO_DSP
 #define NO_EQ
 #define NO_AGC
 #define NO_VST
-#if MPT_OS_WINDOWS && MPT_COMPILER_MSVC
-//#define NO_DMO
-#else
+//#if !MPT_OS_WINDOWS || MPT_OS_WINDOWS_WINRT || !MPT_COMPILER_MSVC || !defined(LIBOPENMPT_BUILD_FULL)
 #define NO_DMO
-#endif
+//#endif
 //#define NO_PLUGINS
-#if defined(MPT_ENABLE_DLOPEN)
-#if MPT_OS_WINDOWS || defined(MPT_WITH_LTDL) || defined(MPT_WITH_DL)
-#if !defined(MPT_WITH_MPG123)
-#define MPT_ENABLE_MPG123_DYNBIND
-#endif
-//#define MPT_ENABLE_UNMO3_DYNBIND
-#endif // MPT_OS_WINDOWS || defined(MPT_WITH_LTDL) || defined(MPT_WITH_DL)
-#else // !MPT_ENABLE_DLOPEN
-//#define MPT_ENABLE_MPG123_DYNBIND
-//#define MPT_ENABLE_UNMO3_DYNBIND
-#endif // MPT_ENABLE_DLOPEN
-#if ((defined(MPT_WITH_MPG123) || defined(MPT_ENABLE_MPG123_DYNBIND) || defined(MPT_WITH_MINIMP3)) || defined(MPT_WITH_MEDIAFOUNDATION)) && ((defined(MPT_WITH_OGG) && defined(MPT_WITH_VORBIS) && defined(MPT_WITH_VORBISFILE)) || defined(MPT_WITH_STBVORBIS))
-#define MPT_ENABLE_MO3_BUILTIN
-#endif
 //#define NO_LIBOPENMPT_C
 //#define NO_LIBOPENMPT_CXX
 
@@ -324,7 +335,7 @@
 
 #elif MPT_OS_EMSCRIPTEN
 
-	#define MPT_CHARSET_CODECVTUTF8
+	#define MPT_CHARSET_INTERNAL
 	#ifndef MPT_LOCALE_ASSUME_CHARSET
 	#define MPT_LOCALE_ASSUME_CHARSET CharsetUTF8
 	#endif
@@ -337,7 +348,7 @@
 		#define MPT_ICONV_NO_WCHAR
 		#endif
 	#else
-		#define MPT_CHARSET_CODECVTUTF8
+		#define MPT_CHARSET_INTERNAL
 	#endif
 	//#ifndef MPT_LOCALE_ASSUME_CHARSET
 	//#define MPT_LOCALE_ASSUME_CHARSET CharsetUTF8
@@ -380,7 +391,7 @@
 
 	// mpt::ToWString, mpt::wfmt, ConvertStrTo<std::wstring>
 	// Required by the tracker to ease interfacing with WinAPI.
-	// Required by MPT_USTRING_MODE_WIDE to ease type tunneling in mpt::String::Print.
+	// Required by MPT_USTRING_MODE_WIDE to ease type tunneling in mpt::format.
 	#define MPT_WSTRING_FORMAT 1
 
 #else
@@ -408,7 +419,7 @@
 // fixing stuff up
 
 #if defined(MPT_BUILD_TARGET_XP)
-// Also support Wine 1.6 in addiion to Windows XP
+// Also support Wine 1.6 in addition to Windows XP
 #ifndef MPT_QUIRK_NO_CPP_THREAD
 #define MPT_QUIRK_NO_CPP_THREAD
 #endif
@@ -417,6 +428,12 @@
 #if defined(MPT_BUILD_ANALYZED) || defined(MPT_BUILD_CHECKED) 
 #ifdef NO_ASSERTS
 #undef NO_ASSERTS // static or dynamic analyzers want assertions on
+#endif
+#endif
+
+#if defined(MPT_BUILD_FUZZER)
+#ifndef MPT_FUZZ_TRACKER
+#define MPT_FUZZ_TRACKER
 #endif
 #endif
 
@@ -456,12 +473,8 @@
 #endif // arch
 #endif // ENABLE_ASM
 
-#if !defined(ENABLE_MMX) && !defined(NO_REVERB)
-#define NO_REVERB // reverb requires mmx
-#endif
-
-#if !defined(ENABLE_X86) && !defined(NO_DSP)
-#define NO_DSP // DSP requires x86 inline asm
+#if defined(MPT_WITH_MPG123) && defined(MPT_BUILD_MSVC) && defined(MPT_BUILD_MSVC_STATIC) && !defined(LIBOPENMPT_NODELAYLOAD) && !MPT_OS_WINDOWS_WINRT
+#define MPT_ENABLE_MPG123_DELAYLOAD
 #endif
 
 #if defined(ENABLE_TESTS) && defined(MODPLUG_NO_FILESAVE)
@@ -475,10 +488,6 @@
 
 #if !MPT_OS_WINDOWS && defined(MPT_WITH_MEDIAFOUNDATION)
 #undef MPT_WITH_MEDIAFOUNDATION // MediaFoundation requires Windows
-#endif
-
-#if MPT_COMPILER_MSVC && MPT_MSVC_BEFORE(2010,0) && defined(MPT_WITH_MEDIAFOUNDATION)
-#undef MPT_WITH_MEDIAFOUNDATION // MediaFoundation requires a modern SDK
 #endif
 
 #if defined(MPT_WITH_MEDIAFOUNDATION) && !defined(MPT_ENABLE_TEMPFILE)
@@ -497,20 +506,16 @@
 #define MPT_ENABLE_DYNBIND // Tracker requires dynamic library loading for export codecs
 #endif
 
-#if defined(MPT_ENABLE_MPG123_DYNBIND) && !defined(MPT_ENABLE_DYNBIND)
-#define MPT_ENABLE_DYNBIND // mpg123 is loaded dynamically
+#if defined(MPT_ENABLE_MPG123_DELAYLOAD) && !defined(MPT_ENABLE_DYNBIND)
+#define MPT_ENABLE_DYNBIND // static MSVC builds require dynbind to load delay-loaded DLLs
 #endif
 
-#if (defined(MPT_WITH_MPG123) || defined(MPT_ENABLE_MPG123_DYNBIND) || defined(MPT_WITH_MINIMP3)) && !defined(MPT_ENABLE_MP3_SAMPLES)
+#if defined(MPT_WITH_MEDIAFOUNDATION) && !defined(MPT_ENABLE_DYNBIND)
+#define MPT_ENABLE_DYNBIND // MediaFoundation needs dynamic loading in order to test availability of delay loaded libs
+#endif
+
+#if (defined(MPT_WITH_MPG123) || defined(MPT_WITH_MINIMP3)) && !defined(MPT_ENABLE_MP3_SAMPLES)
 #define MPT_ENABLE_MP3_SAMPLES
-#endif
-
-#if defined(MPT_WITH_UNMO3) || defined(MPT_ENABLE_UNMO3_DYNBIND) || defined(MPT_ENABLE_MO3_BUILTIN)
-#define MPT_ENABLE_MO3
-#endif
-
-#if defined(MPT_ENABLE_UNMO3_DYNBIND) && !defined(MPT_ENABLE_DYNBIND)
-#define MPT_ENABLE_DYNBIND // unmo3 is loaded dynamically
 #endif
 
 #if defined(ENABLE_TESTS)
@@ -527,10 +532,6 @@
 
 #if defined(MODPLUG_TRACKER) && !defined(MPT_ENABLE_THREAD)
 #define MPT_ENABLE_THREAD // Tracker requires threads
-#endif
-
-#if defined(MODPLUG_TRACKER) && !defined(MPT_ENABLE_ATOMIC)
-#define MPT_ENABLE_ATOMIC // Tracker requires threads
 #endif
 
 #if defined(MPT_EXTERNAL_SAMPLES) && !defined(MPT_ENABLE_FILEIO)
@@ -636,9 +637,11 @@
 
 #define _USE_MATH_DEFINES
 
+#if !MPT_OS_ANDROID
 #ifndef _FILE_OFFSET_BITS
 #define _FILE_OFFSET_BITS 64
 #endif
+#endif // !MPT_OS_ANDROID
 
 
 
@@ -665,10 +668,6 @@
 
 // happens for immutable classes (i.e. classes containing const members)
 #pragma warning(disable:4512) // assignment operator could not be generated
-
-#if MPT_MSVC_AT_LEAST(2012,0) && MPT_MSVC_BEFORE(2013,0)
-#pragma warning(disable:4250) // 'mpt::fstream' : inherits 'std::basic_istream<_Elem,_Traits>::std::basic_istream<_Elem,_Traits>::_Add_vtordisp1' via dominance
-#endif
 
 #pragma warning(error:4309) // Treat "truncation of constant value"-warning as error.
 
@@ -703,8 +702,8 @@
 #endif
 #endif
 
-#ifdef MPT_WITH_MINIZ
-#define MINIZ_HEADER_FILE_ONLY
+#ifdef MPT_WITH_PICOJSON
+#define PICOJSON_USE_INT64
 #endif
 
 #ifdef MPT_WITH_SMBPITCHSHIFT

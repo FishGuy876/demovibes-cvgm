@@ -13,6 +13,7 @@
 #include <map>
 #include <vector>
 #include "../common/misc_util.h"
+#include "../common/mptMutex.h"
 
 
 OPENMPT_NAMESPACE_BEGIN
@@ -35,7 +36,7 @@ enum ComponentType
 {
 	ComponentTypeUnknown = 0,
 	ComponentTypeBuiltin,            // PortAudio
-	ComponentTypeSystem,             // uxtheme.dll, mf.dll
+	ComponentTypeSystem,             // mf.dll
 	ComponentTypeSystemInstallable,  // acm mp3 codec
 	ComponentTypeBundled,            // libsoundtouch
 	ComponentTypeForeign,            // libmp3lame
@@ -67,7 +68,7 @@ public:
 	virtual mpt::ustring GetVersion() const = 0;
 
 	virtual void Initialize() = 0;  // try to load the component
-	
+
 };
 
 
@@ -231,7 +232,7 @@ public:
 
 class ComponentManager;
 
-typedef MPT_SHARED_PTR<IComponent> (*ComponentFactoryMethod)(ComponentManager &componentManager);
+typedef std::shared_ptr<IComponent> (*ComponentFactoryMethod)(ComponentManager &componentManager);
 
 
 class IComponentFactory
@@ -243,7 +244,7 @@ public:
 public:
 	virtual std::string GetID() const = 0;
 	virtual std::string GetSettingsKey() const = 0;
-	virtual MPT_SHARED_PTR<IComponent> Construct(ComponentManager &componentManager) const = 0;
+	virtual std::shared_ptr<IComponent> Construct(ComponentManager &componentManager) const = 0;
 	virtual ComponentFactoryMethod GetStaticConstructor() const = 0;
 };
 
@@ -257,12 +258,12 @@ private:
 protected:
 	ComponentFactoryBase(const std::string &id, const std::string &settingsKey);
 	void PreConstruct() const;
-	void Initialize(ComponentManager &componentManager, MPT_SHARED_PTR<IComponent> component) const;
+	void Initialize(ComponentManager &componentManager, std::shared_ptr<IComponent> component) const;
 public:
 	virtual ~ComponentFactoryBase();
 	virtual std::string GetID() const;
 	virtual std::string GetSettingsKey() const;
-	virtual MPT_SHARED_PTR<IComponent> Construct(ComponentManager &componentManager) const = 0;
+	virtual std::shared_ptr<IComponent> Construct(ComponentManager &componentManager) const = 0;
 	virtual ComponentFactoryMethod GetStaticConstructor() const = 0;
 };
 
@@ -282,14 +283,14 @@ public:
 		return;
 	}
 public:
-	virtual MPT_SHARED_PTR<IComponent> Construct(ComponentManager &componentManager) const
+	virtual std::shared_ptr<IComponent> Construct(ComponentManager &componentManager) const
 	{
 		PreConstruct();
-		MPT_SHARED_PTR<IComponent> component = mpt::make_shared<T>();
+		std::shared_ptr<IComponent> component = std::make_shared<T>();
 		Initialize(componentManager, component);
 		return component;
 	}
-	static MPT_SHARED_PTR<IComponent> StaticConstruct(ComponentManager &componentManager)
+	static std::shared_ptr<IComponent> StaticConstruct(ComponentManager &componentManager)
 	{
 		return ComponentFactory().Construct(componentManager);
 	}
@@ -306,6 +307,7 @@ public:
 	virtual bool LoadOnStartup() const = 0;
 	virtual bool KeepLoaded() const = 0;
 	virtual bool IsBlocked(const std::string &key) const = 0;
+	virtual mpt::PathString Path() const = 0;
 };
 
 
@@ -316,6 +318,7 @@ public:
 	virtual bool LoadOnStartup() const { return false; }
 	virtual bool KeepLoaded() const { return true; }
 	virtual bool IsBlocked(const std::string & /*key*/ ) const { return false; }
+	virtual mpt::PathString Path() const { return mpt::PathString(); }
 };
 
 
@@ -344,7 +347,7 @@ class ComponentManager
 public:
 	static void Init(const IComponentManagerSettings &settings);
 	static void Release();
-	static MPT_SHARED_PTR<ComponentManager> Instance();
+	static std::shared_ptr<ComponentManager> Instance();
 private:
 	ComponentManager(const IComponentManagerSettings &settings);
 private:
@@ -352,21 +355,23 @@ private:
 	{
 		std::string settingsKey;
 		ComponentFactoryMethod factoryMethod;
-		MPT_SHARED_PTR<IComponent> instance;
+		std::shared_ptr<IComponent> instance;
+		std::weak_ptr<IComponent> weakInstance;
 	};
 	typedef std::map<std::string, RegisteredComponent> TComponentMap;
 	const IComponentManagerSettings &m_Settings;
 	TComponentMap m_Components;
 private:
 	bool IsComponentBlocked(const std::string &settingsKey) const;
-	void InitializeComponent(MPT_SHARED_PTR<IComponent> component) const;
+	void InitializeComponent(std::shared_ptr<IComponent> component) const;
 public:
 	void Register(const IComponentFactory &componentFactory);
 	void Startup();
-	MPT_SHARED_PTR<IComponent> GetComponent(const IComponentFactory &componentFactory);
-	MPT_SHARED_PTR<IComponent> ReloadComponent(const IComponentFactory &componentFactory);
+	std::shared_ptr<const IComponent> GetComponent(const IComponentFactory &componentFactory);
+	std::shared_ptr<const IComponent> ReloadComponent(const IComponentFactory &componentFactory);
 	std::vector<std::string> GetRegisteredComponents() const;
 	ComponentInfo GetComponentInfo(std::string name) const;
+	mpt::PathString GetComponentPath() const;
 };
 
 
@@ -386,23 +391,29 @@ bool ComponentListPush(ComponentListEntry *entry);
 		componentManager.Register(ComponentFactory< name >()); \
 	} \
 	static ComponentListEntry Component ## name ## ListEntry = { nullptr, & RegisterComponent ## name }; \
-	static bool Component ## name ## Registered = ComponentListPush(& Component ## name ## ListEntry ); \
+	bool Component ## name ## Registered = ComponentListPush(& Component ## name ## ListEntry ); \
 	const char * const name :: g_ID = #name ; \
 	const char * const name :: g_SettingsKey = settingsKey ; \
 /**/
 
 
 template <typename type>
-MPT_SHARED_PTR<type> GetComponent()
+std::shared_ptr<const type> GetComponent()
 {
-	return MPT_DYNAMIC_POINTER_CAST<type>(ComponentManager::Instance()->GetComponent(ComponentFactory<type>()));
+	return std::dynamic_pointer_cast<const type>(ComponentManager::Instance()->GetComponent(ComponentFactory<type>()));
 }
 
 
 template <typename type>
-MPT_SHARED_PTR<type> ReloadComponent()
+std::shared_ptr<const type> ReloadComponent()
 {
-	return MPT_DYNAMIC_POINTER_CAST<type>(ComponentManager::Instance()->ReloadComponent(ComponentFactory<type>()));
+	return std::dynamic_pointer_cast<const type>(ComponentManager::Instance()->ReloadComponent(ComponentFactory<type>()));
+}
+
+
+static inline mpt::PathString GetComponentPath()
+{
+	return ComponentManager::Instance()->GetComponentPath();
 }
 
 
@@ -415,28 +426,38 @@ MPT_SHARED_PTR<type> ReloadComponent()
 
 
 template <typename type>
-MPT_SHARED_PTR<type> GetComponent()
+std::shared_ptr<const type> GetComponent()
 {
-	MPT_SHARED_PTR<type> component = mpt::make_shared<type>();
+	static std::weak_ptr<type> cache;
+	static mpt::mutex m;
+	MPT_LOCK_GUARD<mpt::mutex> l(m);
+	std::shared_ptr<type> component = cache.lock();
 	if(!component)
 	{
-		return component;
+		component = std::make_shared<type>();
+		component->Initialize();
+		cache = component;
 	}
-	component->Initialize();
 	return component;
+}
+
+
+static inline mpt::PathString GetComponentPath()
+{
+	return mpt::PathString();
 }
 
 
 #endif // MPT_COMPONENT_MANAGER
 
 
-// Simple wrapper around MPT_SHARED_PTR<ComponentType> which automatically
+// Simple wrapper around std::shared_ptr<ComponentType> which automatically
 // gets a reference to the component (or constructs it) on initialization.
 template <typename T>
 class ComponentHandle
 {
 private:
-	MPT_SHARED_PTR<T> component;
+	std::shared_ptr<const T> component;
 public:
 	ComponentHandle()
 		: component(GetComponent<T>())
@@ -451,18 +472,25 @@ public:
 	{
 		return component && component->IsAvailable();
 	}
-	T *get() const
+	const T *get() const
 	{
 		return component.get();
 	}
-	T &operator*() const
+	const T &operator*() const
 	{
 		return *component;
 	}
-	T *operator->() const
+	const T *operator->() const
 	{
 		return &*component;
 	}
+#if MPT_COMPONENT_MANAGER
+	void Reload()
+	{
+		component = nullptr;
+		component = ReloadComponent<T>();
+	}
+#endif
 };
 
 

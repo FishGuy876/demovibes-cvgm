@@ -16,9 +16,22 @@ OPENMPT_NAMESPACE_BEGIN
 
 
 FileTags::FileTags()
-//------------------
 {
 	encoder = mpt::ToUnicode(mpt::CharsetASCII, MptVersion::GetOpenMPTVersionStr());
+}
+
+
+mpt::ustring GetSampleNameFromTags(const FileTags &tags)
+{
+	mpt::ustring result;
+	if(tags.artist.empty())
+	{
+		result = tags.title;
+	} else
+	{
+		result = mpt::format(MPT_USTRING("%1 (by %2)"))(tags.title, tags.artist);
+	}
+	return result;
 }
 
 

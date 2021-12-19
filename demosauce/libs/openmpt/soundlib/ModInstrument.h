@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "tuning.h"
+#include "tuningbase.h"
 #include "Snd_defs.h"
 #include "../common/FlagSet.h"
 #include "../common/misc_util.h"
@@ -21,11 +21,16 @@ OPENMPT_NAMESPACE_BEGIN
 // Instrument Nodes
 struct EnvelopeNode
 {
-	uint16 tick;	// Envelope node position (x axis)
-	uint8 value;	// Envelope node value (y axis)
+	typedef uint16 tick_t;
+	typedef uint8 value_t;
+
+	tick_t tick;	// Envelope node position (x axis)
+	value_t value;	// Envelope node value (y axis)
 
 	EnvelopeNode() : tick(0), value(0) { }
-	EnvelopeNode(uint16 tick, uint8 value) : tick(tick), value(value) { }
+	EnvelopeNode(tick_t tick, value_t value) : tick(tick), value(value) { }
+
+	bool operator== (const EnvelopeNode &other) const { return tick == other.tick && value == other.value; }
 };
 
 // Instrument Envelopes
@@ -56,6 +61,9 @@ struct InstrumentEnvelope : public std::vector<EnvelopeNode>
 	void Sanitize(uint8 maxValue = ENVELOPE_MAX);
 
 	uint32 size() const { return static_cast<uint32>(std::vector<EnvelopeNode>::size()); }
+
+	using std::vector<EnvelopeNode>::push_back;
+	void push_back(EnvelopeNode::tick_t tick, EnvelopeNode::value_t value) { push_back(EnvelopeNode(tick, value)); }
 };
 
 // Instrument Struct

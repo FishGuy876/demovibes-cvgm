@@ -1,7 +1,7 @@
 /*
  * ModCommand.h
  * ------------
- * Purpose: Moduel Command (pattern content) header class and helpers. One Module Command corresponds to one pattern cell.
+ * Purpose: ModCommand declarations and helpers. One ModCommand corresponds to one pattern cell.
  * Notes  : (currently none)
  * Authors: OpenMPT Devs
  * The OpenMPT source code is released under the BSD license. Read LICENSE for more details.
@@ -11,10 +11,7 @@
 #pragma once
 
 #include "Snd_defs.h"
-
 #include "../common/misc_util.h"
-
-#include <cstring>
 
 OPENMPT_NAMESPACE_BEGIN
 
@@ -35,7 +32,7 @@ class CSoundFile;
 
 
 // Volume Column commands
-enum VolumeCommands
+enum VolumeCommand : uint8
 {
 	VOLCMD_NONE				= 0,
 	VOLCMD_VOLUME			= 1,
@@ -58,7 +55,7 @@ enum VolumeCommands
 
 
 // Effect column commands
-enum EffectCommands
+enum EffectCommand : uint8
 {
 	CMD_NONE				= 0,
 	CMD_ARPEGGIO			= 1,
@@ -106,7 +103,7 @@ enum EffectCommands
 };
 
 
-enum EffectType
+enum EffectType : uint8
 {
 	EFFECT_TYPE_NORMAL  = 0,
 	EFFECT_TYPE_GLOBAL  = 1,
@@ -117,9 +114,7 @@ enum EffectType
 };
 
 
-//==============
 class ModCommand
-//==============
 {
 public:
 	typedef uint8 NOTE;
@@ -134,7 +129,7 @@ public:
 	static const int maxColumnValue = 999;
 
 	// Returns empty modcommand.
-	static ModCommand Empty() { ModCommand m = { 0, 0, 0, 0, 0, 0 }; return m; }
+	static ModCommand Empty() { ModCommand m = { 0, 0, VOLCMD_NONE, CMD_NONE, 0, 0 }; return m; }
 
 	bool operator==(const ModCommand& mc) const
 	{
@@ -151,11 +146,11 @@ public:
 
 	uint16 GetValueVolCol() const { return GetValueVolCol(volcmd, vol); }
 	static uint16 GetValueVolCol(uint8 volcmd, uint8 vol) { return (volcmd << 8) + vol; }
-	void SetValueVolCol(const uint16 val) { volcmd = static_cast<uint8>(val >> 8); vol = static_cast<uint8>(val & 0xFF); }
+	void SetValueVolCol(const uint16 val) { volcmd = static_cast<VOLCMD>(val >> 8); vol = static_cast<uint8>(val & 0xFF); }
 
 	uint16 GetValueEffectCol() const { return GetValueEffectCol(command, param); }
 	static uint16 GetValueEffectCol(uint8 command, uint8 param) { return (command << 8) + param; }
-	void SetValueEffectCol(const uint16 val) { command = static_cast<uint8>(val >> 8); param = static_cast<uint8>(val & 0xFF); }
+	void SetValueEffectCol(const uint16 val) { command = static_cast<COMMAND>(val >> 8); param = static_cast<uint8>(val & 0xFF); }
 
 	// Clears modcommand.
 	void Clear() { memset(this, 0, sizeof(ModCommand)); }
@@ -174,8 +169,8 @@ public:
 	static bool IsPcNote(const NOTE note_id) { return note_id == NOTE_PC || note_id == NOTE_PCS; }
 
 	// Returns true if and only if note is a valid musical note.
-	bool IsNote() const { return note >= NOTE_MIN && note <= NOTE_MAX; }
-	static bool IsNote(NOTE note) { return note >= NOTE_MIN && note <= NOTE_MAX; }
+	bool IsNote() const { return IsInRange(note, NOTE_MIN, NOTE_MAX); }
+	static bool IsNote(NOTE note) { return IsInRange(note, NOTE_MIN, NOTE_MAX); }
 	// Returns true if and only if note is a valid special note.
 	bool IsSpecialNote() const { return IsInRange(note, NOTE_MIN_SPECIAL, NOTE_MAX_SPECIAL); }
 	static bool IsSpecialNote(NOTE note) { return IsInRange(note, NOTE_MIN_SPECIAL, NOTE_MAX_SPECIAL); }
@@ -184,6 +179,12 @@ public:
 	static bool IsNoteOrEmpty(NOTE note) { return note == NOTE_NONE || IsNote(note); }
 	// Returns true if any of the commands in this cell trigger a tone portamento.
 	bool IsPortamento() const { return command == CMD_TONEPORTAMENTO || command == CMD_TONEPORTAVOL || volcmd == VOLCMD_TONEPORTAMENTO; }
+	// Returns true if the cell contains an effect command that may affect the global state of the module.
+	bool IsGlobalCommand() const;
+
+	// Returns true if the note is inside the Amiga frequency range
+	bool IsAmigaNote() const { return IsAmigaNote(note); }
+	static bool IsAmigaNote(NOTE note) { return !IsNote(note) || (note >= NOTE_MIDDLEC - 12 && note < NOTE_MIDDLEC + 24); }
 
 	static EffectType GetEffectType(COMMAND cmd);
 	EffectType GetEffectType() const { return GetEffectType(command); }
@@ -207,13 +208,6 @@ public:
 	// Try to combine two commands into one. Returns true on success and the combined command is placed in eff1 / param1.
 	static bool CombineEffects(uint8 &eff1, uint8 &param1, uint8 &eff2, uint8 &param2);
 
-	// Swap volume and effect column (doesn't do any conversion as it's mainly for importing formats with multiple effect columns, so beware!)
-	void SwapEffects()
-	{
-		std::swap(volcmd, command);
-		std::swap(vol, param);
-	}
-
 public:
 	uint8 note;
 	uint8 instr;
@@ -222,7 +216,5 @@ public:
 	uint8 vol;
 	uint8 param;
 };
-
-typedef ModCommand MODCOMMAND_ORIGINAL;
 
 OPENMPT_NAMESPACE_END

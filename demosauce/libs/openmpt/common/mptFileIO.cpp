@@ -94,19 +94,95 @@ bool SetFilesystemCompression(const mpt::PathString &filename)
 
 
 
+namespace mpt {
+
+LazyFileRef & LazyFileRef::operator = (const std::vector<mpt::byte> &data)
+{
+	mpt::ofstream file(m_Filename, std::ios::binary);
+	file.exceptions(std::ios_base::failbit | std::ios_base::badbit);
+	mpt::IO::WriteRaw(file, data.data(), data.size());
+	mpt::IO::Flush(file);
+	return *this;
+}
+
+LazyFileRef & LazyFileRef::operator = (const std::vector<char> &data)
+{
+	mpt::ofstream file(m_Filename, std::ios::binary);
+	file.exceptions(std::ios_base::failbit | std::ios_base::badbit);
+	mpt::IO::WriteRaw(file, data.data(), data.size());
+	mpt::IO::Flush(file);
+	return *this;
+}
+
+LazyFileRef & LazyFileRef::operator = (const std::string &data)
+{
+	mpt::ofstream file(m_Filename, std::ios::binary);
+	file.exceptions(std::ios_base::failbit | std::ios_base::badbit);
+	mpt::IO::WriteRaw(file, data.data(), data.size());
+	mpt::IO::Flush(file);
+	return *this;
+}
+
+LazyFileRef::operator std::vector<mpt::byte> () const
+{
+	mpt::ifstream file(m_Filename, std::ios::binary);
+	if(!mpt::IO::IsValid(file))
+	{
+		return std::vector<mpt::byte>();
+	}
+	file.exceptions(std::ios_base::failbit | std::ios_base::badbit);
+	mpt::IO::SeekEnd(file);
+	std::vector<mpt::byte> buf(mpt::saturate_cast<std::size_t>(mpt::IO::TellRead(file)));
+	mpt::IO::SeekBegin(file);
+	mpt::IO::ReadRaw(file, buf.data(), buf.size());
+	return buf;
+}
+
+LazyFileRef::operator std::vector<char> () const
+{
+	mpt::ifstream file(m_Filename, std::ios::binary);
+	if(!mpt::IO::IsValid(file))
+	{
+		return std::vector<char>();
+	}
+	file.exceptions(std::ios_base::failbit | std::ios_base::badbit);
+	mpt::IO::SeekEnd(file);
+	std::vector<char> buf(mpt::saturate_cast<std::size_t>(mpt::IO::TellRead(file)));
+	mpt::IO::SeekBegin(file);
+	mpt::IO::ReadRaw(file, buf.data(), buf.size());
+	return buf;
+}
+
+LazyFileRef::operator std::string () const
+{
+	mpt::ifstream file(m_Filename, std::ios::binary);
+	if(!mpt::IO::IsValid(file))
+	{
+		return std::string();
+	}
+	file.exceptions(std::ios_base::failbit | std::ios_base::badbit);
+	mpt::IO::SeekEnd(file);
+	std::vector<char> buf(mpt::saturate_cast<std::size_t>(mpt::IO::TellRead(file)));
+	mpt::IO::SeekBegin(file);
+	mpt::IO::ReadRaw(file, buf.data(), buf.size());
+	return std::string(buf.begin(), buf.end());
+}
+
+} // namespace mpt
+
+
+
 #ifdef MODPLUG_TRACKER
 
 #if MPT_OS_WINDOWS
 
 CMappedFile::~CMappedFile()
-//-------------------------
 {
 	Close();
 }
 
 
 bool CMappedFile::Open(const mpt::PathString &filename)
-//-----------------------------------------------------
 {
 	m_hFile = CreateFileW(
 		filename.AsNativePrefixed().c_str(),
@@ -127,7 +203,6 @@ bool CMappedFile::Open(const mpt::PathString &filename)
 
 
 void CMappedFile::Close()
-//-----------------------
 {
 	m_FileName = mpt::PathString();
 	// Unlock file
@@ -156,7 +231,6 @@ void CMappedFile::Close()
 
 
 size_t CMappedFile::GetLength()
-//-----------------------------
 {
 	LARGE_INTEGER size;
 	if(GetFileSizeEx(m_hFile, &size) == FALSE)
@@ -168,7 +242,6 @@ size_t CMappedFile::GetLength()
 
 
 const mpt::byte *CMappedFile::Lock()
-//----------------------------------
 {
 	size_t length = GetLength();
 	if(!length) return nullptr;

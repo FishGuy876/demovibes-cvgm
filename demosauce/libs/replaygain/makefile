@@ -1,2 +1,3 @@
-libreplaygain.so:
-	$(CC) -Wall -std=c99 -O2 -ffast-math -fpic -lm -shared -s -o $@ gain_analysis.c replay_gain.c
+libreplaygain.a:
+	$(CC) -Wall -std=c99 -O2 -ffast-math -c gain_analysis.c replay_gain.c
+	$(AR) rcs $@ *.o

@@ -74,23 +74,17 @@ enum
 };
 
 
-
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(push, 1)
-#endif
-
-struct PACKED MIDIMacroConfigData
+struct MIDIMacroConfigData
 {
-	char szMidiGlb[9][MACRO_LENGTH];		// Global MIDI macros
-	char szMidiSFXExt[16][MACRO_LENGTH];	// Parametric MIDI macros
-	char szMidiZXXExt[128][MACRO_LENGTH];	// Fixed MIDI macros
+	// encoding is ASCII
+	char szMidiGlb[9][MACRO_LENGTH];       // Global MIDI macros
+	char szMidiSFXExt[16][MACRO_LENGTH];   // Parametric MIDI macros
+	char szMidiZXXExt[128][MACRO_LENGTH];  // Fixed MIDI macros
 };
 
-STATIC_ASSERT(sizeof(MIDIMacroConfigData) == 4896); // this is directly written to files, so the size must be correct!
+MPT_BINARY_STRUCT(MIDIMacroConfigData, 4896) // this is directly written to files, so the size must be correct!
 
-//=======================================================
-class PACKED MIDIMacroConfig : public MIDIMacroConfigData
-//=======================================================
+class MIDIMacroConfig : public MIDIMacroConfigData
 {
 
 public:
@@ -126,6 +120,9 @@ public:
 
 #ifdef MODPLUG_TRACKER
 
+	bool operator== (const MIDIMacroConfig &other) const;
+	bool operator!= (const MIDIMacroConfig &other) const { return !(*this == other); }
+
 	// Translate macro type or macro string to macro name
 	CString GetParameteredMacroName(uint32 macroIndex, IMixPlugin *plugin = nullptr) const;
 	CString GetParameteredMacroName(parameteredMacroType macroType) const;
@@ -146,6 +143,9 @@ public:
 	// Reset MIDI macro config to default values.
 	void Reset();
 
+	// Clear all Zxx macros so that they do nothing.
+	void ClearZxxMacros();
+
 	// Sanitize all macro config strings.
 	void Sanitize();
 
@@ -164,8 +164,5 @@ protected:
 
 STATIC_ASSERT(sizeof(MIDIMacroConfig) == sizeof(MIDIMacroConfigData)); // this is directly written to files, so the size must be correct!
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(pop)
-#endif
 
 OPENMPT_NAMESPACE_END

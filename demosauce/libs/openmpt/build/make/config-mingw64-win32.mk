@@ -5,17 +5,22 @@ LD  = i686-w64-mingw32-g++
 AR  = i686-w64-mingw32-ar
 
 CPPFLAGS += -DWIN32 -D_WIN32
-CXXFLAGS += -std=c++0x -municode -mconsole
+CXXFLAGS += -std=c++11 -municode -mconsole
 CFLAGS   += -std=c99   -municode -mconsole
 LDFLAGS  +=
 LDLIBS   += -lm -lrpcrt4 -lwinmm
 ARFLAGS  := rcs
 
+CFLAGS_SILENT += -Wno-unused-parameter -Wno-unused-function -Wno-cast-qual -Wno-old-style-declaration -Wno-type-limits -Wno-unused-but-set-variable
+
 EXESUFFIX=.exe
+SOSUFFIX=.dll
+SOSUFFIXWINDOWS=1
 
 DYNLINK=0
-SHARED_LIB=0
+SHARED_LIB=1
 STATIC_LIB=0
+SHARED_SONAME=0
 
 NO_ZLIB=1
 NO_LTDL=1

@@ -8,7 +8,16 @@
  */
 
 
-#include "dbghelp.h"
+#pragma once
+
+#if MPT_COMPILER_MSVC
+#pragma warning(push)
+#pragma warning(disable:4091) // 'typedef ': ignored on left of '' when no variable is declared
+#endif // MPT_COMPILER_MSVC
+#include <dbghelp.h>
+#if MPT_COMPILER_MSVC
+#pragma warning(pop)
+#endif // MPT_COMPILER_MSVC
 
 OPENMPT_NAMESPACE_BEGIN
 
@@ -44,7 +53,7 @@ static bool WriteMemoryDump(_EXCEPTION_POINTERS *pExceptionInfo, const WCHAR *fi
 				pDump(GetCurrentProcess(), GetCurrentProcessId(), hFile,
 					fullMemDump ?
 					(MINIDUMP_TYPE)(MiniDumpWithFullMemory | MiniDumpWithHandleData | MiniDumpWithThreadInfo | MiniDumpWithProcessThreadData | MiniDumpWithFullMemoryInfo
-#if MPT_COMPILER_MSVC && MPT_MSVC_AT_LEAST(2010,0)
+#if MPT_COMPILER_MSVC
 					| MiniDumpIgnoreInaccessibleMemory | MiniDumpWithTokenInformation
 #endif
 					)

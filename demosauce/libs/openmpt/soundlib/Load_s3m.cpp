@@ -13,7 +13,10 @@
 #include "S3MTools.h"
 #ifndef MODPLUG_NO_FILESAVE
 #include "../common/mptFileIO.h"
-#endif
+#ifdef MODPLUG_TRACKER
+#include "../mptrack/TrackerSettings.h"
+#endif // MODPLUG_TRACKER
+#endif // MODPLUG_NO_FILESAVE
 #include "../common/version.h"
 
 
@@ -21,7 +24,6 @@ OPENMPT_NAMESPACE_BEGIN
 
 
 void CSoundFile::S3MConvert(ModCommand &m, bool fromIT)
-//-----------------------------------------------------
 {
 	switch(m.command | 0x40)
 	{
@@ -61,7 +63,6 @@ void CSoundFile::S3MConvert(ModCommand &m, bool fromIT)
 
 
 void CSoundFile::S3MSaveConvert(uint8 &command, uint8 &param, bool toIT, bool compatibilityExport) const
-//------------------------------------------------------------------------------------------------------
 {
 	switch(command)
 	{
@@ -169,36 +170,59 @@ enum S3MPattern
 };
 
 
-// Functor for fixing PixPlay 4-Bit Zxx panning commands
-struct FixPixPlayPanning
-//======================
+static bool ValidateHeader(const S3MFileHeader &fileHeader)
 {
-	void operator()(ModCommand& m)
+	if(std::memcmp(fileHeader.magic, "SCRM", 4)
+		|| fileHeader.fileType != S3MFileHeader::idS3MType
+		|| (fileHeader.formatVersion != S3MFileHeader::oldVersion && fileHeader.formatVersion != S3MFileHeader::newVersion)
+		)
 	{
-		if(m.command == CMD_MIDI)
-		{
-			m.command = CMD_S3MCMDEX;
-			m.param |= 0x80;
-		}
+		return false;
 	}
-};
+	return true;
+}
+
+
+static uint64 GetHeaderMinimumAdditionalSize(const S3MFileHeader &fileHeader)
+{
+	return fileHeader.ordNum + (fileHeader.smpNum + fileHeader.patNum) * 2;
+}
+
+
+CSoundFile::ProbeResult CSoundFile::ProbeFileHeaderS3M(MemoryFileReader file, const uint64 *pfilesize)
+{
+	S3MFileHeader fileHeader;
+	if(!file.ReadStruct(fileHeader))
+	{
+		return ProbeWantMoreData;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return ProbeFailure;
+	}
+	return ProbeAdditionalSize(file, pfilesize, GetHeaderMinimumAdditionalSize(fileHeader));
+}
 
 
 bool CSoundFile::ReadS3M(FileReader &file, ModLoadingFlags loadFlags)
-//-------------------------------------------------------------------
 {
 	file.Rewind();
 
 	// Is it a valid S3M file?
 	S3MFileHeader fileHeader;
-	if(!file.ReadConvertEndianness(fileHeader)
-		|| !file.CanRead(fileHeader.ordNum + (fileHeader.smpNum + fileHeader.patNum) * 2)
-		|| memcmp(fileHeader.magic, "SCRM", 4)
-		|| fileHeader.fileType != S3MFileHeader::idS3MType
-		|| (fileHeader.formatVersion != S3MFileHeader::oldVersion && fileHeader.formatVersion != S3MFileHeader::newVersion))
+	if(!file.ReadStruct(fileHeader))
 	{
 		return false;
-	} else if(loadFlags == onlyVerifyHeader)
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return false;
+	}
+	if(!file.CanRead(mpt::saturate_cast<FileReader::off_t>(GetHeaderMinimumAdditionalSize(fileHeader))))
+	{
+		return false;
+	}
+	if(loadFlags == onlyVerifyHeader)
 	{
 		return true;
 	}
@@ -210,7 +234,7 @@ bool CSoundFile::ReadS3M(FileReader &file, ModLoadingFlags loadFlags)
 	// ST3 ignored Zxx commands, so if we find that a file was made with ST3, we should erase all MIDI macros.
 	bool keepMidiMacros = false;
 
-	std::string trackerStr;
+	mpt::ustring trackerStr;
 	bool nonCompatTracker = false;
 	bool isST3 = false;
 	switch(fileHeader.cwtv & S3MFileHeader::trackerMask)
@@ -220,35 +244,35 @@ bool CSoundFile::ReadS3M(FileReader &file, ModLoadingFlags loadFlags)
 		{
 			// MPT 1.16 and older versions of OpenMPT - Simply keep default (filter) MIDI macros
 			m_dwLastSavedWithVersion = MAKE_VERSION_NUMERIC(1, 16, 00, 00);
-			m_madeWithTracker = "ModPlug Tracker / OpenMPT";
+			m_madeWithTracker = MPT_USTRING("ModPlug Tracker / OpenMPT");
 			keepMidiMacros = true;
 			nonCompatTracker = true;
 			m_playBehaviour.set(kST3LimitPeriod);
 		} else if(fileHeader.cwtv == S3MFileHeader::trkST3_20 && fileHeader.special == 0 && fileHeader.ultraClicks == 0 && fileHeader.flags == 0 && fileHeader.usePanningTable == 0)
 		{
-			m_madeWithTracker = "Velvet Studio";
+			m_madeWithTracker = MPT_USTRING("Velvet Studio");
 		} else
 		{
-			trackerStr = "Scream Tracker";
+			trackerStr = MPT_USTRING("Scream Tracker");
 			isST3 = true;
 		}
 		break;
 	case S3MFileHeader::trkImagoOrpheus:
-		trackerStr = "Imago Orpheus";
+		trackerStr = MPT_USTRING("Imago Orpheus");
 		nonCompatTracker = true;
 		break;
 	case S3MFileHeader::trkImpulseTracker:
 		if(fileHeader.cwtv <= S3MFileHeader::trkIT2_14)
-			trackerStr = "Impulse Tracker";
+			trackerStr = MPT_USTRING("Impulse Tracker");
 		else
-			m_madeWithTracker = mpt::String::Print("Impulse Tracker 2.14p%1", fileHeader.cwtv - S3MFileHeader::trkIT2_14);
+			m_madeWithTracker = mpt::format(MPT_USTRING("Impulse Tracker 2.14p%1"))(fileHeader.cwtv - S3MFileHeader::trkIT2_14);
 		nonCompatTracker = true;
 		m_nMinPeriod = 1;
 		break;
 	case S3MFileHeader::trkSchismTracker:
 		if(fileHeader.cwtv == S3MFileHeader::trkBeRoTrackerOld)
 		{
-			m_madeWithTracker = "BeRoTracker";
+			m_madeWithTracker = MPT_USTRING("BeRoTracker");
 			m_playBehaviour.set(kST3LimitPeriod);
 		} else
 		{
@@ -258,20 +282,20 @@ bool CSoundFile::ReadS3M(FileReader &file, ModLoadingFlags loadFlags)
 		nonCompatTracker = true;
 		break;
 	case S3MFileHeader::trkOpenMPT:
-		trackerStr = "OpenMPT";
+		trackerStr = MPT_USTRING("OpenMPT");
 		m_dwLastSavedWithVersion = (fileHeader.cwtv & S3MFileHeader::versionMask) << 16;
 		break; 
 	case S3MFileHeader::trkBeRoTracker:
-		m_madeWithTracker = "BeRoTracker";
+		m_madeWithTracker = MPT_USTRING("BeRoTracker");
 		m_playBehaviour.set(kST3LimitPeriod);
 		break;
 	case S3MFileHeader::trkCreamTracker:
-		m_madeWithTracker = "CreamTracker";
+		m_madeWithTracker = MPT_USTRING("CreamTracker");
 		break;
 	}
 	if(!trackerStr.empty())
 	{
-		m_madeWithTracker = mpt::String::Print("%1 %2.%3", trackerStr, (fileHeader.cwtv & 0xF00) >> 8, mpt::fmt::hex0<2>(fileHeader.cwtv & 0xFF));
+		m_madeWithTracker = mpt::format(MPT_USTRING("%1 %2.%3"))(trackerStr, (fileHeader.cwtv & 0xF00) >> 8, mpt::ufmt::hex0<2>(fileHeader.cwtv & 0xFF));
 	}
 	if(nonCompatTracker)
 	{
@@ -279,6 +303,7 @@ bool CSoundFile::ReadS3M(FileReader &file, ModLoadingFlags loadFlags)
 		m_playBehaviour.reset(kST3EffectMemory);
 		m_playBehaviour.reset(kST3PortaSampleChange);
 		m_playBehaviour.reset(kST3VibratoMemory);
+		m_playBehaviour.reset(KST3PortaAfterArpeggio);
 	}
 
 	if((fileHeader.cwtv & S3MFileHeader::trackerMask) > S3MFileHeader::trkScreamTracker)
@@ -295,8 +320,7 @@ bool CSoundFile::ReadS3M(FileReader &file, ModLoadingFlags loadFlags)
 	if(!keepMidiMacros)
 	{
 		// Remove macros so they don't interfere with tunes made in trackers that don't support Zxx
-		MemsetZero(m_MidiCfg.szMidiSFXExt);
-		MemsetZero(m_MidiCfg.szMidiZXXExt);
+		m_MidiCfg.ClearZxxMacros();
 	}
 
 	mpt::String::Read<mpt::String::nullTerminated>(m_songName, fileHeader.name);
@@ -361,21 +385,14 @@ bool CSoundFile::ReadS3M(FileReader &file, ModLoadingFlags loadFlags)
 		m_nChannels = 1;
 	}
 
-	Order.ReadAsByte(file, fileHeader.ordNum, fileHeader.ordNum, 0xFF, 0xFE);
+	ReadOrderFromFile<uint8>(Order(), file, fileHeader.ordNum, 0xFF, 0xFE);
 
 	// Read sample header offsets
-	std::vector<uint16> sampleOffsets(fileHeader.smpNum);
-	for(size_t i = 0; i < fileHeader.smpNum; i++)
-	{
-		sampleOffsets[i] = file.ReadUint16LE();
-	}
-
+	std::vector<uint16le> sampleOffsets;
+	file.ReadVector(sampleOffsets, fileHeader.smpNum);
 	// Read pattern offsets
-	std::vector<uint16> patternOffsets(fileHeader.patNum);
-	for(size_t i = 0; i < fileHeader.patNum; i++)
-	{
-		patternOffsets[i] = file.ReadUint16LE();
-	}
+	std::vector<uint16le> patternOffsets;
+	file.ReadVector(patternOffsets, fileHeader.patNum);
 
 	// Read extended channel panning
 	if(fileHeader.usePanningTable == S3MFileHeader::idPanning)
@@ -399,7 +416,7 @@ bool CSoundFile::ReadS3M(FileReader &file, ModLoadingFlags loadFlags)
 	{
 		S3MSampleHeader sampleHeader;
 
-		if(!file.Seek(sampleOffsets[smp] * 16) || !file.ReadConvertEndianness(sampleHeader))
+		if(!file.Seek(sampleOffsets[smp] * 16) || !file.ReadStruct(sampleHeader))
 		{
 			continue;
 		}
@@ -422,7 +439,7 @@ bool CSoundFile::ReadS3M(FileReader &file, ModLoadingFlags loadFlags)
 
 	if(hasAdlibPatches)
 	{
-		AddToLog("This track uses Adlib instruments, which are not supported by OpenMPT.");
+		AddToLog("This track uses Adlib instruments, which are not supported by this version of OpenMPT.");
 	}
 
 
@@ -440,7 +457,9 @@ bool CSoundFile::ReadS3M(FileReader &file, ModLoadingFlags loadFlags)
 	{
 		return true;
 	}
-	const PATTERNINDEX readPatterns = std::min<PATTERNINDEX>(fileHeader.patNum, MAX_PATTERNS);
+	// Order list cannot contain pattern indices > 255, so do not even try to load higher patterns
+	const PATTERNINDEX readPatterns = std::min<PATTERNINDEX>(fileHeader.patNum, uint8_max);
+	Patterns.ResizeArray(readPatterns);
 	for(PATTERNINDEX pat = 0; pat < readPatterns; pat++)
 	{
 		// A zero parapointer indicates an empty pattern.
@@ -473,7 +492,7 @@ bool CSoundFile::ReadS3M(FileReader &file, ModLoadingFlags loadFlags)
 			}
 
 			CHANNELINDEX channel = (info & s3mChannelMask);
-			ModCommand dummy;
+			ModCommand dummy = ModCommand::Empty();
 			ModCommand &m = (channel < GetNumChannels()) ? rowBase[channel] : dummy;
 
 			if(info & s3mNotePresent)
@@ -552,7 +571,14 @@ bool CSoundFile::ReadS3M(FileReader &file, ModLoadingFlags loadFlags)
 	if(pixPlayPanning && zxxCountLeft + zxxCountRight >= m_nChannels && (-zxxCountLeft + zxxCountRight) < static_cast<int>(m_nChannels))
 	{
 		// There are enough Zxx commands, so let's assume this was made to be played with PixPlay
-		Patterns.ForEachModCommand(FixPixPlayPanning());
+		Patterns.ForEachModCommand([](ModCommand &m)
+		{
+			if(m.command == CMD_MIDI)
+			{
+				m.command = CMD_S3MCMDEX;
+				m.param |= 0x80;
+			}
+		});
 	}
 
 	return true;
@@ -562,7 +588,6 @@ bool CSoundFile::ReadS3M(FileReader &file, ModLoadingFlags loadFlags)
 #ifndef MODPLUG_NO_FILESAVE
 
 bool CSoundFile::SaveS3M(const mpt::PathString &filename) const
-//-------------------------------------------------------------
 {
 	static const uint8 filler[16] =
 	{
@@ -582,7 +607,7 @@ bool CSoundFile::SaveS3M(const mpt::PathString &filename) const
 	fileHeader.fileType = S3MFileHeader::idS3MType;
 
 	// Orders
-	ORDERINDEX writeOrders = Order.GetLengthTailTrimmed();
+	ORDERINDEX writeOrders = Order().GetLengthTailTrimmed();
 	if(writeOrders < 2)
 	{
 		writeOrders = 2;
@@ -651,6 +676,9 @@ bool CSoundFile::SaveS3M(const mpt::PathString &filename) const
 			{
 				ch += 8 - midCh;
 			}
+#ifdef MODPLUG_TRACKER
+			if(TrackerSettings::Instance().MiscSaveChannelMuteStatus)
+#endif
 			if(ChnSettings[chn].dwFlags[CHN_MUTE])
 			{
 				ch |= 0x80;
@@ -662,9 +690,8 @@ bool CSoundFile::SaveS3M(const mpt::PathString &filename) const
 		}
 	}
 
-	fileHeader.ConvertEndianness();
 	fwrite(&fileHeader, sizeof(fileHeader), 1, f);
-	Order.WriteAsByte(f, writeOrders);
+	Order().WriteAsByte(f, writeOrders);
 
 	// Comment about parapointers stolen from Schism Tracker:
 	// The sample data parapointers are 24+4 bits, whereas pattern data and sample headers are only 16+4
@@ -679,27 +706,26 @@ bool CSoundFile::SaveS3M(const mpt::PathString &filename) const
 	// ...which must be a multiple of 16, because parapointers omit the lowest 4 bits.
 	sampleHeaderOffset = (sampleHeaderOffset + 15) & ~15;
 
-	std::vector<uint16> sampleOffsets(writeSamples);
+	std::vector<uint16le> sampleOffsets(writeSamples);
 	for(SAMPLEINDEX smp = 0; smp < writeSamples; smp++)
 	{
 		STATIC_ASSERT((sizeof(S3MSampleHeader) % 16) == 0);
 		sampleOffsets[smp] = static_cast<uint16>((sampleHeaderOffset + smp * sizeof(S3MSampleHeader)) / 16);
-		SwapBytesLE(sampleOffsets[smp]);
 	}
 
 	if(writeSamples != 0)
 	{
-		fwrite(&sampleOffsets[0], 2, writeSamples, f);
+		fwrite(sampleOffsets.data(), 2, writeSamples, f);
 	}
 
 	size_t patternPointerOffset = ftell(f);
 	size_t firstPatternOffset = sampleHeaderOffset + writeSamples * sizeof(S3MSampleHeader);
-	std::vector<uint16> patternOffsets(writePatterns);
+	std::vector<uint16le> patternOffsets(writePatterns);
 
 	// Need to calculate the real offsets later.
 	if(writePatterns != 0)
 	{
-		fwrite(&patternOffsets[0], 2, writePatterns, f);
+		fwrite(patternOffsets.data(), 2, writePatterns, f);
 	}
 
 	// Write channel panning
@@ -736,12 +762,11 @@ bool CSoundFile::SaveS3M(const mpt::PathString &filename) const
 		long patOffset = ftell(f);
 		if(patOffset > 0xFFFF0)
 		{
-			AddToLog(LogError, mpt::String::Print(MPT_USTRING("Too much pattern data! Writing patterns failed starting from pattern %1."), pat));
+			AddToLog(LogError, mpt::format(MPT_USTRING("Too much pattern data! Writing patterns failed starting from pattern %1."))(pat));
 			break;
 		}
 		MPT_ASSERT((patOffset % 16) == 0);
 		patternOffsets[pat] = static_cast<uint16>(patOffset / 16);
-		SwapBytesLE(patternOffsets[pat]);
 
 		std::vector<uint8> buffer;
 		buffer.reserve(5 * 1024);
@@ -764,7 +789,7 @@ bool CSoundFile::SaveS3M(const mpt::PathString &filename) const
 				CHANNELINDEX writeChannels = MIN(32, GetNumChannels());
 				for(CHANNELINDEX chn = 0; chn < writeChannels; chn++)
 				{
-					ModCommand &m = rowBase[chn];
+					const ModCommand &m = rowBase[chn];
 
 					uint8 info = static_cast<uint8>(chn);
 					uint8 note = m.note;
@@ -859,7 +884,7 @@ bool CSoundFile::SaveS3M(const mpt::PathString &filename) const
 			buffer.insert(buffer.end(), 16 - (buffer.size() % 16u), 0);
 		}
 
-		fwrite(&buffer[0], buffer.size(), 1, f);
+		fwrite(buffer.data(), buffer.size(), 1, f);
 	}
 
 	size_t sampleDataOffset = ftell(f);
@@ -897,7 +922,7 @@ bool CSoundFile::SaveS3M(const mpt::PathString &filename) const
 			// Write sample data
 			if(sampleDataOffset > 0xFFFFFF0)
 			{
-				AddToLog(LogError, mpt::String::Print(MPT_USTRING("Too much sample data! Writing samples failed starting from sample %1."), realSmp));
+				AddToLog(LogError, mpt::format(MPT_USTRING("Too much sample data! Writing samples failed starting from sample %1."))(realSmp));
 				break;
 			}
 
@@ -914,22 +939,20 @@ bool CSoundFile::SaveS3M(const mpt::PathString &filename) const
 				sampleDataOffset += fillSize;
 			}
 		}
-
-		sampleHeader[smp].ConvertEndianness();
 	}
 
 	// Now we know where the patterns are.
 	if(writePatterns != 0)
 	{
 		fseek(f, patternPointerOffset, SEEK_SET);
-		fwrite(&patternOffsets[0], 2, writePatterns, f);
+		fwrite(patternOffsets.data(), 2, writePatterns, f);
 	}
 
 	// And we can finally write the sample headers.
 	if(writeSamples != 0)
 	{
 		fseek(f, sampleHeaderOffset, SEEK_SET);
-		fwrite(&sampleHeader[0], sizeof(sampleHeader[0]), writeSamples, f);
+		fwrite(sampleHeader.data(), sizeof(sampleHeader[0]), writeSamples, f);
 	}
 
 	fclose(f);

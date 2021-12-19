@@ -37,8 +37,8 @@
 #define MPT_CLANG_AT_LEAST(major,minor,patch)        (MPT_COMPILER_CLANG_VERSION >= MPT_COMPILER_MAKE_VERSION3((major),(minor),(patch)))
 #define MPT_CLANG_BEFORE(major,minor,patch)          (MPT_COMPILER_CLANG_VERSION <  MPT_COMPILER_MAKE_VERSION3((major),(minor),(patch)))
 
-#if MPT_CLANG_BEFORE(3,0,0)
-#error "clang version 3.0 required"
+#if MPT_CLANG_BEFORE(3,4,0)
+#error "clang version 3.4 required"
 #endif
 
 #if defined(__clang_analyzer__) 
@@ -54,14 +54,22 @@
 #define MPT_GCC_AT_LEAST(major,minor,patch)          (MPT_COMPILER_GCC_VERSION >= MPT_COMPILER_MAKE_VERSION3((major),(minor),(patch)))
 #define MPT_GCC_BEFORE(major,minor,patch)            (MPT_COMPILER_GCC_VERSION <  MPT_COMPILER_MAKE_VERSION3((major),(minor),(patch)))
 
-#if MPT_GCC_BEFORE(4,1,0)
-#error "GCC version 4.1 required"
+#if MPT_GCC_BEFORE(4,8,0)
+#error "GCC version 4.8 required"
 #endif
 
 #elif defined(_MSC_VER)
 
 #define MPT_COMPILER_MSVC                            1
-#if (_MSC_VER >= 1900)
+#if (_MSC_VER >= 1913)
+#define MPT_COMPILER_MSVC_VERSION                    MPT_COMPILER_MAKE_VERSION2(2017,6)
+#elif (_MSC_VER >= 1912)
+#define MPT_COMPILER_MSVC_VERSION                    MPT_COMPILER_MAKE_VERSION2(2017,5)
+#elif (_MSC_VER >= 1911)
+#define MPT_COMPILER_MSVC_VERSION                    MPT_COMPILER_MAKE_VERSION2(2017,3)
+#elif (_MSC_VER >= 1910)
+#define MPT_COMPILER_MSVC_VERSION                    MPT_COMPILER_MAKE_VERSION2(2017,0)
+#elif (_MSC_VER >= 1900)
 #define MPT_COMPILER_MSVC_VERSION                    MPT_COMPILER_MAKE_VERSION2(2015,0)
 #elif (_MSC_VER >= 1800)
 #define MPT_COMPILER_MSVC_VERSION                    MPT_COMPILER_MAKE_VERSION2(2013,0)
@@ -77,8 +85,8 @@
 #define MPT_MSVC_AT_LEAST(version,sp)                (MPT_COMPILER_MSVC_VERSION >= MPT_COMPILER_MAKE_VERSION2((version),(sp)))
 #define MPT_MSVC_BEFORE(version,sp)                  (MPT_COMPILER_MSVC_VERSION <  MPT_COMPILER_MAKE_VERSION2((version),(sp)))
 
-#if MPT_MSVC_BEFORE(2008,0)
-#error "MSVC version 2008 required"
+#if MPT_MSVC_BEFORE(2015,0)
+#error "MSVC version 2015 required"
 #endif
 
 #if defined(_PREFAST_)
@@ -89,7 +97,7 @@
 
 #else
 
-#error "Your compiler is unknown to openmpt and thus not supported. You might want to edit CompilerDetect.h und typedefs.h."
+#define MPT_COMPILER_GENERIC                         1
 
 #endif
 
@@ -121,23 +129,57 @@
 
 
 
+#if MPT_COMPILER_GENERIC || MPT_COMPILER_GCC || MPT_COMPILER_CLANG
+
+#if (__cplusplus >= 201703)
+#define MPT_CXX 17
+#elif (__cplusplus >= 201402)
+#define MPT_CXX 14
+#else
+#define MPT_CXX 11
+#endif
+
+#elif MPT_COMPILER_MSVC
+
+#if MPT_MSVC_AT_LEAST(2017,0)
+#if (_MSVC_LANG >= 201402)
+#define MPT_CXX 14
+#else
+#define MPT_CXX 11
+#endif
+#else
+#define MPT_CXX 11
+#endif
+
+#else
+
+#define MPT_CXX 11
+
+#endif
+
+// MPT_CXX is stricter than just using __cplusplus directly.
+// We will only claim a language version as supported IFF all core language and
+// library fatures that we need are actually supported AND working correctly
+// (to our needs).
+
+#define MPT_CXX_AT_LEAST(version) (MPT_CXX >= (version))
+#define MPT_CXX_BEFORE(version)   (MPT_CXX <  (version))
+
+
+
 #if MPT_COMPILER_MSVC
 	#define MPT_PLATFORM_LITTLE_ENDIAN
 #elif MPT_COMPILER_GCC
-	#if MPT_GCC_AT_LEAST(4,6,0)
-		#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-			#define MPT_PLATFORM_BIG_ENDIAN
-		#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-			#define MPT_PLATFORM_LITTLE_ENDIAN
-		#endif
+	#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+		#define MPT_PLATFORM_BIG_ENDIAN
+	#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		#define MPT_PLATFORM_LITTLE_ENDIAN
 	#endif
 #elif MPT_COMPILER_CLANG || MPT_COMPILER_MSVCCLANGC2
-	#if MPT_CLANG_AT_LEAST(3,2,0)
-		#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-			#define MPT_PLATFORM_BIG_ENDIAN
-		#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-			#define MPT_PLATFORM_LITTLE_ENDIAN
-		#endif
+	#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+		#define MPT_PLATFORM_BIG_ENDIAN
+	#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		#define MPT_PLATFORM_LITTLE_ENDIAN
 	#endif
 #endif
 
@@ -166,138 +208,46 @@
 		|| defined(__x86_64) || defined(__x86_64__) \
 		|| defined(_M_X64) || defined(__bfin__)
 			#define MPT_PLATFORM_LITTLE_ENDIAN
-	#else
-		#error "unknown endianness"
 	#endif
+#endif
+
+#if defined(MPT_PLATFORM_BIG_ENDIAN) || defined(MPT_PLATFORM_LITTLE_ENDIAN)
+#define MPT_PLATFORM_ENDIAN_KNOWN 1
+#else
+#define MPT_PLATFORM_ENDIAN_KNOWN 0
 #endif
 
 
 
-#if MPT_COMPILER_MSVC
-
-	#if defined(_M_X64)
-		#define MPT_ARCH_BITS 64
-		#define MPT_ARCH_BITS_32 0
-		#define MPT_ARCH_BITS_64 1
-	#elif defined(_M_IX86)
-		#define MPT_ARCH_BITS 32
-		#define MPT_ARCH_BITS_32 1
-		#define MPT_ARCH_BITS_64 0
-	#endif
-
-#elif MPT_COMPILER_GCC || MPT_COMPILER_CLANG || MPT_COMPILER_MSVCCLANGC2
-
-	#if defined(__SIZEOF_POINTER__)
-		#if (__SIZEOF_POINTER__ == 8)
-			#define MPT_ARCH_BITS 64
-			#define MPT_ARCH_BITS_32 0
-			#define MPT_ARCH_BITS_64 1
-		#elif (__SIZEOF_POINTER__ == 4)
-			#define MPT_ARCH_BITS 32
-			#define MPT_ARCH_BITS_32 1
-			#define MPT_ARCH_BITS_64 0
-		#endif
-	#endif
-
-#endif // MPT_COMPILER
-
-
-
-// Guess the supported C++ standard version
-
-// This is only a rough estimate to facilitate conditional compilation
-
-#define MPT_CXX_98         199711L // STD
-#define MPT_CXX_03_TR1     200301L // custom
-#define MPT_CXX_11_PARTIAL 201100L // custom
-#define MPT_CXX_11_FULL    201103L // STD
-#define MPT_CXX_14_PARTIAL 201400L // custom
-#define MPT_CXX_14_FULL    201402L // STD
-
-#if MPT_COMPILER_GENERIC
-	#define MPT_CXX_VERSION __cplusplus
-#elif MPT_COMPILER_MSVCCLANGC2
-	#define MPT_CXX_VERSION MPT_CXX_14_PARTIAL
-#elif MPT_COMPILER_CLANG
-	#if MPT_CLANG_AT_LEAST(3,5,0)
-		#define MPT_CXX_VERSION MPT_CXX_11_FULL
-	#else
-		#define MPT_CXX_VERSION MPT_CXX_11_PARTIAL
-	#endif
-#elif MPT_COMPILER_GCC
-	#if MPT_GCC_AT_LEAST(4,9,0)
-		#define MPT_CXX_VERSION MPT_CXX_11_FULL
-	#elif MPT_GCC_AT_LEAST(4,3,0)
-		#define MPT_CXX_VERSION MPT_CXX_11_PARTIAL
-	#elif MPT_GCC_AT_LEAST(4,1,0)
-		#define MPT_CXX_VERSION MPT_CXX_03_TR1
-	#else
-		#define MPT_CXX_VERSION MPT_CXX_98
-	#endif
-#elif MPT_COMPILER_MSVC
-	#if MPT_MSVC_AT_LEAST(2010,0)
-		#define MPT_CXX_VERSION MPT_CXX_11_PARTIAL
-	#else
-		#define MPT_CXX_VERSION MPT_CXX_03_TR1
-	#endif
-#endif // MPT_COMPILER
+// This should really be based on __STDCPP_THREADS__, but that is not defined by
+// GCC or clang. Stupid.
+// Just assume multithreaded and disable for platforms we know are
+// singlethreaded later on.
+#define MPT_PLATFORM_MULTITHREADED 1
 
 
 
 // specific C++ features
 
+
+
+// C++11 constexpr
+
 #if MPT_COMPILER_MSVC
-#if MPT_MSVC_AT_LEAST(2010,0)
-#define MPT_COMPILER_HAS_RVALUE_REF 1
-#endif
-#elif MPT_COMPILER_GCC
-#if MPT_GCC_AT_LEAST(4,5,0)
-#define MPT_COMPILER_HAS_RVALUE_REF 1
-#endif
-#elif MPT_COMPILER_CLANG
-#if MPT_CLANG_AT_LEAST(3,0,0)
-#define MPT_COMPILER_HAS_RVALUE_REF 1
-#endif
-#elif MPT_COMPILER_MSVCCLANGC2
-#define MPT_COMPILER_HAS_RVALUE_REF 1
-#endif
-
-#ifndef MPT_COMPILER_HAS_RVALUE_REF
-#define MPT_COMPILER_HAS_RVALUE_REF 0
+#define MPT_COMPILER_QUIRK_CONSTEXPR_NO_STRING_LITERALS
 #endif
 
 
-// C++11 includes variadic macros.
-// C99 includes variadic macros.
 
-#if MPT_COMPILER_CLANG
-#if MPT_CLANG_AT_LEAST(3,0,0)
-#define MPT_COMPILER_HAS_VARIADIC_MACROS 1
-#endif
-#elif MPT_COMPILER_MSVCCLANGC2
-#define MPT_COMPILER_HAS_VARIADIC_MACROS 1
-#elif MPT_COMPILER_MSVC
-#if MPT_MSVC_AT_LEAST(2005,0)
-#define MPT_COMPILER_HAS_VARIADIC_MACROS 1
-#endif
-#elif MPT_COMPILER_GCC
-#if MPT_GCC_AT_LEAST(3,0,0)
-#define MPT_COMPILER_HAS_VARIADIC_MACROS 1
-#endif
+#if MPT_COMPILER_MSVC
+// Compiler has multiplication/division semantics when shifting signed integers.
+#define MPT_COMPILER_SHIFT_SIGNED 1
 #endif
 
-#ifndef MPT_COMPILER_HAS_VARIADIC_MACROS
-#define MPT_COMPILER_HAS_VARIADIC_MACROS 0
+#ifndef MPT_COMPILER_SHIFT_SIGNED
+#define MPT_COMPILER_SHIFT_SIGNED 0
 #endif
 
-
-#if MPT_MSVC_AT_LEAST(2010,0) || MPT_CLANG_AT_LEAST(3,0,0) || MPT_GCC_AT_LEAST(4,5,0)
-#define MPT_COMPILER_HAS_TYPE_TRAITS 1
-#endif
-
-#ifndef MPT_COMPILER_HAS_TYPE_TRAITS
-#define MPT_COMPILER_HAS_TYPE_TRAITS 0
-#endif
 
 
 #if MPT_COMPILER_GCC || MPT_COMPILER_MSVC
@@ -321,8 +271,29 @@
 // The order of the checks matters!
 #if defined(__EMSCRIPTEN__)
 	#define MPT_OS_EMSCRIPTEN 1
+	#if defined(__EMSCRIPTEN_major__) && defined(__EMSCRIPTEN_minor__)
+		#if (__EMSCRIPTEN_major__ > 1)
+			#define MPT_OS_EMSCRIPTEN_ANCIENT 0
+		#elif (__EMSCRIPTEN_major__ == 1) && (__EMSCRIPTEN_minor__ >= 36)
+			#define MPT_OS_EMSCRIPTEN_ANCIENT 0
+		#else
+			#define MPT_OS_EMSCRIPTEN_ANCIENT 1
+		#endif
+	#else
+		#define MPT_OS_EMSCRIPTEN_ANCIENT 1
+	#endif
 #elif defined(_WIN32)
 	#define MPT_OS_WINDOWS 1
+	#if defined(WINAPI_FAMILY)
+		#include <winapifamily.h>
+		#if (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP)
+			#define MPT_OS_WINDOWS_WINRT 0
+		#else
+			#define MPT_OS_WINDOWS_WINRT 1
+		#endif
+	#else // !WINAPI_FAMILY
+		#define MPT_OS_WINDOWS_WINRT 0
+	#endif // WINAPI_FAMILY
 #elif defined(__APPLE__)
 	#define MPT_OS_MACOSX_OR_IOS 1
 	//#include "TargetConditionals.h"
@@ -355,6 +326,9 @@
 #ifndef MPT_OS_WINDOWS
 #define MPT_OS_WINDOWS 0
 #endif
+#ifndef MPT_OS_WINDOWS_WINRT
+#define MPT_OS_WINDOWS_WINRT 0
+#endif
 #ifndef MPT_OS_MACOSX_OR_IOS
 #define MPT_OS_MACOSX_OR_IOS 0
 #endif
@@ -383,3 +357,13 @@
 #define MPT_OS_UNKNOWN 0
 #endif
 
+#ifndef MPT_OS_EMSCRIPTEN_ANCIENT
+#define MPT_OS_EMSCRIPTEN_ANCIENT 0
+#endif
+
+
+
+#if MPT_OS_EMSCRIPTEN
+#undef MPT_PLATFORM_MULTITHREADED
+#define MPT_PLATFORM_MULTITHREADED 0
+#endif

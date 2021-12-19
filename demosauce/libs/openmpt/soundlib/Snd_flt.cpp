@@ -2,7 +2,9 @@
  * snd_flt.cpp
  * -----------
  * Purpose: Calculation of resonant filter coefficients.
- * Notes  : (currently none)
+ * Notes  : Extended filter range was introduced in MPT 1.12 and went up to 8652 Hz.
+ *          MPT 1.16 upped this to the current 10670 Hz.
+ *          We have no way of telling whether a file was made with MPT 1.12 or 1.16 though.
  * Authors: Olivier Lapicque
  *          OpenMPT Devs
  * The OpenMPT source code is released under the BSD license. Read LICENSE for more details.
@@ -22,21 +24,42 @@ OPENMPT_NAMESPACE_BEGIN
 // EMU10K1 docs: cutoff = reg[0-127]*62+100
 
 
+uint8 CSoundFile::FrequencyToCutOff(double frequency) const
+{
+	// IT Cutoff is computed as cutoff = 110 * 2 ^ (0.25 + x/y), where x is the cutoff and y defines the filter range.
+	// Reversed, this gives us x = (log2(cutoff / 110) - 0.25) * y.
+	// <==========> Rewrite as x = (log2(cutoff) - log2(110) - 0.25) * y.
+	// <==========> Rewrite as x = (ln(cutoff) - ln(110) - 0.25*ln(2)) * y/ln(2).
+	//                                           <4.8737671609324025>
+	double cutoff = (std::log(frequency) - 4.8737671609324025) * (m_SongFlags[SONG_EXFILTERRANGE] ? (20.0 / M_LN2) : (24.0 / M_LN2));
+	Limit(cutoff, 0.0, 127.0);
+	return Util::Round<uint8>(cutoff);
+}
+
+
 uint32 CSoundFile::CutOffToFrequency(uint32 nCutOff, int flt_modifier) const
-//--------------------------------------------------------------------------
 {
 	MPT_ASSERT(nCutOff < 128);
-	float Fc = 110.0f * std::pow(2.0f, 0.25f + ((float)(nCutOff * (flt_modifier + 256))) / (m_SongFlags[SONG_EXFILTERRANGE] ? 20.0f * 512.0f : 24.0f * 512.0f));
-	int freq = static_cast<int>(Fc);
+	float computedCutoff = static_cast<float>(nCutOff * (flt_modifier + 256));	// 0...127*512
+	float Fc;
+	if(GetType() != MOD_TYPE_IMF)
+	{
+		Fc = 110.0f * std::pow(2.0f, 0.25f + computedCutoff / (m_SongFlags[SONG_EXFILTERRANGE] ? 20.0f * 512.0f : 24.0f * 512.0f));
+	} else
+	{
+		// EMU8000: Documentation says the cutoff is in quarter semitones, with 0x00 being 125 Hz and 0xFF being 8 kHz
+		// The first half of the sentence contradicts the second, though.
+		Fc = 125.0f * std::pow(2.0f, computedCutoff * 6.0f / (127.0f * 512.0f));
+	}
+	int freq = Util::Round<int>(Fc);
 	Limit(freq, 120, 20000);
-	if (freq * 2 > (int)m_MixerSettings.gdwMixingFreq) freq = m_MixerSettings.gdwMixingFreq / 2;
+	if(freq * 2 > (int)m_MixerSettings.gdwMixingFreq) freq = m_MixerSettings.gdwMixingFreq / 2;
 	return static_cast<uint32>(freq);
 }
 
 
 // Simple 2-poles resonant filter
 void CSoundFile::SetupChannelFilter(ModChannel *pChn, bool bReset, int flt_modifier) const
-//----------------------------------------------------------------------------------------
 {
 	int cutoff = (int)pChn->nCutOff + (int)pChn->nCutSwing;
 	int resonance = (int)(pChn->nResonance & 0x7F) + (int)pChn->nResSwing;
@@ -51,8 +74,6 @@ void CSoundFile::SetupChannelFilter(ModChannel *pChn, bool bReset, int flt_modif
 		pChn->nResonance = (uint8)resonance;
 		pChn->nResSwing = 0;
 	}
-
-	float d, e;
 
 	// flt_modifier is in [-256, 256], so cutoff is in [0, 127 * 2] after this calculation.
 	const int computedCutoff = cutoff * (flt_modifier + 256) / 256;
@@ -71,28 +92,24 @@ void CSoundFile::SetupChannelFilter(ModChannel *pChn, bool bReset, int flt_modif
 
 	pChn->dwFlags.set(CHN_FILTER);
 
+	// 2 * damping factor
+	const float dmpfac = std::pow(10.0f, -resonance * ((24.0f / 128.0f) / 20.0f));
+	const float fc = CutOffToFrequency(cutoff, flt_modifier) * (2.0f * (float)M_PI);
+	float d, e;
 	if(m_playBehaviour[kITFilterBehaviour] && !m_SongFlags[SONG_EXFILTERRANGE])
 	{
-		const float freqParameterMultiplier = 128.0f / (24.0f * 256.0f);
+		const float r = m_MixerSettings.gdwMixingFreq / fc;
 
-		// 2 ^ (i / 24 * 256)
-		float frequency = 110.0f * pow(2.0f, 0.25f + (float)computedCutoff * freqParameterMultiplier);
-		LimitMax(frequency, (float)(m_MixerSettings.gdwMixingFreq / 2));
-		const float r = (float)m_MixerSettings.gdwMixingFreq / (2.0f * (float)M_PI * frequency);
-
-		d = ITResonanceTable[resonance] * r + ITResonanceTable[resonance] - 1.0f;
+		d = dmpfac * r + dmpfac - 1.0f;
 		e = r * r;
 	} else
 	{
-		float fc = (float)CutOffToFrequency(cutoff, flt_modifier);
-		const float dmpfac = pow(10.0f, -((24.0f / 128.0f) * (float)resonance) / 20.0f);
+		const float r = fc / m_MixerSettings.gdwMixingFreq;
 
-		fc *= (float)(2.0f * (float)M_PI / (float)m_MixerSettings.gdwMixingFreq);
-
-		d = (1.0f - 2.0f * dmpfac) * fc;
+		d = (1.0f - 2.0f * dmpfac) * r;
 		LimitMax(d, 2.0f);
-		d = (2.0f * dmpfac - d) / fc;
-		e = pow(1.0f / fc, 2.0f);
+		d = (2.0f * dmpfac - d) / r;
+		e = 1.0f / (r * r);
 	}
 
 	float fg = 1.0f / (1.0f + d + e);
@@ -100,7 +117,7 @@ void CSoundFile::SetupChannelFilter(ModChannel *pChn, bool bReset, int flt_modif
 	float fb1 = -e / (1.0f + d + e);
 
 #if defined(MPT_INTMIXER)
-#define FILTER_CONVERT(x) static_cast<mixsample_t>((x) * (1 << MIXING_FILTER_PRECISION))
+#define FILTER_CONVERT(x) Util::Round<mixsample_t>((x) * (1 << MIXING_FILTER_PRECISION))
 #else
 #define FILTER_CONVERT(x) (x)
 #endif
@@ -123,6 +140,8 @@ void CSoundFile::SetupChannelFilter(ModChannel *pChn, bool bReset, int flt_modif
 		pChn->nFilter_B0 = FILTER_CONVERT(fb0);
 		pChn->nFilter_B1 = FILTER_CONVERT(fb1);
 #ifdef MPT_INTMIXER
+		if(pChn->nFilter_A0 == 0)
+			pChn->nFilter_A0 = 1;	// Prevent silence at low filter cutoff and very high sampling rate
 		pChn->nFilter_HP = 0;
 #else
 		pChn->nFilter_HP = 0;

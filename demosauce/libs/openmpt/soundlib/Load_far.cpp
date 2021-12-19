@@ -14,60 +14,39 @@
 
 OPENMPT_NAMESPACE_BEGIN
 
-
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(push, 1)
-#endif
-
 // FAR File Header
-struct PACKED FARFileHeader
+struct FARFileHeader
 {
-	uint8  magic[4];
-	char   songName[40];
-	uint8  eof[3];
-	uint16 headerLength;
-	uint8  version;
-	uint8  onOff[16];
-	uint8  editingState[9];	// Stuff we don't care about
-	uint8  defaultSpeed;
-	uint8  chnPanning[16];
-	uint8  patternState[4];	// More stuff we don't care about
-	uint16 messageLength;
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(headerLength);
-		SwapBytesLE(messageLength);
-	}
+	uint8le  magic[4];
+	char     songName[40];
+	uint8le  eof[3];
+	uint16le headerLength;
+	uint8le  version;
+	uint8le  onOff[16];
+	uint8le  editingState[9];	// Stuff we don't care about
+	uint8le  defaultSpeed;
+	uint8le  chnPanning[16];
+	uint8le  patternState[4];	// More stuff we don't care about
+	uint16le messageLength;
 };
 
-STATIC_ASSERT(sizeof(FARFileHeader) == 98);
+MPT_BINARY_STRUCT(FARFileHeader, 98)
 
 
-struct PACKED FAROrderHeader
+struct FAROrderHeader
 {
-	uint8  orders[256];
-	uint8  numPatterns;	// supposed to be "number of patterns stored in the file"; apparently that's wrong
-	uint8  numOrders;
-	uint8  restartPos;
-	uint16 patternSize[256];
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		for(size_t i = 0; i < CountOf(patternSize); i++)
-		{
-			SwapBytesLE(patternSize[i]);
-		}
-	}
+	uint8le  orders[256];
+	uint8le  numPatterns;	// supposed to be "number of patterns stored in the file"; apparently that's wrong
+	uint8le  numOrders;
+	uint8le  restartPos;
+	uint16le patternSize[256];
 };
 
-STATIC_ASSERT(sizeof(FAROrderHeader) == 771);
+MPT_BINARY_STRUCT(FAROrderHeader, 771)
 
 
 // FAR Sample header
-struct PACKED FARSampleHeader
+struct FARSampleHeader
 {
 	// Sample flags
 	enum SampleFlags
@@ -76,22 +55,14 @@ struct PACKED FARSampleHeader
 		smpLoop		= 0x08,
 	};
 
-	char   name[32];
-	uint32 length;
-	uint8  finetune;
-	uint8  volume;
-	uint32 loopStart;
-	uint32 loopEnd;
-	uint8  type;
-	uint8  loop;
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(length);
-		SwapBytesLE(loopStart);
-		SwapBytesLE(loopEnd);
-	}
+	char     name[32];
+	uint32le length;
+	uint8le  finetune;
+	uint8le  volume;
+	uint32le loopStart;
+	uint32le loopEnd;
+	uint8le  type;
+	uint8le  loop;
 
 	// Convert sample header to OpenMPT's internal format.
 	void ConvertToMPT(ModSample &mptSmp) const
@@ -113,7 +84,7 @@ struct PACKED FARSampleHeader
 
 		if((loop & 8) && mptSmp.nLoopEnd > mptSmp.nLoopStart)
 		{
-			mptSmp.uFlags |= CHN_LOOP;
+			mptSmp.uFlags.set(CHN_LOOP);
 		}
 	}
 
@@ -128,26 +99,64 @@ struct PACKED FARSampleHeader
 	}
 };
 
-STATIC_ASSERT(sizeof(FARSampleHeader) == 48);
+MPT_BINARY_STRUCT(FARSampleHeader, 48)
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(pop)
-#endif
+
+static bool ValidateHeader(const FARFileHeader &fileHeader)
+{
+	if(std::memcmp(fileHeader.magic, "FAR\xFE", 4) != 0
+		|| std::memcmp(fileHeader.eof, "\x0D\x0A\x1A", 3)
+		)
+	{
+		return false;
+	}
+	if(fileHeader.headerLength < sizeof(FARFileHeader))
+	{
+		return false;
+	}
+	return true;
+}
+
+
+static uint64 GetHeaderMinimumAdditionalSize(const FARFileHeader &fileHeader)
+{
+	return fileHeader.headerLength - sizeof(FARFileHeader);
+}
+
+
+CSoundFile::ProbeResult CSoundFile::ProbeFileHeaderFAR(MemoryFileReader file, const uint64 *pfilesize)
+{
+	FARFileHeader fileHeader;
+	if(!file.ReadStruct(fileHeader))
+	{
+		return ProbeWantMoreData;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return ProbeFailure;
+	}
+	return ProbeAdditionalSize(file, pfilesize, GetHeaderMinimumAdditionalSize(fileHeader));
+}
 
 
 bool CSoundFile::ReadFAR(FileReader &file, ModLoadingFlags loadFlags)
-//-------------------------------------------------------------------
 {
 	file.Rewind();
 
 	FARFileHeader fileHeader;
-	if(!file.ReadConvertEndianness(fileHeader)
-		|| memcmp(fileHeader.magic, "FAR\xFE", 4) != 0
-		|| memcmp(fileHeader.eof, "\x0D\x0A\x1A", 3)
-		|| !file.LengthIsAtLeast(fileHeader.headerLength))
+	if(!file.ReadStruct(fileHeader))
 	{
 		return false;
-	} else if(loadFlags == onlyVerifyHeader)
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return false;
+	}
+	if(!file.CanRead(mpt::saturate_cast<FileReader::off_t>(GetHeaderMinimumAdditionalSize(fileHeader))))
+	{
+		return false;
+	}
+	if(loadFlags == onlyVerifyHeader)
 	{
 		return true;
 	}
@@ -178,17 +187,17 @@ bool CSoundFile::ReadFAR(FileReader &file, ModLoadingFlags loadFlags)
 
 	// Read orders
 	FAROrderHeader orderHeader;
-	if(!file.ReadConvertEndianness(orderHeader))
+	if(!file.ReadStruct(orderHeader))
 	{
 		return false;
 	}
-	Order.ReadFromArray(orderHeader.orders, orderHeader.numOrders, 0xFF, 0xFE);
-	Order.SetRestartPos(orderHeader.restartPos);
+	ReadOrderFromArray(Order(), orderHeader.orders, orderHeader.numOrders, 0xFF, 0xFE);
+	Order().SetRestartPos(orderHeader.restartPos);
 
 	file.Seek(fileHeader.headerLength);
 	
 	// Pattern effect LUT
-	static const uint8 farEffects[] =
+	static const EffectCommand farEffects[] =
 	{
 		CMD_NONE,
 		CMD_PORTAMENTOUP,
@@ -225,7 +234,7 @@ bool CSoundFile::ReadFAR(FileReader &file, ModLoadingFlags loadFlags)
 			continue;
 		}
 
-		// Read break row and unused value
+		// Read break row and unused value (used to be pattern tempo)
 		ROWINDEX breakRow = patternChunk.ReadUint8();
 		patternChunk.Skip(1);
 		if(breakRow > 0 && breakRow < numRows - 2)
@@ -253,10 +262,10 @@ bool CSoundFile::ReadFAR(FileReader &file, ModLoadingFlags loadFlags)
 					m.instr = data[1] + 1;
 				}
 
-				if(data[2] & 0x0F)
+				if(m.note != NOTE_NONE || data[2] > 0)
 				{
 					m.volcmd = VOLCMD_VOLUME;
-					m.vol = (data[2] & 0x0F) << 2;
+					m.vol = (Clamp(data[2], uint8(1), uint8(16)) - 1u) * 4u;
 				}
 				
 				m.param = data[3] & 0x0F;
@@ -288,7 +297,7 @@ bool CSoundFile::ReadFAR(FileReader &file, ModLoadingFlags loadFlags)
 			}
 		}
 
-		Patterns[pat].WriteEffect(EffectWriter(CMD_PATTERNBREAK, 0).Row(breakRow).Retry(EffectWriter::rmTryNextRow));
+		Patterns[pat].WriteEffect(EffectWriter(CMD_PATTERNBREAK, 0).Row(breakRow).RetryNextRow());
 	}
 	
 	if(!(loadFlags & loadSampleData))
@@ -308,7 +317,7 @@ bool CSoundFile::ReadFAR(FileReader &file, ModLoadingFlags loadFlags)
 		}
 
 		FARSampleHeader sampleHeader;
-		if(!file.ReadConvertEndianness(sampleHeader))
+		if(!file.ReadStruct(sampleHeader))
 		{
 			return true;
 		}

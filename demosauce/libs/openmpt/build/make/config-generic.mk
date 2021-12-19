@@ -1,10 +1,10 @@
 
-CC  = cc 
-CXX = c++
-LD  = c++
+CC  ?= cc 
+CXX ?= c++
+LD  ?= c++
 AR  = ar
 
-#CPPFLAGS += -DMPT_COMPILER_GENERIC
+CPPFLAGS += 
 CXXFLAGS += -std=c++11 
 CFLAGS   += -std=c99   
 LDFLAGS  += 

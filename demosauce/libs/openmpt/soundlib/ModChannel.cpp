@@ -15,7 +15,6 @@
 OPENMPT_NAMESPACE_BEGIN
 
 void ModChannel::Reset(ResetFlags resetMask, const CSoundFile &sndFile, CHANNELINDEX sourceChannel)
-//-------------------------------------------------------------------------------------------------
 {
 	if(resetMask & resetSetPosBasic)
 	{
@@ -46,8 +45,7 @@ void ModChannel::Reset(ResetFlags resetMask, const CSoundFile &sndFile, CHANNELI
 	if(resetMask & resetSetPosAdvanced)
 	{
 		nPeriod = 0;
-		nPos = 0;
-		nPosLo = 0;
+		position.Set(0);
 		nLength = 0;
 		nLoopStart = 0;
 		nLoopEnd = 0;
@@ -60,9 +58,10 @@ void ModChannel::Reset(ResetFlags resetMask, const CSoundFile &sndFile, CHANNELI
 		rightVol = leftVol = 0;
 		newRightVol = newLeftVol = 0;
 		rightRamp = leftRamp = 0;
-		nVolume = 256;
+		nVolume = 0;	// Needs to be 0 for SMP_NODEFAULTVOLUME flag
 		nVibratoPos = nTremoloPos = nPanbrelloPos = 0;
 		nOldHiOffset = 0;
+		nLeftVU = nRightVU = 0;
 
 		//-->Custom tuning related
 		m_ReCalculateFreqOnFirstTick = false;
@@ -70,7 +69,6 @@ void ModChannel::Reset(ResetFlags resetMask, const CSoundFile &sndFile, CHANNELI
 		m_PortamentoFineSteps = 0;
 		m_PortamentoTickSlide = 0;
 		m_Freq = 0;
-		m_VibratoDepth = 0;
 		//<--Custom tuning related.
 	}
 
@@ -96,15 +94,40 @@ void ModChannel::Reset(ResetFlags resetMask, const CSoundFile &sndFile, CHANNELI
 
 
 void ModChannel::Stop()
-//---------------------
 {
 	nPeriod = 0;
-	nInc = 0;
-	nPos = nPosLo = 0;
+	increment.Set(0);
+	position.Set(0);
 	nLeftVU = nRightVU = 0;
 	nVolume = 0;
 	pCurrentSample = nullptr;
-	nInc = 0;
+}
+
+
+void ModChannel::UpdateInstrumentVolume(const ModSample *smp, const ModInstrument *ins)
+{
+	nInsVol = 64;
+	if(smp != nullptr)
+		nInsVol = smp->nGlobalVol;
+	if(ins != nullptr)
+		nInsVol = (nInsVol * ins->nGlobalVol) / 64;
+}
+
+
+ModCommand::NOTE ModChannel::GetPluginNote(bool realNoteMapping) const
+{
+	if(nArpeggioLastNote != NOTE_NONE)
+	{
+		// If an arpeggio is playing, this definitely the last playing note, which may be different from the arpeggio base note stored in nNote.
+		return nArpeggioLastNote;
+	}
+	ModCommand::NOTE plugNote = nNote;
+	// Caution: When in compatible mode, ModChannel::nNote stores the "real" note, not the mapped note!
+	if(realNoteMapping && pModInstrument != nullptr && plugNote >= NOTE_MIN && plugNote < (MPT_ARRAY_COUNT(pModInstrument->NoteMap) + NOTE_MIN))
+	{
+		plugNote = pModInstrument->NoteMap[plugNote - NOTE_MIN];
+	}
+	return plugNote;
 }
 
 

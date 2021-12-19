@@ -33,7 +33,6 @@ OPENMPT_NAMESPACE_BEGIN
 #if defined(MPT_ENABLE_FILEIO_STDIO)
 
 static inline FILE * mpt_fopen(const mpt::PathString &filename, const char *mode)
-//-------------------------------------------------------------------------------
 {
 	#if MPT_OS_WINDOWS
 		return _wfopen(filename.AsNativePrefixed().c_str(), mode ? mpt::ToWide(mpt::CharsetASCII, mode).c_str() : L"");
@@ -64,15 +63,7 @@ bool SetFilesystemCompression(const mpt::PathString &filename);
 namespace mpt
 {
 
-#if MPT_COMPILER_MSVC && MPT_MSVC_BEFORE(2010,0)
-
-// VS2008 converts char filenames with CRT mbcs string conversion functions to wchar_t filenames.
-// This is totally wrong for Win32 GUI applications because the C locale does not necessarily match the current windows ANSI codepage (CP_ACP).
-// Work around this insanity by using our own string conversions for the std::fstream filenames.
-
-#define MPT_FSTREAM_DO_CONVERSIONS
-
-#elif MPT_COMPILER_GCC
+#if MPT_COMPILER_GCC
 
 #if MPT_OS_WINDOWS
 // GCC C++ library has no wchar_t overloads
@@ -240,6 +231,29 @@ public:
 
 
 
+// LazyFileRef is a simple reference to an on-disk file by the means of a
+// filename which allows easy assignment of the whole file contents to and from
+// byte buffers.
+class LazyFileRef {
+private:
+	const mpt::PathString m_Filename;
+public:
+	LazyFileRef(const mpt::PathString &filename)
+		: m_Filename(filename)
+	{
+		return;
+	}
+public:
+	LazyFileRef & operator = (const std::vector<mpt::byte> &data);
+	LazyFileRef & operator = (const std::vector<char> &data);
+	LazyFileRef & operator = (const std::string &data);
+	operator std::vector<mpt::byte> () const;
+	operator std::vector<char> () const;
+	operator std::string () const;
+};
+
+
+
 #if defined(MPT_ENABLE_FILEIO_STDIO)
 
 // class FILE_ostream, FILE_output_streambuf and FILE_output_buffered_streambuf
@@ -400,7 +414,7 @@ public:
 		: FILE_output_streambuf(f)
 		, buf((bufSize > 0) ? bufSize : 1)
 	{
-		setp(&buf[0], &buf[0] + buf.size());
+		setp(buf.data(), buf.data() + buf.size());
 	}
 	~FILE_output_buffered_streambuf()
 	{
@@ -515,9 +529,7 @@ public:
 
 #ifdef MODPLUG_TRACKER
 #if MPT_OS_WINDOWS
-//===============
 class CMappedFile
-//===============
 {
 protected:
 	HANDLE m_hFile;
@@ -541,9 +553,7 @@ public:
 #endif // MODPLUG_TRACKER
 
 
-//=============
 class InputFile
-//=============
 {
 private:
 	mpt::PathString m_Filename;

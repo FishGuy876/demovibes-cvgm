@@ -1,0 +1,17 @@
+*.o
+*.d
+*.0
+*.a
+*.so
+*.log
+*.swp
+*.wav
+*.zip
+sockulf.db
+dscan
+demosauce
+demosauce.conf
+config.mk
+makefile.conf
+test_files/
+bin/

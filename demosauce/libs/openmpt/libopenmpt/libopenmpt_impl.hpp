@@ -14,11 +14,6 @@
 #include "libopenmpt.hpp"
 
 #include <iosfwd>
-#ifdef LIBOPENMPT_ANCIENT_COMPILER
-#if defined(__GNUC__)
-#include <tr1/memory>
-#endif
-#endif
 #include <memory>
 
 #if defined(_MSC_VER)
@@ -28,7 +23,13 @@
 
 // forward declarations
 namespace OpenMPT {
+class FileReaderTraitsStdStream;
+typedef FileReaderTraitsStdStream FileReaderTraitsDefault;
+namespace detail {
+template <typename Tbase>
 class FileReader;
+} // namespace detail
+typedef detail::FileReader<FileReaderTraitsDefault> FileReader;
 class CSoundFile;
 class Dither;
 } // namespace OpenMPT
@@ -80,29 +81,14 @@ protected:
 	}; // struct subsong_data
 	typedef std::vector<subsong_data> subsongs_type;
 	static const std::int32_t all_subsongs = -1;
-#ifdef LIBOPENMPT_ANCIENT_COMPILER_SHARED_PTR
-	LIBOPENMPT_SHARED_PTR<log_interface> m_Log;
-#else
-	std::shared_ptr<log_interface> m_Log;
-#endif
-#ifdef LIBOPENMPT_ANCIENT_COMPILER_SHARED_PTR
-	LIBOPENMPT_SHARED_PTR<log_forwarder> m_LogForwarder;
-#else
+	std::unique_ptr<log_interface> m_Log;
 	std::unique_ptr<log_forwarder> m_LogForwarder;
-#endif
 	std::int32_t m_current_subsong;
 	double m_currentPositionSeconds;
-#ifdef LIBOPENMPT_ANCIENT_COMPILER_SHARED_PTR
-	LIBOPENMPT_SHARED_PTR<OpenMPT::CSoundFile> m_sndFile;
-#else
 	std::unique_ptr<OpenMPT::CSoundFile> m_sndFile;
-#endif
 	bool m_loaded;
-#ifdef LIBOPENMPT_ANCIENT_COMPILER_SHARED_PTR
-	LIBOPENMPT_SHARED_PTR<OpenMPT::Dither> m_Dither;
-#else
+	bool m_mixer_initialized;
 	std::unique_ptr<OpenMPT::Dither> m_Dither;
-#endif
 	subsongs_type m_subsongs;
 	float m_Gain;
 	bool m_ctl_load_skip_samples;
@@ -130,62 +116,31 @@ protected:
 	std::size_t read_interleaved_wrapper( std::size_t count, std::size_t channels, float * interleaved );
 	std::pair< std::string, std::string > format_and_highlight_pattern_row_channel_command( std::int32_t p, std::int32_t r, std::int32_t c, int command ) const;
 	std::pair< std::string, std::string > format_and_highlight_pattern_row_channel( std::int32_t p, std::int32_t r, std::int32_t c, std::size_t width, bool pad ) const;
-#ifdef LIBOPENMPT_ANCIENT_COMPILER_SHARED_PTR
-	static double could_open_propability( const OpenMPT::FileReader & file, double effort, LIBOPENMPT_SHARED_PTR<log_interface> log );
-#else
-	static double could_open_propability( const OpenMPT::FileReader & file, double effort, std::shared_ptr<log_interface> log );
-#endif
+	static double could_open_probability( const OpenMPT::FileReader & file, double effort, std::unique_ptr<log_interface> log );
 public:
 	static std::vector<std::string> get_supported_extensions();
+	static bool is_extension_supported( const char * extension );
 	static bool is_extension_supported( const std::string & extension );
-#ifdef LIBOPENMPT_ANCIENT_COMPILER_SHARED_PTR
-	static double could_open_propability( callback_stream_wrapper stream, double effort, LIBOPENMPT_SHARED_PTR<log_interface> log );
-#else
-	static double could_open_propability( callback_stream_wrapper stream, double effort, std::shared_ptr<log_interface> log );
-#endif
-#ifdef LIBOPENMPT_ANCIENT_COMPILER_SHARED_PTR
-	static double could_open_propability( std::istream & stream, double effort, LIBOPENMPT_SHARED_PTR<log_interface> log );
-#else
-	static double could_open_propability( std::istream & stream, double effort, std::shared_ptr<log_interface> log );
-#endif
-#ifdef LIBOPENMPT_ANCIENT_COMPILER_SHARED_PTR
-	module_impl( callback_stream_wrapper stream, LIBOPENMPT_SHARED_PTR<log_interface> log, const std::map< std::string, std::string > & ctls );
-#else
-	module_impl( callback_stream_wrapper stream, std::shared_ptr<log_interface> log, const std::map< std::string, std::string > & ctls );
-#endif
-#ifdef LIBOPENMPT_ANCIENT_COMPILER_SHARED_PTR
-	module_impl( std::istream & stream, LIBOPENMPT_SHARED_PTR<log_interface> log, const std::map< std::string, std::string > & ctls );
-#else
-	module_impl( std::istream & stream, std::shared_ptr<log_interface> log, const std::map< std::string, std::string > & ctls );
-#endif
-#ifdef LIBOPENMPT_ANCIENT_COMPILER_SHARED_PTR
-	module_impl( const std::vector<std::uint8_t> & data, LIBOPENMPT_SHARED_PTR<log_interface> log, const std::map< std::string, std::string > & ctls );
-#else
-	module_impl( const std::vector<std::uint8_t> & data, std::shared_ptr<log_interface> log, const std::map< std::string, std::string > & ctls );
-#endif
-#ifdef LIBOPENMPT_ANCIENT_COMPILER_SHARED_PTR
-	module_impl( const std::vector<char> & data, LIBOPENMPT_SHARED_PTR<log_interface> log, const std::map< std::string, std::string > & ctls );
-#else
-	module_impl( const std::vector<char> & data, std::shared_ptr<log_interface> log, const std::map< std::string, std::string > & ctls );
-#endif
-#ifdef LIBOPENMPT_ANCIENT_COMPILER_SHARED_PTR
-	module_impl( const std::uint8_t * data, std::size_t size, LIBOPENMPT_SHARED_PTR<log_interface> log, const std::map< std::string, std::string > & ctls );
-#else
-	module_impl( const std::uint8_t * data, std::size_t size, std::shared_ptr<log_interface> log, const std::map< std::string, std::string > & ctls );
-#endif
-#ifdef LIBOPENMPT_ANCIENT_COMPILER_SHARED_PTR
-	module_impl( const char * data, std::size_t size, LIBOPENMPT_SHARED_PTR<log_interface> log, const std::map< std::string, std::string > & ctls );
-#else
-	module_impl( const char * data, std::size_t size, std::shared_ptr<log_interface> log, const std::map< std::string, std::string > & ctls );
-#endif
-#ifdef LIBOPENMPT_ANCIENT_COMPILER_SHARED_PTR
-	module_impl( const void * data, std::size_t size, LIBOPENMPT_SHARED_PTR<log_interface> log, const std::map< std::string, std::string > & ctls );
-#else
-	module_impl( const void * data, std::size_t size, std::shared_ptr<log_interface> log, const std::map< std::string, std::string > & ctls );
-#endif
+	static double could_open_probability( callback_stream_wrapper stream, double effort, std::unique_ptr<log_interface> log );
+	static double could_open_probability( std::istream & stream, double effort, std::unique_ptr<log_interface> log );
+	static std::size_t probe_file_header_get_recommended_size();
+	static int probe_file_header( std::uint64_t flags, const std::uint8_t * data, std::size_t size, std::uint64_t filesize );
+	static int probe_file_header( std::uint64_t flags, const void * data, std::size_t size, std::uint64_t filesize );
+	static int probe_file_header( std::uint64_t flags, const std::uint8_t * data, std::size_t size );
+	static int probe_file_header( std::uint64_t flags, const void * data, std::size_t size );
+	static int probe_file_header( std::uint64_t flags, std::istream & stream );
+	static int probe_file_header( std::uint64_t flags, callback_stream_wrapper stream );
+	module_impl( callback_stream_wrapper stream, std::unique_ptr<log_interface> log, const std::map< std::string, std::string > & ctls );
+	module_impl( std::istream & stream, std::unique_ptr<log_interface> log, const std::map< std::string, std::string > & ctls );
+	module_impl( const std::vector<std::uint8_t> & data, std::unique_ptr<log_interface> log, const std::map< std::string, std::string > & ctls );
+	module_impl( const std::vector<char> & data, std::unique_ptr<log_interface> log, const std::map< std::string, std::string > & ctls );
+	module_impl( const std::uint8_t * data, std::size_t size, std::unique_ptr<log_interface> log, const std::map< std::string, std::string > & ctls );
+	module_impl( const char * data, std::size_t size, std::unique_ptr<log_interface> log, const std::map< std::string, std::string > & ctls );
+	module_impl( const void * data, std::size_t size, std::unique_ptr<log_interface> log, const std::map< std::string, std::string > & ctls );
 	~module_impl();
 public:
 	void select_subsong( std::int32_t subsong );
+	std::int32_t get_selected_subsong() const;
 	void set_repeat_count( std::int32_t repeat_count );
 	std::int32_t get_repeat_count() const;
 	double get_duration_seconds() const;
@@ -240,6 +195,14 @@ public:
 	std::string ctl_get( std::string ctl, bool throw_if_unknown = true ) const;
 	void ctl_set( std::string ctl, const std::string & value, bool throw_if_unknown = true );
 }; // class module_impl
+
+namespace helper {
+
+template<typename T, typename... Args> std::unique_ptr<T> make_unique(Args&&... args) {
+	return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
+} // namespace helper
 
 } // namespace openmpt
 

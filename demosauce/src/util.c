@@ -30,12 +30,12 @@ double amp_to_db(double amp)
 
 //-----------------------------------------------------------------------------
 
-
 void* util_memalign(size_t size, size_t align)
 {
-    assert((align & (align - 1)) == 0); // is align power of two?
-    size = (size + align - 1) & ~(align - 1);
-    return aligned_alloc(align, size);
+    void* ptr = NULL;
+    int err = posix_memalign(&ptr, align, size);
+    assert(!err);
+    return ptr;
 }
 
 void* util_realign(void* ptr, size_t size, size_t align)
@@ -71,7 +71,7 @@ int64_t util_filesize(const char* path)
     struct stat buf = {0};
     int err = stat(path, &buf);
     int64_t size = err ? -1 : buf.st_size;
-    log_debug("[filesize] '%s' %li", path, size);
+    log_debug("[filesize] '%s' %"PRIi64, path, size);
     return size;
 }
 
@@ -194,6 +194,10 @@ bool keyval_bool(const char* heap, const char* key, bool fallback)
 
 //-----------------------------------------------------------------------------
 
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0 // osx extrawurst
+#endif
+
 int socket_connect(const char* host, int port)
 {
     int                 fd          = -1;
@@ -201,8 +205,8 @@ int socket_connect(const char* host, int port)
     struct addrinfo*    info        = NULL;
     struct addrinfo     hints       = {0};
 
-    log_debug("[socket] connecting to %s:%d", host, port);
-    if (snprintf(portstr, sizeof portstr, "%d", port) < 0)
+    log_debug("[socket] connecting to %s:%i", host, port);
+    if (snprintf(portstr, sizeof portstr, "%i", port) < 0)
         goto error;
 
     hints.ai_family     = AF_UNSPEC;
@@ -225,7 +229,7 @@ int socket_connect(const char* host, int port)
         return fd;
 
 error:
-    log_debug("[socket] failed to connect to %s:%d", host, port);
+    log_debug("[socket] failed to connect to %s:%i", host, port);
     return -1;
 }
 
@@ -237,8 +241,8 @@ int socket_listen(int port, bool local)
     struct addrinfo*    info        = NULL;
     struct addrinfo     hints       = {0};
 
-    log_debug("[socket] listening on %d", port);
-    if (snprintf(portstr, sizeof portstr, "%d", port) < 0)
+    log_debug("[socket] listening on %i", port);
+    if (snprintf(portstr, sizeof portstr, "%i", port) < 0)
         goto error;
 
     hints.ai_family     = AF_UNSPEC;
@@ -270,7 +274,7 @@ error:
     freeaddrinfo(info);
     close(fd0);
     close(fd1);
-    log_debug("[socket] failed to listen on %d", port);
+    log_debug("[socket] failed to listen on %i", port);
     return -1;
 }
 
@@ -304,7 +308,7 @@ bool socket_read(int socket, struct buffer* buffer)
 
     buffer->size = total;
     ((char*)buffer->data)[total] = 0;
-    log_debug("[socket] read %li bytes", buffer->size);
+    log_debug("[socket] read %"PRIi64" bytes", buffer->size);
     return bytes > 0;
 }
 
@@ -326,7 +330,7 @@ void buffer_resize(struct buffer* buf, int64_t size)
     if (buf->max_size < buf->size) {
         buf->data = realloc(buf->data, buf->size);
         buf->max_size = buf->size;
-        log_debug("[buffer] %p resize to %ld bytes", buf, size);
+        log_debug("[buffer] %p resize to %"PRIi64" bytes", buf, size);
     }
 }
 
