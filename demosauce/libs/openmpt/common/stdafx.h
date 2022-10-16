@@ -22,6 +22,7 @@
 
 #if !defined(MPT_BUILD_WINESUPPORT)
 
+#define _AFX_NO_MFC_CONTROLS_IN_DIALOGS	// Do not include support for MFC controls in dialogs (reduces binary bloat; remove this #define if you want to use MFC controls)
 #include <afxwin.h>         // MFC core and standard components
 #include <afxext.h>         // MFC extensions
 #include <afxcmn.h>			// MFC support for Windows Common Controls
@@ -60,11 +61,13 @@ struct IUnknown;
 #include "../common/typedefs.h"
 // <memory>
 // <new>
+// <climits>
+// <cstddef>
 // <cstdint>
 // <stdint.h>
 
 #include "../common/mptTypeTraits.h"
-// <type_traits> // if available
+// <type_traits>
 
 #include "../common/mptString.h"
 // <algorithm>
@@ -110,9 +113,7 @@ struct IUnknown;
 // nonetheless. Pre-include the affected headers here as a future-proof
 // safe-guard and let their own include guards handle the further including by
 // VST SDK.
-#if !((MPT_COMPILER_MSVC && MPT_MSVC_BEFORE(2010,0)) || (MPT_COMPILER_GCC && MPT_GCC_BEFORE(4,3,0)))
 #include <cstdint>
-#endif
 #include <stdint.h>
 #include <cstring>
 #include <string.h>

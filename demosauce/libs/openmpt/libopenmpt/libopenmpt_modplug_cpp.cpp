@@ -95,6 +95,13 @@ static openmpt::module * get_self( const CSoundFile * that ) {
 
 #define mod ( get_self( this ) )
 
+#define update_state() \
+	if ( mod ) m_nCurrentPattern = mod->get_current_order(); \
+	if ( mod ) m_nPattern = mod->get_current_pattern(); \
+	if ( mod ) m_nMusicSpeed = mod->get_current_speed(); \
+	if ( mod ) m_nMusicTempo = mod->get_current_tempo(); \
+/**/
+
 UINT CSoundFile::m_nXBassDepth = 0;
 UINT CSoundFile::m_nXBassRange = 0;
 UINT CSoundFile::m_nReverbDepth = 0;
@@ -246,6 +253,7 @@ BOOL CSoundFile::Create( LPCBYTE lpStream, DWORD dwMemLength ) {
 		m_nChannels = mod->get_num_channels();
 		m_nMasterVolume = 128;
 		m_nSamples = mod->get_num_samples();
+		update_state();
 		return TRUE;
 	} catch ( ... ) {
 		Destroy();
@@ -267,8 +275,8 @@ UINT CSoundFile::GetNumChannels() const {
 	return mod->get_num_channels();
 }
 
-static int vol128_To_millibel( unsigned int vol ) {
-	return static_cast<int>( 2000.0 * std::log10( static_cast<int>( vol ) / 128.0 ) );
+static std::int32_t vol128_To_millibel( unsigned int vol ) {
+	return static_cast<std::int32_t>( 2000.0 * std::log10( static_cast<int>( vol ) / 128.0 ) );
 }
 
 BOOL CSoundFile::SetMasterVolume( UINT vol, BOOL bAdjustAGC ) {
@@ -292,26 +300,41 @@ UINT CSoundFile::GetNumInstruments() const {
 void CSoundFile::SetCurrentOrder( UINT nOrder ) {
 	mpcpplog();
 	mod->set_position_order_row( nOrder, 0 );
+	update_state();
 }
 
 UINT CSoundFile::GetSampleName( UINT nSample, LPSTR s ) const {
-	UNUSED(nSample);
 	mpcpplog();
 	if ( !s ) {
 		return 0;
 	}
-	// todo
-	return 0;
+	char buf[32];
+	std::memset( buf, 0, 32 );
+	if ( mod ) {
+		std::vector<std::string> names = mod->get_sample_names();
+		if ( 1 <= nSample && nSample <= names.size() ) {
+			std::strncpy( buf, names[ nSample - 1 ].c_str(), 31 );
+		}
+	}
+	std::memcpy( s, buf, 32 );
+	return static_cast<UINT>( std::strlen( buf ) );
 }
 
 UINT CSoundFile::GetInstrumentName( UINT nInstr, LPSTR s ) const {
-	UNUSED(nInstr);
 	mpcpplog();
 	if ( !s ) {
 		return 0;
 	}
-	// todo
-	return 0;
+	char buf[32];
+	std::memset( buf, 0, 32 );
+	if ( mod ) {
+		std::vector<std::string> names = mod->get_instrument_names();
+		if ( 1 <= nInstr && nInstr <= names.size() ) {
+			std::strncpy( buf, names[ nInstr - 1 ].c_str(), 31 );
+		}
+	}
+	std::memcpy( s, buf, 32 );
+	return static_cast<UINT>( std::strlen( buf ) );
 }
 
 void CSoundFile::LoopPattern( int nPat, int nRow ) {
@@ -635,6 +658,7 @@ UINT CSoundFile::GetRawSongComments( LPSTR s, UINT cbsize, UINT linesize ) {
 void CSoundFile::SetCurrentPos( UINT nPos ) {
 	mpcpplog();
 	if ( mod ) mod->set_position_seconds( nPos );
+	update_state();
 }
 
 UINT CSoundFile::GetCurrentPos() const {
@@ -734,7 +758,8 @@ UINT CSoundFile::Read( LPVOID lpBuffer, UINT cbBuffer ) {
 			dst[sample] = tmpbuf[sample] << (32-16-1-MIXING_ATTENUATION);
 		}
 	}
-	return static_cast<UINT>( frames_rendered * get_frame_size() );
+	update_state();
+	return static_cast<UINT>( frames_rendered );
 }
 
 

@@ -54,6 +54,10 @@ class ScanFile(object):
             length = re.compile(r'length:(\d*\.?\d+)')
             samplerate = re.compile(r'samplerate:(\d*\.?\d+)')
             loopiness = re.compile(r'loopiness:(\d*\.?\d+)')
+
+            # Try to calculate ReplayGain in the initial scan
+            repgain = re.compile(r'replaygain:(-?\d*\.?\d+)')
+            self.__replaygain = float(repgain.search(output).group(1))
             
             self.length = float(length.search(output).group(1))
 
@@ -78,11 +82,12 @@ class ScanFile(object):
     def replaygain(self):
         if not self.readable:
             return 0
-
+        
+        # Retain this function so only replaygain is recalculated upon request
         if not self.__replaygain:
             try:
                 path = os.path.dirname(program)
-                p = subprocess.Popen([program, '-r', self.file], stdout = subprocess.PIPE, cwd = path)
+                p = subprocess.Popen([program, self.file], stdout = subprocess.PIPE, cwd = path)
                 output = p.communicate()[0]
                 repgain = re.compile(r'replaygain:(-?\d*\.?\d+)')
                 self.__replaygain = float(repgain.search(output).group(1))

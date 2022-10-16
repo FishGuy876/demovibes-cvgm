@@ -12,13 +12,11 @@
 
 #include <string>
 
+#include "../common/FileReaderFwd.h"
+
 OPENMPT_NAMESPACE_BEGIN
 
-class FileReader;
-
-//====================================
 class SongMessage : public std::string
-//====================================
 {
 public:
 
@@ -58,6 +56,12 @@ public:
 	// [in]  lineEnding: line ending formatting of the text in memory.
 	// [out] returns formatted song message.
 	std::string GetFormatted(const LineEnding lineEnding) const;
+
+	// Set song message.
+	// [in]  lineEnding: line ending formatting of the text in memory. Must be leCR or leLF or leCRLF,
+	// [out] returns true if the message has been changed.
+	bool SetFormatted(std::string message, LineEnding lineEnding);
+
 };
 
 OPENMPT_NAMESPACE_END

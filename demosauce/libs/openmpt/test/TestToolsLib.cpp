@@ -65,7 +65,7 @@ Testcase::Testcase(Fatality fatality, Verbosity verbosity, const char * const de
 
 std::string Testcase::AsString() const
 {
-	return mpt::String::Print("%1(%2): %3", context.file, context.line, remove_newlines(desc));
+	return mpt::format(std::string("%1(%2): %3"))(context.file, context.line, remove_newlines(desc));
 }
 
 
@@ -196,7 +196,6 @@ void Testcase::ReportException()
 #if defined(MPT_ASSERT_HANDLER_NEEDED)
 
 MPT_NOINLINE void AssertHandler(const char *file, int line, const char *function, const char *expr, const char *msg)
-//------------------------------------------------------------------------------------------------------------------
 {
 	Test::fail_count++;
 	if(msg)

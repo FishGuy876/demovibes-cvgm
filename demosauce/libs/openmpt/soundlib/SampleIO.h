@@ -13,16 +13,16 @@
 #pragma once
 
 
+#include "../common/FileReaderFwd.h"
+
+
 OPENMPT_NAMESPACE_BEGIN
 
 
 struct ModSample;
-class FileReader;
 
 // Sample import / export formats
-//============
 class SampleIO
-//============
 {
 protected:
 	typedef uint32 format_type;
@@ -65,12 +65,7 @@ public:
 	enum Endianness
 	{
 		littleEndian = 0,
-		bigEndian,
-#ifdef MPT_PLATFORM_LITTLE_ENDIAN
-		nativeEndian = littleEndian,
-#else
-		nativeEndian = bigEndian,
-#endif
+		bigEndian = 1,
 	};
 
 	// Sample encoding
@@ -133,6 +128,22 @@ public:
 		format = (format & ~encodingMask) | (encoding << encodingOffset);
 	}
 
+	static inline Endianness GetNativeEndianness()
+	{
+		const mpt::endian_type endian = mpt::endian();
+		MPT_ASSERT((endian == mpt::endian_little) || (endian == mpt::endian_big));
+		Endianness result = littleEndian;
+		MPT_MAYBE_CONSTANT_IF(endian == mpt::endian_little)
+		{
+			result = littleEndian;
+		}
+		MPT_MAYBE_CONSTANT_IF(endian == mpt::endian_big)
+		{
+			result = bigEndian;
+		}
+		return result;
+	}
+
 	void MayNormalize()
 	{
 		if(GetBitDepth() == 24 || GetBitDepth() == 32)
@@ -148,9 +159,9 @@ public:
 	}
 
 	// Return 0 in case of variable-length encoded samples.
-	std::size_t GetEncodedBitsPerSample() const
+	uint8 GetEncodedBitsPerSample() const
 	{
-		std::size_t result = 0;
+		uint8 result = 0;
 		switch(GetEncoding())
 		{
 			case signedPCM:// Integer PCM, signed

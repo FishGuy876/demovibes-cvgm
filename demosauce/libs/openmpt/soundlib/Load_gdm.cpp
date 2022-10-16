@@ -21,141 +21,133 @@
 OPENMPT_NAMESPACE_BEGIN
 
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(push, 1)
-#endif
-
-
 // GDM File Header
-struct PACKED GDMFileHeader
+struct GDMFileHeader
 {
-	char   magic[4];				// ID: 'GDM\xFE'
-	char   songTitle[32];			// Music's title
-	char   songMusician[32];		// Name of music's composer
-	char   dosEOF[3];				// 13, 10, 26
-	char   magic2[4];				// ID: 'GMFS'
-	uint8  formatMajorVer;			// Format major version
-	uint8  formatMinorVer;			// Format minor version
-	uint16 trackerID;				// Composing Tracker ID code (00 = 2GDM)
-	uint8  trackerMajorVer;			// Tracker's major version
-	uint8  trackerMinorVer;			// Tracker's minor version
-	uint8  panMap[32];				// 0-Left to 15-Right, 255-N/U
-	uint8  masterVol;				// Range: 0...64
-	uint8  tempo;					// Initial music tempo (6)
-	uint8  bpm;						// Initial music BPM (125)
-	uint16 originalFormat;			// Original format ID:
+	char     magic[4];				// ID: 'GDM\xFE'
+	char     songTitle[32];			// Music's title
+	char     songMusician[32];		// Name of music's composer
+	char     dosEOF[3];				// 13, 10, 26
+	char     magic2[4];				// ID: 'GMFS'
+	uint8le  formatMajorVer;		// Format major version
+	uint8le  formatMinorVer;		// Format minor version
+	uint16le trackerID;				// Composing Tracker ID code (00 = 2GDM)
+	uint8le  trackerMajorVer;		// Tracker's major version
+	uint8le  trackerMinorVer;		// Tracker's minor version
+	uint8le  panMap[32];			// 0-Left to 15-Right, 255-N/U
+	uint8le  masterVol;				// Range: 0...64
+	uint8le  tempo;					// Initial music tempo (6)
+	uint8le  bpm;					// Initial music BPM (125)
+	uint16le originalFormat;		// Original format ID:
 		// 1-MOD, 2-MTM, 3-S3M, 4-669, 5-FAR, 6-ULT, 7-STM, 8-MED, 9-PSM
 		// (versions of 2GDM prior to v1.15 won't set this correctly)
 		// 2GDM v1.17 will only spit out 0-byte files when trying to convert a PSM16 file,
 		// and fail outright when trying to convert a new PSM file.
 
-	uint32 orderOffset;
-	uint8  lastOrder;				// Number of orders in module - 1
-	uint32 patternOffset;
-	uint8  lastPattern;				// Number of patterns in module - 1
-	uint32 sampleHeaderOffset;
-	uint32 sampleDataOffset;
-	uint8  lastSample;				// Number of samples in module - 1
-	uint32 messageTextOffset;		// Offset of song message
-	uint32 messageTextLength;
-	uint32 scrollyScriptOffset;		// Offset of scrolly script (huh?)
-	uint16 scrollyScriptLength;
-	uint32 textGraphicOffset;		// Offset of text graphic (huh?)
-	uint16 textGraphicLength;
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(trackerID);
-		SwapBytesLE(originalFormat);
-		SwapBytesLE(orderOffset);
-		SwapBytesLE(patternOffset);
-		SwapBytesLE(sampleHeaderOffset);
-		SwapBytesLE(sampleDataOffset);
-		SwapBytesLE(messageTextOffset);
-		SwapBytesLE(messageTextLength);
-		SwapBytesLE(messageTextOffset);
-		SwapBytesLE(messageTextLength);
-		SwapBytesLE(scrollyScriptOffset);
-		SwapBytesLE(scrollyScriptLength);
-		SwapBytesLE(textGraphicOffset);
-		SwapBytesLE(textGraphicLength);
-	}
+	uint32le orderOffset;
+	uint8le  lastOrder;				// Number of orders in module - 1
+	uint32le patternOffset;
+	uint8le  lastPattern;			// Number of patterns in module - 1
+	uint32le sampleHeaderOffset;
+	uint32le sampleDataOffset;
+	uint8le  lastSample;			// Number of samples in module - 1
+	uint32le messageTextOffset;		// Offset of song message
+	uint32le messageTextLength;
+	uint32le scrollyScriptOffset;		// Offset of scrolly script (huh?)
+	uint16le scrollyScriptLength;
+	uint32le textGraphicOffset;		// Offset of text graphic (huh?)
+	uint16le textGraphicLength;
 };
 
-STATIC_ASSERT(sizeof(GDMFileHeader) == 157);
+MPT_BINARY_STRUCT(GDMFileHeader, 157)
 
 
 // GDM Sample Header
-struct PACKED GDMSampleHeader
+struct GDMSampleHeader
 {
 	enum SampleFlags
 	{
 		smpLoop		= 0x01,
-		smp16Bit	= 0x02,		// 16-Bit samples are not handled correctly by 2GDM (not implemented)
+		smp16Bit	= 0x02,	// 16-Bit samples are not handled correctly by 2GDM (not implemented)
 		smpVolume	= 0x04,
 		smpPanning	= 0x08,
-		smpLZW		= 0x10,		// LZW-compressed samples are not implemented in 2GDM
-		smpStereo	= 0x20,		// Stereo samples are not handled correctly by 2GDM (not implemented)
+		smpLZW		= 0x10,	// LZW-compressed samples are not implemented in 2GDM
+		smpStereo	= 0x20,	// Stereo samples are not handled correctly by 2GDM (not implemented)
 	};
 
-	char   name[32];		// sample's name
-	char   fileName[12];	// sample's filename
-	uint8  emsHandle;		// useless
-	uint32 length;			// length in bytes
-	uint32 loopBegin;		// loop start in samples
-	uint32 loopEnd;			// loop end in samples
-	uint8  flags;			// misc. flags
-	uint16 c4Hertz;			// frequency
-	uint8  volume;			// default volume
-	uint8  panning;			// default pan
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(length);
-		SwapBytesLE(loopBegin);
-		SwapBytesLE(loopEnd);
-		SwapBytesLE(c4Hertz);
-	}
+	char     name[32];		// sample's name
+	char     fileName[12];	// sample's filename
+	uint8le  emsHandle;		// useless
+	uint32le length;		// length in bytes
+	uint32le loopBegin;		// loop start in samples
+	uint32le loopEnd;		// loop end in samples
+	uint8le  flags;			// misc. flags
+	uint16le c4Hertz;		// frequency
+	uint8le  volume;		// default volume
+	uint8le  panning;		// default pan
 };
 
-STATIC_ASSERT(sizeof(GDMSampleHeader) == 62);
+MPT_BINARY_STRUCT(GDMSampleHeader, 62)
 
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(pop)
-#endif
-
-
-bool CSoundFile::ReadGDM(FileReader &file, ModLoadingFlags loadFlags)
-//-------------------------------------------------------------------
+static const MODTYPE gdmFormatOrigin[] =
 {
-	file.Rewind();
+	MOD_TYPE_NONE, MOD_TYPE_MOD, MOD_TYPE_MTM, MOD_TYPE_S3M, MOD_TYPE_669, MOD_TYPE_FAR, MOD_TYPE_ULT, MOD_TYPE_STM, MOD_TYPE_MED, MOD_TYPE_PSM
+};
 
-	const MODTYPE gdmFormatOrigin[] =
-	{
-		MOD_TYPE_NONE, MOD_TYPE_MOD, MOD_TYPE_MTM, MOD_TYPE_S3M, MOD_TYPE_669, MOD_TYPE_FAR, MOD_TYPE_ULT, MOD_TYPE_STM, MOD_TYPE_MED, MOD_TYPE_PSM
-	};
 
-	GDMFileHeader fileHeader;
-	if(!file.ReadConvertEndianness(fileHeader)
-		|| memcmp(fileHeader.magic, "GDM\xFE", 4)
+static bool ValidateHeader(const GDMFileHeader &fileHeader)
+{
+	if(std::memcmp(fileHeader.magic, "GDM\xFE", 4)
 		|| fileHeader.dosEOF[0] != 13 || fileHeader.dosEOF[1] != 10 || fileHeader.dosEOF[2] != 26
-		|| memcmp(fileHeader.magic2, "GMFS", 4)
+		|| std::memcmp(fileHeader.magic2, "GMFS", 4)
 		|| fileHeader.formatMajorVer != 1 || fileHeader.formatMinorVer != 0
-		|| fileHeader.originalFormat >= CountOf(gdmFormatOrigin)
+		|| fileHeader.originalFormat >= mpt::size(gdmFormatOrigin)
 		|| fileHeader.originalFormat == 0)
 	{
 		return false;
-	} else if(loadFlags == onlyVerifyHeader)
+	}
+	return true;
+}
+
+
+CSoundFile::ProbeResult CSoundFile::ProbeFileHeaderGDM(MemoryFileReader file, const uint64 *pfilesize)
+{
+	GDMFileHeader fileHeader;
+	if(!file.ReadStruct(fileHeader))
+	{
+		return ProbeWantMoreData;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return ProbeFailure;
+	}
+	MPT_UNREFERENCED_PARAMETER(pfilesize);
+	return ProbeSuccess;
+}
+
+
+bool CSoundFile::ReadGDM(FileReader &file, ModLoadingFlags loadFlags)
+{
+	file.Rewind();
+
+	GDMFileHeader fileHeader;
+	if(!file.ReadStruct(fileHeader))
+	{
+		return false;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return false;
+	}
+	if(loadFlags == onlyVerifyHeader)
 	{
 		return true;
 	}
 
 	InitializeGlobals(gdmFormatOrigin[fileHeader.originalFormat]);
 	m_ContainerType = MOD_CONTAINERTYPE_GDM;
-	m_madeWithTracker = mpt::String::Print("BWSB 2GDM %1.%2 (converted from %3)", fileHeader.trackerMajorVer, fileHeader.formatMinorVer, ModTypeToTracker(GetType()));
+	m_madeWithTracker = mpt::format(MPT_USTRING("BWSB 2GDM %1.%2 (converted from %3)"))(fileHeader.trackerMajorVer, fileHeader.formatMinorVer, ModTypeToTracker(GetType()));
 
 	// Song name
 	mpt::String::Read<mpt::String::maybeNullTerminated>(m_songName, fileHeader.songTitle);
@@ -188,15 +180,19 @@ bool CSoundFile::ReadGDM(FileReader &file, ModLoadingFlags loadFlags)
 			break;
 		}
 	}
+	if(m_nChannels < 1)
+	{
+		return false;
+	}
 
-	m_nDefaultGlobalVolume = MIN(fileHeader.masterVol * 4, 256);
+	m_nDefaultGlobalVolume = std::min(fileHeader.masterVol * 4u, 256u);
 	m_nDefaultSpeed = fileHeader.tempo;
 	m_nDefaultTempo.Set(fileHeader.bpm);
 
 	// Read orders
 	if(file.Seek(fileHeader.orderOffset))
 	{
-		Order.ReadAsByte(file, fileHeader.lastOrder + 1, fileHeader.lastOrder + 1, 0xFF, 0xFE);
+		ReadOrderFromFile<uint8>(Order(), file, fileHeader.lastOrder + 1, 0xFF, 0xFE);
 	}
 
 	// Read samples
@@ -211,7 +207,7 @@ bool CSoundFile::ReadGDM(FileReader &file, ModLoadingFlags loadFlags)
 	for(SAMPLEINDEX smp = 1; smp <= m_nSamples; smp++)
 	{
 		GDMSampleHeader gdmSample;
-		if(!file.ReadConvertEndianness(gdmSample))
+		if(!file.ReadStruct(gdmSample))
 		{
 			break;
 		}
@@ -256,10 +252,10 @@ bool CSoundFile::ReadGDM(FileReader &file, ModLoadingFlags loadFlags)
 		if(gdmSample.flags & GDMSampleHeader::smpVolume)
 		{
 			// Default volume is used... 0...64, 255 = no default volume
-			sample.nVolume = std::min(gdmSample.volume, uint8(64)) * 4;
+			sample.nVolume = std::min<uint8>(gdmSample.volume, 64) * 4;
 		} else
 		{
-			sample.nVolume = 256;
+			sample.uFlags.set(SMP_NODEFAULTVOLUME);
 		}
 
 		if(gdmSample.flags & GDMSampleHeader::smpPanning)
@@ -290,9 +286,10 @@ bool CSoundFile::ReadGDM(FileReader &file, ModLoadingFlags loadFlags)
 	}
 
 	// Read patterns
-	Patterns.ResizeArray(MAX(MAX_PATTERNS, fileHeader.lastPattern + 1));
+	Patterns.ResizeArray(fileHeader.lastPattern + 1);
 
 	const CModSpecifications &modSpecs = GetModSpecifications(GetBestSaveFormat());
+	bool onlyAmigaNotes = true;
 
 	// We'll start at position patternsOffset and decode all patterns
 	file.Seek(fileHeader.patternOffset);
@@ -347,6 +344,10 @@ bool CSoundFile::ReadGDM(FileReader &file, ModLoadingFlags loadFlags)
 						noteByte = (noteByte & 0x7F) - 1; // This format doesn't have note cuts
 						if(noteByte < 0xF0) noteByte = (noteByte & 0x0F) + 12 * (noteByte >> 4) + 12 + NOTE_MIN;
 						m.note = noteByte;
+						if(!m.IsAmigaNote())
+						{
+							onlyAmigaNotes = false;
+						}
 					}
 					m.instr = noteSample;
 				}
@@ -359,16 +360,14 @@ bool CSoundFile::ReadGDM(FileReader &file, ModLoadingFlags loadFlags)
 
 					while(chunk.CanRead(2))
 					{
-						uint8 effByte = chunk.ReadUint8();
-						uint8 paramByte = chunk.ReadUint8();
-
 						// We may want to restore the old command in some cases.
 						const ModCommand oldCmd = m;
-						m.command = effByte & effectMask;
-						m.param = paramByte;
+
+						uint8 effByte = chunk.ReadUint8();
+						m.param = chunk.ReadUint8();
 
 						// Effect translation LUT
-						static const uint8 gdmEffTrans[] =
+						static const EffectCommand gdmEffTrans[] =
 						{
 							CMD_NONE, CMD_PORTAMENTOUP, CMD_PORTAMENTODOWN, CMD_TONEPORTAMENTO,
 							CMD_VIBRATO, CMD_TONEPORTAVOL, CMD_VIBRATOVOL, CMD_TREMOLO,
@@ -381,8 +380,9 @@ bool CSoundFile::ReadGDM(FileReader &file, ModLoadingFlags loadFlags)
 						};
 
 						// Translate effect
-						if(m.command < CountOf(gdmEffTrans))
-							m.command = gdmEffTrans[m.command];
+						uint8 command = effByte & effectMask;
+						if(command < CountOf(gdmEffTrans))
+							m.command = gdmEffTrans[command];
 						else
 							m.command = CMD_NONE;
 
@@ -506,6 +506,8 @@ bool CSoundFile::ReadGDM(FileReader &file, ModLoadingFlags loadFlags)
 			}
 		}
 	}
+
+	m_SongFlags.set(SONG_AMIGALIMITS | SONG_ISAMIGA, GetType() == MOD_TYPE_MOD && GetNumChannels() == 4 && onlyAmigaNotes);
 
 	// Read song comments
 	if(fileHeader.messageTextLength > 0 && file.Seek(fileHeader.messageTextOffset))

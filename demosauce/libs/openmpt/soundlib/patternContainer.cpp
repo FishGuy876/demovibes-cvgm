@@ -20,15 +20,13 @@ OPENMPT_NAMESPACE_BEGIN
 
 
 void CPatternContainer::ClearPatterns()
-//-------------------------------------
 {
 	DestroyPatterns();
-	m_Patterns.assign(m_Patterns.size(), MODPATTERN(*this));
+	m_Patterns.assign(m_Patterns.size(), CPattern(*this));
 }
 
 
 void CPatternContainer::DestroyPatterns()
-//---------------------------------------
 {
 	for(PATTERNINDEX i = 0; i < m_Patterns.size(); i++)
 	{
@@ -38,83 +36,74 @@ void CPatternContainer::DestroyPatterns()
 
 
 PATTERNINDEX CPatternContainer::Duplicate(PATTERNINDEX from, bool respectQtyLimits)
-//---------------------------------------------------------------------------------
 {
 	if(!IsValidPat(from))
 	{
 		return PATTERNINDEX_INVALID;
 	}
 
-	const CPattern oldPat = m_Patterns[from];
-	PATTERNINDEX newPatIndex = InsertAny(oldPat.GetNumRows(), respectQtyLimits);
+	PATTERNINDEX newPatIndex = InsertAny(m_Patterns[from].GetNumRows(), respectQtyLimits);
 
 	if(newPatIndex != PATTERNINDEX_INVALID)
 	{
-		CPattern &newPat = m_Patterns[newPatIndex];
-		memcpy(newPat.m_ModCommands, oldPat.m_ModCommands, newPat.GetNumChannels() * newPat.GetNumRows() * sizeof(ModCommand));
-		newPat.m_Rows = oldPat.m_Rows;
-		newPat.m_RowsPerBeat = oldPat.m_RowsPerBeat;
-		newPat.m_RowsPerMeasure = oldPat.m_RowsPerMeasure;
-		newPat.m_PatternName = oldPat.m_PatternName;
-		newPat.m_tempoSwing = oldPat.m_tempoSwing;
+		m_Patterns[newPatIndex] = m_Patterns[from];
 	}
 	return newPatIndex;
 }
 
 
 PATTERNINDEX CPatternContainer::InsertAny(const ROWINDEX rows, bool respectQtyLimits)
-//-----------------------------------------------------------------------------------
 {
 	PATTERNINDEX i = 0;
 	for(i = 0; i < m_Patterns.size(); i++)
-		if(!m_Patterns[i]) break;
+		if(!m_Patterns[i].IsValid()) break;
 	if(respectQtyLimits && i >= m_rSndFile.GetModSpecifications().patternsMax)
 		return PATTERNINDEX_INVALID;
 	if(!Insert(i, rows))
 		return PATTERNINDEX_INVALID;
 	else return i;
-
 }
 
 
 bool CPatternContainer::Insert(const PATTERNINDEX index, const ROWINDEX rows)
-//---------------------------------------------------------------------------
 {
 	if(rows > MAX_PATTERN_ROWS || rows == 0)
 		return false;
-	if(index < m_Patterns.size() && m_Patterns[index])
+	if(IsValidPat(index))
 		return false;
 
-	if(index >= m_Patterns.size())
+	try
 	{
-		m_Patterns.resize(index + 1, MODPATTERN(*this));
+		if(index >= m_Patterns.size())
+		{
+			m_Patterns.resize(index + 1, CPattern(*this));
+		}
+		m_Patterns[index].AllocatePattern(rows);
+		m_Patterns[index].RemoveSignature();
+		m_Patterns[index].SetName("");
+	} MPT_EXCEPTION_CATCH_OUT_OF_MEMORY(e)
+	{
+		MPT_EXCEPTION_DELETE_OUT_OF_MEMORY(e);
+		return false;
 	}
-
-	m_Patterns[index].AllocatePattern(rows);
-	m_Patterns[index].RemoveSignature();
-	m_Patterns[index].SetName("");
-
-	return m_Patterns[index] != nullptr;
+	return m_Patterns[index].IsValid();
 }
 
 
 void CPatternContainer::Remove(const PATTERNINDEX ipat)
-//-----------------------------------------------------
 {
 	if(ipat < m_Patterns.size()) m_Patterns[ipat].Deallocate();
 }
 
 
 bool CPatternContainer::IsPatternEmpty(const PATTERNINDEX nPat) const
-//-------------------------------------------------------------------
 {
 	if(!IsValidPat(nPat))
 		return false;
 	
-	const ModCommand *m = m_Patterns[nPat].m_ModCommands;
-	for(const ModCommand *mEnd = m + m_Patterns[nPat].GetNumChannels() * m_Patterns[nPat].GetNumRows(); m != mEnd; m++)
+	for(const auto &m : m_Patterns[nPat].m_ModCommands)
 	{
-		if(!m->IsEmpty())
+		if(!m.IsEmpty())
 			return false;
 	}
 	return true;
@@ -122,26 +111,24 @@ bool CPatternContainer::IsPatternEmpty(const PATTERNINDEX nPat) const
 
 
 void CPatternContainer::ResizeArray(const PATTERNINDEX newSize)
-//-------------------------------------------------------------
 {
 	if(Size() <= newSize)
-		m_Patterns.resize(newSize, MODPATTERN(*this));
-	else
 	{
-		for(PATTERNINDEX i = Size(); i > newSize; i--) Remove(i-1);
-		m_Patterns.resize(newSize, MODPATTERN(*this));
+		m_Patterns.resize(newSize, CPattern(*this));
+	} else
+	{
+		for(PATTERNINDEX i = Size(); i > newSize; i--)
+			Remove(i - 1);
+		m_Patterns.resize(newSize, CPattern(*this));
 	}
 }
 
 
 void CPatternContainer::OnModTypeChanged(const MODTYPE /*oldtype*/)
-//-----------------------------------------------------------------
 {
 	const CModSpecifications specs = m_rSndFile.GetModSpecifications();
-	if(specs.patternsMax < Size())
-		ResizeArray(MAX(MAX_PATTERNS, specs.patternsMax));
-	else if(Size() < MAX_PATTERNS)
-		ResizeArray(MAX_PATTERNS);
+	//if(specs.patternsMax < Size())
+	//	ResizeArray(specs.patternsMax);
 
 	// remove pattern time signatures
 	if(!specs.hasPatternSignatures)
@@ -155,20 +142,7 @@ void CPatternContainer::OnModTypeChanged(const MODTYPE /*oldtype*/)
 }
 
 
-void CPatternContainer::Init()
-//----------------------------
-{
-	for(PATTERNINDEX i = 0; i < Size(); i++)
-	{
-		Remove(i);
-	}
-
-	ResizeArray(MAX_PATTERNS);
-}
-
-
 PATTERNINDEX CPatternContainer::GetNumPatterns() const
-//----------------------------------------------------
 {
 	if(Size() == 0)
 	{
@@ -186,7 +160,6 @@ PATTERNINDEX CPatternContainer::GetNumPatterns() const
 
 
 PATTERNINDEX CPatternContainer::GetNumNamedPatterns() const
-//---------------------------------------------------------
 {
 	if(Size() == 0)
 	{
@@ -205,13 +178,12 @@ PATTERNINDEX CPatternContainer::GetNumNamedPatterns() const
 
 
 void WriteModPatterns(std::ostream& oStrm, const CPatternContainer& patc)
-//----------------------------------------------------------------------
 {
 	srlztn::SsbWrite ssb(oStrm);
 	ssb.BeginWrite(FileIdPatterns, MptVersion::num);
 	const PATTERNINDEX nPatterns = patc.Size();
 	uint16 nCount = 0;
-	for(uint16 i = 0; i < nPatterns; i++) if (patc[i])
+	for(uint16 i = 0; i < nPatterns; i++) if (patc[i].IsValid())
 	{
 		ssb.WriteItem(patc[i], srlztn::ID::FromInt<uint16>(i), &WriteModPattern);
 		nCount = i + 1;
@@ -222,7 +194,6 @@ void WriteModPatterns(std::ostream& oStrm, const CPatternContainer& patc)
 
 
 void ReadModPatterns(std::istream& iStrm, CPatternContainer& patc, const size_t)
-//--------------------------------------------------------------------------------
 {
 	srlztn::SsbRead ssb(iStrm);
 	ssb.BeginRead(FileIdPatterns, MptVersion::num);

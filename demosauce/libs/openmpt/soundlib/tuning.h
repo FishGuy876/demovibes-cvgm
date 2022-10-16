@@ -10,131 +10,204 @@
 
 #pragma once
 
+#include <map>
+
 #include "tuningbase.h"
 
 
 OPENMPT_NAMESPACE_BEGIN
 
 
-typedef CTuningBase CTuning;
+namespace Tuning {
 
 
-
-//================================
-class CTuningRTI : public CTuning //RTI <-> Ratio Table Implementation
-//================================
+class CTuningRTI
 {
 
 public:
-//BEGIN STATIC CONST MEMBERS:
+
+	static const char s_FileExtension[5];
+
+	enum
+	{
+		TT_GENERAL        = 0,
+		TT_GROUPGEOMETRIC = 1,
+		TT_GEOMETRIC      = 3,
+	};
+
 	static const RATIOTYPE s_DefaultFallbackRatio;
 	static const NOTEINDEXTYPE s_StepMinDefault = -64;
 	static const UNOTEINDEXTYPE s_RatioTableSizeDefault = 128;
 	static const USTEPINDEXTYPE s_RatioTableFineSizeMaxDefault = 1000;
-	static const SERIALIZATION_VERSION s_SerializationVersion = 4;
-//END STATIC CONST MEMBERS
-
 
 public:
-//BEGIN TUNING INTERFACE METHODS:
-	virtual RATIOTYPE GetRatio(const NOTEINDEXTYPE& stepsFromCentre) const;
 
-	virtual RATIOTYPE GetRatio(const NOTEINDEXTYPE& stepsFromCentre, const STEPINDEXTYPE& fineSteps) const;
+	//To return ratio of certain note.
+	RATIOTYPE GetRatio(const NOTEINDEXTYPE& stepsFromCentre) const;
 
-	virtual UNOTEINDEXTYPE GetRatioTableSize() const {return static_cast<UNOTEINDEXTYPE>(m_RatioTable.size());}
+	//To return ratio from a 'step'(noteindex + stepindex)
+	RATIOTYPE GetRatio(const NOTEINDEXTYPE& stepsFromCentre, const STEPINDEXTYPE& fineSteps) const;
 
-	virtual NOTEINDEXTYPE GetRatioTableBeginNote() const {return m_StepMin;}
+	UNOTEINDEXTYPE GetRatioTableSize() const {return static_cast<UNOTEINDEXTYPE>(m_RatioTable.size());}
 
-	VRPAIR GetValidityRange() const {return VRPAIR(m_StepMin, m_StepMin + static_cast<NOTEINDEXTYPE>(m_RatioTable.size()) - 1);}
+	NOTEINDEXTYPE GetRatioTableBeginNote() const {return m_StepMin;}
+
+	//Tuning might not be valid for arbitrarily large range,
+	//so this can be used to ask where it is valid. Tells the lowest and highest
+	//note that are valid.
+	VRPAIR GetValidityRange() const {return VRPAIR(m_StepMin, static_cast<NOTEINDEXTYPE>(m_StepMin + static_cast<NOTEINDEXTYPE>(m_RatioTable.size()) - 1));}
+
+	//Return true if note is within validity range - false otherwise.
+	bool IsValidNote(const NOTEINDEXTYPE n) const {return (n >= GetValidityRange().first && n <= GetValidityRange().second);}
 
 	UNOTEINDEXTYPE GetGroupSize() const {return m_GroupSize;}
 
 	RATIOTYPE GetGroupRatio() const {return m_GroupRatio;}
 
-	virtual STEPINDEXTYPE GetStepDistance(const NOTEINDEXTYPE& from, const NOTEINDEXTYPE& to) const
+	//To return (fine)stepcount between two consecutive mainsteps.
+	USTEPINDEXTYPE GetFineStepCount() const {return m_FineStepCount;}
+
+	//To return 'directed distance' between given notes.
+	STEPINDEXTYPE GetStepDistance(const NOTEINDEXTYPE& from, const NOTEINDEXTYPE& to) const
 		{return (to - from)*(static_cast<NOTEINDEXTYPE>(GetFineStepCount())+1);}
 
-	virtual STEPINDEXTYPE GetStepDistance(const NOTEINDEXTYPE& noteFrom, const STEPINDEXTYPE& stepDistFrom, const NOTEINDEXTYPE& noteTo, const STEPINDEXTYPE& stepDistTo) const
+	//To return 'directed distance' between given steps.
+	STEPINDEXTYPE GetStepDistance(const NOTEINDEXTYPE& noteFrom, const STEPINDEXTYPE& stepDistFrom, const NOTEINDEXTYPE& noteTo, const STEPINDEXTYPE& stepDistTo) const
 		{return GetStepDistance(noteFrom, noteTo) + stepDistTo - stepDistFrom;}
 
-	static CTuning* Deserialize(std::istream& inStrm);
+	//To set finestepcount between two consecutive mainsteps.
+	//Finestep count == 0 means that
+	//stepdistances become the same as note distances.
+	void SetFineStepCount(const USTEPINDEXTYPE& fs);
 
-	static uint32 GetVersion() {return s_SerializationVersion;}
+	//Multiply all ratios by given number.
+	bool Multiply(const RATIOTYPE&);
+
+	bool SetRatio(const NOTEINDEXTYPE& s, const RATIOTYPE& r);
+
+	TUNINGTYPE GetType() const {return m_TuningType;}
+
+	std::string GetNoteName(const NOTEINDEXTYPE& x, bool addOctave = true) const;
+
+	void SetNoteName(const NOTEINDEXTYPE&, const std::string&);
+
+	static CTuningRTI* CreateDeserialize(std::istream & f)
+	{
+		CTuningRTI *pT = new CTuningRTI();
+		if(pT->InitDeserialize(f) != SerializationResult::Success)
+		{
+			delete pT;
+			return nullptr;
+		}
+		return pT;
+	}
 
 	//Try to read old version (v.3) and return pointer to new instance if succesfull, else nullptr.
-	static CTuningRTI* DeserializeOLD(std::istream&) {return 0;}
-
-	SERIALIZATION_RETURN_TYPE Serialize(std::ostream& out) const;
-
-
-public:
-	//PUBLIC CONSTRUCTORS/DESTRUCTORS:
-	CTuningRTI(const std::vector<RATIOTYPE>& ratios,
-				const NOTEINDEXTYPE& stepMin = s_StepMinDefault,
-				const std::string& name = "")
-				: CTuning(name)
+	static CTuningRTI* CreateDeserializeOLD(std::istream & f)
 	{
-		SetDummyValues();
-		m_StepMin = stepMin;
-		m_RatioTable = ratios;
+		CTuningRTI *pT = new CTuningRTI();
+		if(pT->InitDeserializeOLD(f) != SerializationResult::Success)
+		{
+			delete pT;
+			return nullptr;
+		}
+		return pT;
 	}
 
-	//Copy tuning.
-	CTuningRTI(const CTuning* const pTun);
-
-	CTuningRTI() {SetDummyValues();}
-
-	CTuningRTI(const std::string& name) : CTuning(name) {SetDummyValues();}
-
-	CTuningRTI(const NOTEINDEXTYPE& stepMin, const std::string& name) : CTuning(name)
+	static CTuningRTI* CreateGeneral(const std::string &name)
 	{
-		SetDummyValues();
-		m_StepMin = stepMin;
+		CTuningRTI *pT = new CTuningRTI();
+		pT->SetName(name);
+		return pT;
 	}
 
-	virtual ~CTuningRTI() {}
+	static CTuningRTI* CreateGroupGeometric(const std::string &name, UNOTEINDEXTYPE groupsize, RATIOTYPE groupratio, USTEPINDEXTYPE finestepcount)
+	{
+		CTuningRTI *pT = new CTuningRTI();
+		pT->SetName(name);
+		if(pT->CreateGroupGeometric(groupsize, groupratio, 0) != false)
+		{
+			delete pT;
+			return nullptr;
+		}
+		pT->SetFineStepCount(finestepcount);
+		return pT;
+	}
 
-//BEGIN PROTECTED VIRTUALS:
-protected:
-	bool ProSetRatio(const NOTEINDEXTYPE&, const RATIOTYPE&);
-	bool ProCreateGroupGeometric(const std::vector<RATIOTYPE>&, const RATIOTYPE&, const VRPAIR&, const NOTEINDEXTYPE ratiostartpos);
+	static CTuningRTI* CreateGroupGeometric(const std::string &name, const std::vector<RATIOTYPE> &ratios, RATIOTYPE groupratio, USTEPINDEXTYPE finestepcount)
+	{
+		CTuningRTI *pT = new CTuningRTI();
+		pT->SetName(name);
+		VRPAIR range = std::make_pair(s_StepMinDefault, static_cast<NOTEINDEXTYPE>(s_StepMinDefault + s_RatioTableSizeDefault - 1));
+		range.second = std::max(range.second, mpt::saturate_cast<NOTEINDEXTYPE>(ratios.size() - 1));
+		range.first = 0 - range.second - 1;
+		if(pT->CreateGroupGeometric(ratios, groupratio, range, 0) != false)
+		{
+			delete pT;
+			return nullptr;
+		}
+		pT->SetFineStepCount(finestepcount);
+		return pT;
+	}
+
+	static CTuningRTI* CreateGeometric(const std::string &name, UNOTEINDEXTYPE groupsize, RATIOTYPE groupratio, USTEPINDEXTYPE finestepcount)
+	{
+		CTuningRTI *pT = new CTuningRTI();
+		pT->SetName(name);
+		if(pT->CreateGeometric(groupsize, groupratio) != false)
+		{
+			delete pT;
+			return nullptr;
+		}
+		pT->SetFineStepCount(finestepcount);
+		return pT;
+	}
+
+	Tuning::SerializationResult Serialize(std::ostream& out) const;
+
+#ifdef MODPLUG_TRACKER
+	bool WriteSCL(std::ostream &f, const mpt::PathString &filename) const;
+#endif
+
+	bool ChangeGroupsize(const NOTEINDEXTYPE&);
+	bool ChangeGroupRatio(const RATIOTYPE&);
+
+	void SetName(const std::string& s) { m_TuningName = s; }
+	std::string GetName() const {return m_TuningName;}
+
+private:
+
+	CTuningRTI();
+
+	SerializationResult InitDeserialize(std::istream& inStrm);
+
+	//Try to read old version (v.3) and return pointer to new instance if succesfull, else nullptr.
+	SerializationResult InitDeserializeOLD(std::istream&);
+
+	//Create GroupGeometric tuning of *this using virtual ProCreateGroupGeometric.
+	bool CreateGroupGeometric(const std::vector<RATIOTYPE>&, const RATIOTYPE&, const VRPAIR vr, const NOTEINDEXTYPE ratiostartpos);
+
+	//Create GroupGeometric of *this using ratios from 'itself' and ratios starting from
+	//position given as third argument.
+	bool CreateGroupGeometric(const NOTEINDEXTYPE&, const RATIOTYPE&, const NOTEINDEXTYPE&);
+
+	//Create geometric tuning of *this using ratio(0) = 1.
+	bool CreateGeometric(const UNOTEINDEXTYPE& p, const RATIOTYPE& r) {return CreateGeometric(p,r,GetValidityRange());}
+	bool CreateGeometric(const UNOTEINDEXTYPE&, const RATIOTYPE&, const VRPAIR vr);
+
+	//The two methods below return false if action was done, true otherwise.
+	bool ProCreateGroupGeometric(const std::vector<RATIOTYPE>&, const RATIOTYPE&, const VRPAIR&, const NOTEINDEXTYPE& ratiostartpos);
 	bool ProCreateGeometric(const UNOTEINDEXTYPE&, const RATIOTYPE&, const VRPAIR&);
-	void ProSetFineStepCount(const USTEPINDEXTYPE&);
 
-	virtual NOTESTR ProGetNoteName(const NOTEINDEXTYPE& xi, bool addOctave) const;
-
-	//Not implemented.
-	VRPAIR ProSetValidityRange(const VRPAIR&);
-
-	//Note: Groupsize is restricted to interval [0, NOTEINDEXTYPE_MAX]
-	NOTEINDEXTYPE ProSetGroupSize(const UNOTEINDEXTYPE& p) {return m_GroupSize = (p<=static_cast<UNOTEINDEXTYPE>(NOTEINDEXTYPE_MAX)) ? static_cast<NOTEINDEXTYPE>(p) : NOTEINDEXTYPE_MAX;}
-	RATIOTYPE ProSetGroupRatio(const RATIOTYPE& pr) {return m_GroupRatio = (pr >= 0) ? pr : -pr;}
-
-	virtual uint32 GetClassVersion() const {return GetVersion();}
-
-	virtual bool ProProcessUnserializationdata(UNOTEINDEXTYPE ratiotableSize);
-
-
-//END PROTECTED VIRTUALS
-
-protected:
-//BEGIN PROTECTED CLASS SPECIFIC METHODS:
-	//GroupGeometric.
-	bool CreateRatioTableGG(const std::vector<RATIOTYPE>&, const RATIOTYPE, const VRPAIR& vr, const NOTEINDEXTYPE ratiostartpos);
+	void UpdateFineStepTable();
 
 	//Note: Stepdiff should be in range [1, finestepcount]
-	virtual RATIOTYPE GetRatioFine(const NOTEINDEXTYPE& note, USTEPINDEXTYPE stepDiff) const;
+	RATIOTYPE GetRatioFine(const NOTEINDEXTYPE& note, USTEPINDEXTYPE stepDiff) const;
 
 	//GroupPeriodic-specific.
 	//Get the corresponding note in [0, period-1].
 	//For example GetRefNote(-1) is to return note :'groupsize-1'.
 	NOTEINDEXTYPE GetRefNote(NOTEINDEXTYPE note) const;
-
-private:
-	//PRIVATE METHODS:
-
-	//Sets dummy values for *this.
-	void SetDummyValues();
 
 	bool IsNoteInTable(const NOTEINDEXTYPE& s) const
 	{
@@ -145,8 +218,8 @@ private:
 	}
 
 private:
-	//ACTUAL DATA MEMBERS
-	//NOTE: Update SetDummyValues when adding members.
+
+	TUNINGTYPE m_TuningType;
 
 	//Noteratios
 	std::vector<RATIOTYPE> m_RatioTable;
@@ -162,9 +235,19 @@ private:
 	NOTEINDEXTYPE m_GroupSize;
 	RATIOTYPE m_GroupRatio;
 
-	//<----Actual data members
+	USTEPINDEXTYPE m_FineStepCount;
 
-}; //End: CTuningRTI declaration.
+	std::string m_TuningName;
+
+	std::map<NOTEINDEXTYPE, std::string> m_NoteNameMap;
+
+}; // class CTuningRTI
+
+
+typedef CTuningRTI CTuning;
+
+
+} // namespace Tuning
 
 
 OPENMPT_NAMESPACE_END

@@ -8,50 +8,35 @@
  */
 
 
+#pragma once
+
 #include "../common/Endianness.h"
 #include "../common/mptIO.h"
+
+#include "../common/FileReaderFwd.h"
 
 
 OPENMPT_NAMESPACE_BEGIN
 
 
-class FileReader;
-
-
 namespace Ogg
 {
 
-
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(push, 1)
-#endif
-
-struct PACKED PageHeader
+struct PageHeader
 {
-	char   capture_pattern[4]; // "OggS"
-	uint8  version;
-	uint8  header_type;
-	uint64 granule_position;
-	uint32 bitstream_serial_number;
-	uint32 page_seqauence_number;
-	uint32 CRC_checksum;
-	uint8  page_segments;
-
-	void ConvertEndianness()
-	{
-		SwapBytesLE(granule_position);
-		SwapBytesLE(bitstream_serial_number);
-		SwapBytesLE(page_seqauence_number);
-		SwapBytesLE(CRC_checksum);
-	}
-
+	char     capture_pattern[4]; // "OggS"
+	uint8le  version;
+	uint8le  header_type;
+	uint64le granule_position;
+	uint32le bitstream_serial_number;
+	uint32le page_seqauence_number;
+	uint32le CRC_checksum;
+	uint8le  page_segments;
 };
 
-STATIC_ASSERT(sizeof(PageHeader) == 27);
-
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(pop)
-#endif
+} // namespace Ogg
+MPT_BINARY_STRUCT(Ogg::PageHeader, 27)
+namespace Ogg {
 
 
 struct PageInfo
@@ -80,9 +65,9 @@ bool UpdatePageCRC(PageInfo &pageInfo, const std::vector<uint8> &pageData);
 
 
 template <typename Tfile>
-bool WritePage(Tfile & f, PageInfo &pageInfo, const std::vector<uint8> &pageData)
+bool WritePage(Tfile & f, const PageInfo &pageInfo, const std::vector<uint8> &pageData)
 {
-	if(!mpt::IO::WriteConvertEndianness(f, pageInfo.header))
+	if(!mpt::IO::Write(f, pageInfo.header))
 	{
 		return false;
 	}
@@ -90,7 +75,7 @@ bool WritePage(Tfile & f, PageInfo &pageInfo, const std::vector<uint8> &pageData
 	{
 		return false;
 	}
-	if(!mpt::IO::WriteRaw(f, &pageData[0], pageData.size()))
+	if(!mpt::IO::WriteRaw(f, pageData.data(), pageData.size()))
 	{
 		return false;
 	}

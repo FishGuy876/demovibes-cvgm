@@ -1,11 +1,11 @@
 
-CC  = ~/afl/afl-clang-fast
-CXX = ~/afl/afl-clang-fast++
-LD  = ~/afl/afl-clang-fast++
+CC  = contrib/fuzzing/afl/afl-clang-fast
+CXX = contrib/fuzzing/afl/afl-clang-fast++
+LD  = contrib/fuzzing/afl/afl-clang-fast++
 AR  = ar 
 
 CPPFLAGS +=
-CXXFLAGS += -std=c++0x -fPIC -fno-strict-aliasing
+CXXFLAGS += -std=c++11 -fPIC -fno-strict-aliasing
 CFLAGS   += -std=c99   -fPIC -fno-strict-aliasing
 LDFLAGS  += 
 LDLIBS   += -lm

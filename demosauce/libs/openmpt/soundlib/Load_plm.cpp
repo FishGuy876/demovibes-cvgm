@@ -14,38 +14,28 @@
 
 OPENMPT_NAMESPACE_BEGIN
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(push, 1)
-#endif
-
-struct PACKED PLMFileHeader
+struct PLMFileHeader
 {
-	char   magic[4];		// "PLM\x1A"
-	uint8  headerSize;		// Number of bytes in header, including magic bytes
-	uint8  version;			// version code of file format (0x10)
-	char   songName[48];
-	uint8  numChannels;
-	uint8  flags;			// unused?
-	uint8  maxVol;			// Maximum volume for vol slides, normally 0x40
-	uint8  amplify;			// SoundBlaster amplify, 0x40 = no amplify
-	uint8  tempo;
-	uint8  speed;
-	uint8  panPos[32];		// 0...15
-	uint8  numSamples;
-	uint8  numPatterns;
-	uint16 numOrders;
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(numOrders);
-	}
+	char     magic[4];		// "PLM\x1A"
+	uint8le  headerSize;	// Number of bytes in header, including magic bytes
+	uint8le  version;		// version code of file format (0x10)
+	char     songName[48];
+	uint8le  numChannels;
+	uint8le  flags;			// unused?
+	uint8le  maxVol;		// Maximum volume for vol slides, normally 0x40
+	uint8le  amplify;		// SoundBlaster amplify, 0x40 = no amplify
+	uint8le  tempo;
+	uint8le  speed;
+	uint8le  panPos[32];	// 0...15
+	uint8le  numSamples;
+	uint8le  numPatterns;
+	uint16le numOrders;
 };
 
-STATIC_ASSERT(sizeof(PLMFileHeader) == 96);
+MPT_BINARY_STRUCT(PLMFileHeader, 96)
 
 
-struct PACKED PLMSampleHeader
+struct PLMSampleHeader
 {
 	enum SampleFlags
 	{
@@ -53,94 +43,112 @@ struct PACKED PLMSampleHeader
 		smpPingPong = 2,
 	};
 
-	char   magic[4];		// "PLS\x1A"
-	uint8  headerSize;		// Number of bytes in header, including magic bytes
-	uint8  version;	
-	char   name[32];
-	char   filename[12];
-	uint8  panning;			// 0...15, 255 = no pan
-	uint8  volume;			// 0...64
-	uint8  flags;			// See SampleFlags
-	uint16 sampleRate;
-	char   unused[4];
-	uint32 loopStart;
-	uint32 loopEnd;
-	uint32 length;
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(sampleRate);
-		SwapBytesLE(loopStart);
-		SwapBytesLE(loopEnd);
-		SwapBytesLE(length);
-	}
+	char     magic[4];		// "PLS\x1A"
+	uint8le  headerSize;	// Number of bytes in header, including magic bytes
+	uint8le  version;	
+	char     name[32];
+	char     filename[12];
+	uint8le  panning;		// 0...15, 255 = no pan
+	uint8le  volume;		// 0...64
+	uint8le  flags;			// See SampleFlags
+	uint16le sampleRate;
+	char     unused[4];
+	uint32le loopStart;
+	uint32le loopEnd;
+	uint32le length;
 };
 
-STATIC_ASSERT(sizeof(PLMSampleHeader) == 71);
+MPT_BINARY_STRUCT(PLMSampleHeader, 71)
 
 
-struct PACKED PLMPatternHeader
+struct PLMPatternHeader
 {
-	uint32 size;
-	uint8  numRows;
-	uint8  numChannels;
-	uint8  color;
-	char   name[25];
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(size);
-	}
+	uint32le size;
+	uint8le  numRows;
+	uint8le  numChannels;
+	uint8le  color;
+	char     name[25];
 };
 
-STATIC_ASSERT(sizeof(PLMPatternHeader) == 32);
+MPT_BINARY_STRUCT(PLMPatternHeader, 32)
 
 
-struct PACKED PLMOrderItem
+struct PLMOrderItem
 {
-	uint16 x;		// Starting position of pattern
-	uint8  y;		// Number of first channel
-	uint8  pattern;
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(x);
-	}
+	uint16le x;		// Starting position of pattern
+	uint8le  y;		// Number of first channel
+	uint8le  pattern;
 };
 
-STATIC_ASSERT(sizeof(PLMOrderItem) == 4);
+MPT_BINARY_STRUCT(PLMOrderItem, 4)
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(pop)
-#endif
+
+static bool ValidateHeader(const PLMFileHeader &fileHeader)
+{
+	if(std::memcmp(fileHeader.magic, "PLM\x1A", 4)
+		|| fileHeader.version != 0x10
+		|| fileHeader.numChannels == 0 || fileHeader.numChannels > 32
+		|| fileHeader.headerSize < sizeof(PLMFileHeader)
+		)
+	{
+		return false;
+	}
+	return true;
+}
+
+
+static uint64 GetHeaderMinimumAdditionalSize(const PLMFileHeader &fileHeader)
+{
+	return fileHeader.headerSize - sizeof(PLMFileHeader) + 4 * (fileHeader.numOrders + fileHeader.numPatterns + fileHeader.numSamples);
+}
+
+
+CSoundFile::ProbeResult CSoundFile::ProbeFileHeaderPLM(MemoryFileReader file, const uint64 *pfilesize)
+{
+	PLMFileHeader fileHeader;
+	if(!file.ReadStruct(fileHeader))
+	{
+		return ProbeWantMoreData;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return ProbeFailure;
+	}
+	return ProbeAdditionalSize(file, pfilesize, GetHeaderMinimumAdditionalSize(fileHeader));
+}
 
 
 bool CSoundFile::ReadPLM(FileReader &file, ModLoadingFlags loadFlags)
-//-------------------------------------------------------------------
 {
 	file.Rewind();
 
 	PLMFileHeader fileHeader;
-	if(!file.ReadConvertEndianness(fileHeader)
-		|| memcmp(fileHeader.magic, "PLM\x1A", 4)
-		|| fileHeader.version != 0x10
-		|| fileHeader.numChannels == 0 || fileHeader.numChannels > 32
-		|| !file.Seek(fileHeader.headerSize)
-		|| !file.CanRead(4 * (fileHeader.numOrders + fileHeader.numPatterns + fileHeader.numSamples)))
+	if(!file.ReadStruct(fileHeader))
 	{
 		return false;
-	} else if(loadFlags == onlyVerifyHeader)
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return false;
+	}
+	if(!file.CanRead(mpt::saturate_cast<FileReader::off_t>(GetHeaderMinimumAdditionalSize(fileHeader))))
+	{
+		return false;
+	}
+	if(loadFlags == onlyVerifyHeader)
 	{
 		return true;
+	}
+
+	if(!file.Seek(fileHeader.headerSize))
+	{
+		return false;
 	}
 
 	InitializeGlobals(MOD_TYPE_PLM);
 	InitializeChannels();
 	m_SongFlags = SONG_ITOLDEFFECTS;
-	m_madeWithTracker = "Disorder Tracker 2";
+	m_madeWithTracker = MPT_USTRING("Disorder Tracker 2");
 	// Some PLMs use ASCIIZ, some space-padding strings...weird. Oh, and the file browser stops at 0 bytes in the name, the main GUI doesn't.
 	mpt::String::Read<mpt::String::spacePadded>(m_songName, fileHeader.songName);
 	m_nChannels = fileHeader.numChannels + 1;	// Additional channel for writing pattern breaks
@@ -154,16 +162,11 @@ bool CSoundFile::ReadPLM(FileReader &file, ModLoadingFlags loadFlags)
 	m_nSamples = fileHeader.numSamples;
 
 	std::vector<PLMOrderItem> order(fileHeader.numOrders);
-	for(uint16 i = 0; i < fileHeader.numOrders; i++)
-	{
-		PLMOrderItem ord;
-		file.ReadConvertEndianness(ord);
-		order[i] = ord;
-	}
+	file.ReadVector(order, fileHeader.numOrders);
 
-	std::vector<uint32> patternPos, samplePos;
-	file.ReadVectorLE(patternPos, fileHeader.numPatterns);
-	file.ReadVectorLE(samplePos, fileHeader.numSamples);
+	std::vector<uint32le> patternPos, samplePos;
+	file.ReadVector(patternPos, fileHeader.numPatterns);
+	file.ReadVector(samplePos, fileHeader.numSamples);
 
 	for(SAMPLEINDEX smp = 0; smp < fileHeader.numSamples; smp++)
 	{
@@ -173,7 +176,7 @@ bool CSoundFile::ReadPLM(FileReader &file, ModLoadingFlags loadFlags)
 		PLMSampleHeader sampleHeader;
 		if(samplePos[smp] == 0
 			|| !file.Seek(samplePos[smp])
-			|| !file.ReadConvertEndianness(sampleHeader))
+			|| !file.ReadStruct(sampleHeader))
 				continue;
 
 		mpt::String::Read<mpt::String::maybeNullTerminated>(m_szNames[smp + 1], sampleHeader.name);
@@ -183,7 +186,7 @@ bool CSoundFile::ReadPLM(FileReader &file, ModLoadingFlags loadFlags)
 			sample.uFlags.set(CHN_PANNING);
 			sample.nPan = sampleHeader.panning * 0x11;
 		}
-		sample.nGlobalVol = std::min(sampleHeader.volume, uint8(64));
+		sample.nGlobalVol = std::min<uint8>(sampleHeader.volume, 64);
 		sample.nC5Speed = sampleHeader.sampleRate;
 		sample.nLoopStart = sampleHeader.loopStart;
 		sample.nLoopEnd = sampleHeader.loopEnd;
@@ -249,16 +252,15 @@ bool CSoundFile::ReadPLM(FileReader &file, ModLoadingFlags loadFlags)
 		CMD_OFFSETPERCENTAGE,
 	};
 
-	Order.clear();
-	for(uint16 i = 0; i < fileHeader.numOrders; i++)
+	Order().clear();
+	for(const auto &ord : order)
 	{
-		const PLMOrderItem &ord = order[i];
 		if(ord.pattern >= fileHeader.numPatterns
 			|| ord.y > fileHeader.numChannels
 			|| !file.Seek(patternPos[ord.pattern])) continue;
 
 		PLMPatternHeader patHeader;
-		file.ReadConvertEndianness(patHeader);
+		file.ReadStruct(patHeader);
 		if(!patHeader.numRows) continue;
 
 		STATIC_ASSERT(ORDERINDEX_MAX >= (MPT_MAX_UNSIGNED_VALUE(ord.x) + 255) / rowsPerPat);
@@ -276,13 +278,12 @@ bool CSoundFile::ReadPLM(FileReader &file, ModLoadingFlags loadFlags)
 				curRow = 0;
 				curOrd++;
 			}
-			if(curOrd >= Order.size())
+			if(curOrd >= Order().size())
 			{
-				PATTERNINDEX pat = Patterns.InsertAny(rowsPerPat);
-				Order.resize(curOrd + 1);
-				Order[curOrd] = pat;
+				Order().resize(curOrd + 1);
+				Order()[curOrd] = Patterns.InsertAny(rowsPerPat);
 			}
-			PATTERNINDEX pat = Order[curOrd];
+			PATTERNINDEX pat = Order()[curOrd];
 			if(!Patterns.IsValidPat(pat)) break;
 
 			ModCommand *m = Patterns[pat].GetpModCommand(curRow, ord.y);
@@ -315,7 +316,7 @@ bool CSoundFile::ReadPLM(FileReader &file, ModLoadingFlags loadFlags)
 						m->param = 0x30 | (m->param & 0x03);
 						break;
 					case 0x0B:	// Jump to order
-						if(m->param < fileHeader.numOrders)
+						if(m->param < order.size())
 						{
 							uint16 target = order[m->param].x;
 							m->param = static_cast<ModCommand::PARAM>(target / rowsPerPat);
@@ -372,25 +373,22 @@ bool CSoundFile::ReadPLM(FileReader &file, ModLoadingFlags loadFlags)
 	}
 	// Module ends with the last row of the last order item
 	ROWINDEX endPatSize = maxPos % rowsPerPat;
-	if(endPatSize > 0)
+	ORDERINDEX endOrder = static_cast<ORDERINDEX>(maxPos / rowsPerPat);
+	if(endPatSize > 0 && Order().IsValidPat(endOrder))
 	{
-		PATTERNINDEX endPat = Order[maxPos / rowsPerPat];
-		if(Patterns.IsValidPat(endPat))
-		{
-			Patterns[endPat].Resize(endPatSize, false);
-		}
+		Patterns[Order()[endOrder]].Resize(endPatSize, false);
 	}
 	// If there are still any non-existent patterns in our order list, insert some blank patterns.
 	PATTERNINDEX blankPat = PATTERNINDEX_INVALID;
-	for(ORDERINDEX i = 0; i < Order.size(); i++)
+	for(auto &pat : Order())
 	{
-		if(Order[i] == Order.GetInvalidPatIndex())
+		if(pat == Order.GetInvalidPatIndex())
 		{
 			if(blankPat == PATTERNINDEX_INVALID)
 			{
 				blankPat = Patterns.InsertAny(rowsPerPat);
 			}
-			Order[i] = blankPat;
+			pat = blankPat;
 		}
 	}
 

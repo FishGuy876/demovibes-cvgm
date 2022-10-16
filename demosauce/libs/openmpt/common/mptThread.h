@@ -15,17 +15,15 @@
 
 #if defined(MPT_QUIRK_NO_CPP_THREAD)
 #define MPT_STD_THREAD 0
-#elif MPT_OS_ANDROID
-#define MPT_STD_THREAD 0
 #elif MPT_COMPILER_GENERIC
 #define MPT_STD_THREAD 1
-#elif MPT_MSVC_AT_LEAST(2012,0)
+#elif MPT_COMPILER_MSVC
 #define MPT_STD_THREAD 1
-#elif MPT_GCC_AT_LEAST(4,4,0) && !MPT_OS_WINDOWS
+#elif MPT_COMPILER_GCC && !MPT_OS_WINDOWS
 #define MPT_STD_THREAD 1
-#elif MPT_CLANG_AT_LEAST(3,2,0) && defined(__GLIBCXX__)
+#elif MPT_COMPILER_CLANG && defined(__GLIBCXX__)
 #define MPT_STD_THREAD 1
-#elif (MPT_OS_MACOSX_OR_IOS || MPT_OS_FREEBSD) && MPT_CLANG_AT_LEAST(3,0,0)
+#elif (MPT_OS_MACOSX_OR_IOS || MPT_OS_FREEBSD) && MPT_COMPILER_CLANG
 #define MPT_STD_THREAD 1
 #elif MPT_CLANG_AT_LEAST(3,6,0) && defined(_LIBCPP_VERSION)
 #define MPT_STD_THREAD 1
@@ -90,8 +88,8 @@ class thread
 
 private:
 
-	thread(const thread &) {} // = delete
-	thread & operator = (const thread &) { return *this; } // = delete
+	thread(const thread &) = delete;
+	thread & operator = (const thread &) = delete;
 
 private:
 
@@ -228,6 +226,37 @@ public:
 		threadHandle = nullptr;
 	}
 
+	void swap(thread & other) noexcept
+	{
+		using std::swap;
+		swap(threadHandle, other.threadHandle);
+		swap(startupDoneEvent, other.startupDoneEvent);
+		swap(functionMode, other.functionMode);
+	}
+
+	friend void swap(thread & a, thread & b) noexcept
+	{
+		a.swap(b);
+	}
+
+	thread(thread && other) noexcept
+		: threadHandle(nullptr)
+		, startupDoneEvent(nullptr)
+		, functionMode(FunctionModeNone)
+	{
+		swap(other);
+	}
+
+	thread & operator=(thread && other) noexcept
+	{
+		if(joinable())
+		{
+			std::terminate();
+		}
+		swap(other);
+		return *this;
+	}
+
 	thread()
 		: threadHandle(nullptr)
 		, startupDoneEvent(nullptr)
@@ -321,31 +350,6 @@ public:
 
 
 #endif // MPT_STD_THREAD
-
-
-
-template<typename T, void (T::*Func)(void)>
-class pointer_to_member_functor {
-private:
-	T *that;
-public:
-	void operator () ()
-	{
-		(that->*Func)();
-	}
-	pointer_to_member_functor(T *that)
-		: that(that)
-	{
-		return;
-	}
-};
-
-// MPT_DELEGATE is a helper to use member functions of classes as thread entry
-//  points.
-// Implementing generic support in the mpt::thread constructor would result
-//  in horribly unreadable template code when not making use of at least some
-//  C++11 features.
-#define MPT_DELEGATE(type, func, inst) mpt::pointer_to_member_functor< type , & type :: func >( inst )
 
 
 

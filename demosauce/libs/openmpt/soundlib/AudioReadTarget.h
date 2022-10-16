@@ -8,10 +8,13 @@
  */
 
 
+#pragma once
+
 #include "Sndfile.h"
 #include "Dither.h"
-#include "SampleFormatConverters.h"
-#include "SampleFormat.h"
+#include "../soundbase/SampleFormat.h"
+#include "../soundbase/SampleFormatConverters.h"
+#include "../soundbase/SampleFormatCopy.h"
 #include "MixerLoops.h"
 #include "Mixer.h"
 
@@ -74,9 +77,7 @@ public:
 #if defined(MODPLUG_TRACKER)
 
 
-//===========================================
 class AudioReadTargetBufferInterleavedDynamic
-//===========================================
 	: public IAudioReadTarget
 {
 private:

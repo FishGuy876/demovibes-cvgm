@@ -30,14 +30,12 @@ public:
 	enum Number
 	{
 
-		// Win9x
+		WinNT4   = 0x0400,
 		Win98    = 0x0410,
 		WinME    = 0x0490,
-
-		// WinNT
-		WinNT4   = 0x0400,
 		Win2000  = 0x0500,
 		WinXP    = 0x0501,
+		WinXP64  = 0x0502,
 		WinVista = 0x0600,
 		Win7     = 0x0601,
 		Win8     = 0x0602,
@@ -49,12 +47,12 @@ public:
 	};
 
 	static mpt::ustring VersionToString(uint16 version);
+	static mpt::ustring VersionToString(Number version);
 
 private:
 
 	bool SystemIsWindows;
 
-	bool SystemIsNT;
 	uint32 SystemVersion;
 
 private:
@@ -72,9 +70,6 @@ public:
 	bool IsBefore(mpt::Windows::Version::Number version) const;
 	bool IsAtLeast(mpt::Windows::Version::Number version) const;
 
-	bool Is9x() const;
-	bool IsNT() const;
-
 	mpt::ustring GetName() const;
 #ifdef MODPLUG_TRACKER
 	mpt::ustring GetNameShort() const;
@@ -82,8 +77,8 @@ public:
 
 public:
 
-	static uint16 GetMinimumKernelLevel();
-	static uint16 GetMinimumAPILevel();
+	static mpt::Windows::Version::Number GetMinimumKernelLevel();
+	static mpt::Windows::Version::Number GetMinimumAPILevel();
 
 }; // class Version
 
@@ -130,6 +125,8 @@ public:
 	bool IsAtLeast(mpt::Wine::Version other) const;
 };
 
+mpt::Wine::Version GetMinimumWineVersion();
+
 class VersionContext
 {
 protected:
@@ -141,6 +138,7 @@ protected:
 	std::string m_RawHostRelease;
 	mpt::Wine::Version m_Version;
 	bool m_HostIsLinux;
+	bool m_HostIsBSD;
 public:
 	VersionContext();
 public:
@@ -152,6 +150,7 @@ public:
 	std::string RawHostRelease() const { return m_RawHostRelease; }
 	mpt::Wine::Version Version() const { return m_Version; }
 	bool HostIsLinux() const { return m_HostIsLinux; }
+	bool HostIsBSD() const { return m_HostIsBSD; }
 };
 
 } // namespace Wine

@@ -88,8 +88,9 @@ static bool ompt_load(struct decoder* dec, const char* path, int samplerate, int
         return false;
     }
 
-    openmpt_module* mod = openmpt_module_create(openmpt_stream_get_file_callbacks(),
-                                                file, openmpt_log_func_silent, NULL, NULL);
+    openmpt_module* mod = openmpt_module_create2(openmpt_stream_get_file_callbacks(),
+                                                 file, openmpt_log_func_silent, NULL,
+                                                 NULL, NULL, NULL, NULL, NULL);
     fclose(file);
     if (!mod) {
         log_debug("[openmpt] failed to load %s", path);
@@ -113,6 +114,7 @@ static bool ompt_load(struct decoder* dec, const char* path, int samplerate, int
 
 static bool ompt_probe(const char* path)
 {
+    // TODO: look into probe function
     const char* ext = strrchr(path, '.');
     if (ext && openmpt_is_extension_supported(ext + 1))
         return true;

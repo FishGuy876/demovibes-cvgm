@@ -20,12 +20,8 @@
 
 OPENMPT_NAMESPACE_BEGIN
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(push, 1)
-#endif
-
 // DMF header
-struct PACKED DMFFileHeader
+struct DMFFileHeader
 {
 	char   signature[4];	// "DDMF"
 	uint8  version;			// 1 - 7 are beta versions, 8 is the official thing, 10 is xtracker32
@@ -37,9 +33,9 @@ struct PACKED DMFFileHeader
 	uint8  creationYear;
 };
 
-STATIC_ASSERT(sizeof(DMFFileHeader) == 66);
+MPT_BINARY_STRUCT(DMFFileHeader, 66)
 
-struct PACKED DMFChunk
+struct DMFChunk
 {
 	// 32-Bit chunk identifiers
 	enum ChunkIdentifiers
@@ -54,77 +50,55 @@ struct PACKED DMFChunk
 		idSETT	= MAGIC4LE('S','E','T','T'),	// Probably contains GUI settings
 	};
 
-	typedef ChunkIdentifiers id_type;
-
-	uint32 id;
-	uint32 length;
+	uint32le id;
+	uint32le length;
 
 	size_t GetLength() const
 	{
-		return SwapBytesReturnLE(length);
+		return length;
 	}
 
-	id_type GetID() const
+	ChunkIdentifiers GetID() const
 	{
-		return static_cast<id_type>(SwapBytesReturnLE(id));
+		return static_cast<ChunkIdentifiers>(id.get());
 	}
 };
 
-STATIC_ASSERT(sizeof(DMFChunk) == 8);
+MPT_BINARY_STRUCT(DMFChunk, 8)
 
 // Order list
-struct PACKED DMFSequence
+struct DMFSequence
 {
-	uint16 loopStart;
-	uint16 loopEnd;
+	uint16le loopStart;
+	uint16le loopEnd;
 	// order list follows here ...
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(loopStart);
-		SwapBytesLE(loopEnd);
-	}
 };
 
-STATIC_ASSERT(sizeof(DMFSequence) == 4);
+MPT_BINARY_STRUCT(DMFSequence, 4)
 
 // Pattern header (global)
-struct PACKED DMFPatterns
+struct DMFPatterns
 {
-	uint16 numPatterns;	// 1..1024 patterns
-	uint8  numTracks;	// 1..32 channels
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(numPatterns);
-	}
+	uint16le numPatterns;	// 1..1024 patterns
+	uint8le  numTracks;		// 1..32 channels
 };
 
-STATIC_ASSERT(sizeof(DMFPatterns) == 3);
+MPT_BINARY_STRUCT(DMFPatterns, 3)
 
 // Pattern header (for each pattern)
-struct PACKED DMFPatternHeader
+struct DMFPatternHeader
 {
-	uint8  numTracks;	// 1..32 channels
-	uint8  beat;		// [hi|lo] -> hi = rows per beat, lo = reserved
-	uint16 numRows;
-	uint32 patternLength;
+	uint8le  numTracks;	// 1..32 channels
+	uint8le  beat;		// [hi|lo] -> hi = rows per beat, lo = reserved
+	uint16le numRows;
+	uint32le patternLength;
 	// patttern data follows here ...
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(numRows);
-		SwapBytesLE(patternLength);
-	}
 };
 
-STATIC_ASSERT(sizeof(DMFPatternHeader) == 8);
+MPT_BINARY_STRUCT(DMFPatternHeader, 8)
 
 // Sample header
-struct PACKED DMFSampleHeader
+struct DMFSampleHeader
 {
 	enum SampleFlags
 	{
@@ -138,12 +112,12 @@ struct PACKED DMFSampleHeader
 		smpLibrary	= 0x80,	// Sample is stored in a library
 	};
 
-	uint32 length;
-	uint32 loopStart;
-	uint32 loopEnd;
-	uint16 c3freq;		// 1000..45000hz
-	uint8  volume;		// 0 = ignore
-	uint8  flags;
+	uint32le length;
+	uint32le loopStart;
+	uint32le loopEnd;
+	uint16le c3freq;		// 1000..45000hz
+	uint8le  volume;		// 0 = ignore
+	uint8le  flags;
 
 	// Convert an DMFSampleHeader to OpenMPT's internal sample representation.
 	void ConvertToMPT(ModSample &mptSmp) const
@@ -159,6 +133,7 @@ struct PACKED DMFSampleHeader
 			mptSmp.nVolume = volume + 1;
 		else
 			mptSmp.nVolume = 256;
+		mptSmp.uFlags.set(SMP_NODEFAULTVOLUME, volume == 0);
 
 		if((flags & smpLoop) != 0 && mptSmp.nSustainEnd > mptSmp.nSustainStart)
 		{
@@ -172,31 +147,19 @@ struct PACKED DMFSampleHeader
 			mptSmp.nSustainEnd /= 2;
 		}
 	}
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(length);
-		SwapBytesLE(loopStart);
-		SwapBytesLE(loopEnd);
-		SwapBytesLE(c3freq);
-	}
 };
 
-STATIC_ASSERT(sizeof(DMFSampleHeader) == 16);
+MPT_BINARY_STRUCT(DMFSampleHeader, 16)
 
 // Sample header tail (between head and tail, there might be the library name of the sample, depending on the DMF version)
-struct PACKED DMFSampleHeaderTail
+struct DMFSampleHeaderTail
 {
-	uint16 filler;
-	uint32 crc32;
+	uint16le filler;
+	uint32le crc32;
 };
 
-STATIC_ASSERT(sizeof(DMFSampleHeaderTail) == 6);
+MPT_BINARY_STRUCT(DMFSampleHeaderTail, 6)
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(pop)
-#endif
 
 // Pattern translation memory
 struct DMFPatternSettings
@@ -220,7 +183,7 @@ struct DMFPatternSettings
 		}
 	};
 
-	std::vector<ChannelState> channels;			// Memory for each channel's state
+	std::vector<ChannelState> channels;		// Memory for each channel's state
 	bool realBPMmode;						// true = BPM mode
 	uint8 beat;								// Rows per beat
 	uint8 tempoTicks;						// Tick mode param
@@ -240,7 +203,6 @@ struct DMFPatternSettings
 
 // Convert portamento value (not very accurate due to X-Tracker's higher granularity, to say the least)
 static uint8 DMFporta2MPT(uint8 val, const uint8 internalTicks, const bool hasFine)
-//---------------------------------------------------------------------------------
 {
 	if(val == 0)
 		return 0;
@@ -253,7 +215,6 @@ static uint8 DMFporta2MPT(uint8 val, const uint8 internalTicks, const bool hasFi
 
 // Convert portamento / volume slide value (not very accurate due to X-Tracker's higher granularity, to say the least)
 static uint8 DMFslide2MPT(uint8 val, const uint8 internalTicks, const bool up)
-//----------------------------------------------------------------------------
 {
 	val = std::max<uint8>(1, val / 4);
 	const bool isFine = (val < 0x0F) || (internalTicks < 2);
@@ -270,7 +231,6 @@ static uint8 DMFslide2MPT(uint8 val, const uint8 internalTicks, const bool up)
 
 // Calculate tremor on/off param
 static uint8 DMFtremor2MPT(uint8 val, const uint8 internalTicks)
-//--------------------------------------------------------------
 {
 	uint8 ontime = (val >> 4);
 	uint8 offtime = (val & 0x0F);
@@ -282,7 +242,6 @@ static uint8 DMFtremor2MPT(uint8 val, const uint8 internalTicks)
 
 // Calculate delay parameter for note cuts / delays
 static uint8 DMFdelay2MPT(uint8 val, const uint8 internalTicks)
-//-------------------------------------------------------------
 {
 	int newval = (int)val * (int)internalTicks / 255;
 	Limit(newval, 0, 15);
@@ -292,7 +251,6 @@ static uint8 DMFdelay2MPT(uint8 val, const uint8 internalTicks)
 
 // Convert vibrato-style command parameters
 static uint8 DMFvibrato2MPT(uint8 val, const uint8 internalTicks)
-//---------------------------------------------------------------
 {
 	// MPT: 1 vibrato period == 64 ticks... we have internalTicks ticks per row.
 	// X-Tracker: Period length specified in rows!
@@ -304,7 +262,6 @@ static uint8 DMFvibrato2MPT(uint8 val, const uint8 internalTicks)
 
 // Try using effect memory (zero paramer) to give the effect swapper some optimization hints.
 static void ApplyEffectMemory(const ModCommand *m, ROWINDEX row, CHANNELINDEX numChannels, uint8 effect, uint8 &param)
-//--------------------------------------------------------------------------------------------------------------------
 {
 	if(effect == CMD_NONE || param == 0)
 	{
@@ -367,7 +324,6 @@ static void ApplyEffectMemory(const ModCommand *m, ROWINDEX row, CHANNELINDEX nu
 
 
 static PATTERNINDEX ConvertDMFPattern(FileReader &file, DMFPatternSettings &settings, CSoundFile &sndFile)
-//--------------------------------------------------------------------------------------------------------
 {
 	// Pattern flags
 	enum PatternFlags
@@ -388,7 +344,7 @@ static PATTERNINDEX ConvertDMFPattern(FileReader &file, DMFPatternSettings &sett
 	file.Rewind();
 	
 	DMFPatternHeader patHead;
-	file.ReadConvertEndianness(patHead);
+	file.ReadStruct(patHead);
 
 	const ROWINDEX numRows = Clamp(ROWINDEX(patHead.numRows), ROWINDEX(1), MAX_PATTERN_ROWS);
 	const PATTERNINDEX pat = sndFile.Patterns.InsertAny(numRows);
@@ -664,7 +620,7 @@ static PATTERNINDEX ConvertDMFPattern(FileReader &file, DMFPatternSettings &sett
 						// Put high offset on previous row
 						if(row > 0 && effect1 != settings.channels[chn].highOffset)
 						{
-							if(sndFile.Patterns[pat].WriteEffect(EffectWriter(CMD_S3MCMDEX, (0xA0 | (effect1 - 6))).Row(row - 1).Channel(chn).Retry(EffectWriter::rmTryPreviousRow)))
+							if(sndFile.Patterns[pat].WriteEffect(EffectWriter(CMD_S3MCMDEX, (0xA0 | (effect1 - 6))).Row(row - 1).Channel(chn).RetryPreviousRow()))
 							{
 								settings.channels[chn].highOffset = effect1;
 							}
@@ -748,7 +704,7 @@ static PATTERNINDEX ConvertDMFPattern(FileReader &file, DMFPatternSettings &sett
 						// Put vibrato type on previous row
 						if(row > 0 && effect2 != settings.channels[chn].vibratoType)
 						{
-							if(sndFile.Patterns[pat].WriteEffect(EffectWriter(CMD_S3MCMDEX, (0x30 | (effect2 - 8))).Row(row - 1).Channel(chn).Retry(EffectWriter::rmTryPreviousRow)))
+							if(sndFile.Patterns[pat].WriteEffect(EffectWriter(CMD_S3MCMDEX, (0x30 | (effect2 - 8))).Row(row - 1).Channel(chn).RetryPreviousRow()))
 							{
 								settings.channels[chn].vibratoType = effect2;
 							}
@@ -807,7 +763,7 @@ static PATTERNINDEX ConvertDMFPattern(FileReader &file, DMFPatternSettings &sett
 						// Put tremolo type on previous row
 						if(row > 0 && effect3 != settings.channels[chn].tremoloType)
 						{
-							if(sndFile.Patterns[pat].WriteEffect(EffectWriter(CMD_S3MCMDEX, (0x40 | (effect3 - 4))).Row(row - 1).Channel(chn).Retry(EffectWriter::rmTryPreviousRow)))
+							if(sndFile.Patterns[pat].WriteEffect(EffectWriter(CMD_S3MCMDEX, (0x40 | (effect3 - 4))).Row(row - 1).Channel(chn).RetryPreviousRow()))
 							{
 								settings.channels[chn].tremoloType = effect3;
 							}
@@ -904,18 +860,18 @@ static PATTERNINDEX ConvertDMFPattern(FileReader &file, DMFPatternSettings &sett
 		{
 			tempoChange = false;
 			
-			sndFile.Patterns[pat].WriteEffect(EffectWriter(CMD_TEMPO, static_cast<ModCommand::PARAM>(tempo)).Row(row).Channel(0).Retry(EffectWriter::rmTryNextRow));
-			sndFile.Patterns[pat].WriteEffect(EffectWriter(CMD_SPEED, static_cast<ModCommand::PARAM>(speed)).Row(row).Retry(EffectWriter::rmTryNextRow));
+			sndFile.Patterns[pat].WriteEffect(EffectWriter(CMD_TEMPO, static_cast<ModCommand::PARAM>(tempo)).Row(row).Channel(0).RetryNextRow());
+			sndFile.Patterns[pat].WriteEffect(EffectWriter(CMD_SPEED, static_cast<ModCommand::PARAM>(speed)).Row(row).RetryNextRow());
 		}
 		// Try to put delay effects somewhere as well
 		if(writeDelay & 0xF0)
 		{
-			sndFile.Patterns[pat].WriteEffect(EffectWriter(CMD_S3MCMDEX, 0xE0 | (writeDelay >> 4)).Row(row).AllowMultiple().Retry(EffectWriter::rmIgnore));
+			sndFile.Patterns[pat].WriteEffect(EffectWriter(CMD_S3MCMDEX, 0xE0 | (writeDelay >> 4)).Row(row).AllowMultiple());
 		}
 		if(writeDelay & 0x0F)
 		{
 			const uint8 param = (writeDelay & 0x0F) * settings.internalTicks / 15;
-			sndFile.Patterns[pat].WriteEffect(EffectWriter(CMD_S3MCMDEX, 0x60u | Clamp(param, uint8(1), uint8(15))).Row(row).AllowMultiple().Retry(EffectWriter::rmIgnore));
+			sndFile.Patterns[pat].WriteEffect(EffectWriter(CMD_S3MCMDEX, 0x60u | Clamp(param, uint8(1), uint8(15))).Row(row).AllowMultiple());
 		}
 		writeDelay = 0;
 	}	// End for all rows
@@ -924,17 +880,47 @@ static PATTERNINDEX ConvertDMFPattern(FileReader &file, DMFPatternSettings &sett
 }
 
 
-bool CSoundFile::ReadDMF(FileReader &file, ModLoadingFlags loadFlags)
-//-------------------------------------------------------------------
+static bool ValidateHeader(const DMFFileHeader &fileHeader)
 {
-	DMFFileHeader fileHeader;
-	file.Rewind();
-	if(!file.ReadStruct(fileHeader)
-		|| memcmp(fileHeader.signature, "DDMF", 4)
+	if(std::memcmp(fileHeader.signature, "DDMF", 4)
 		|| !fileHeader.version || fileHeader.version > 10)
 	{
 		return false;
-	} else if(loadFlags == onlyVerifyHeader)
+	}
+	return true;
+}
+
+
+CSoundFile::ProbeResult CSoundFile::ProbeFileHeaderDMF(MemoryFileReader file, const uint64 *pfilesize)
+{
+	DMFFileHeader fileHeader;
+	if(!file.ReadStruct(fileHeader))
+	{
+		return ProbeWantMoreData;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return ProbeFailure;
+	}
+	MPT_UNREFERENCED_PARAMETER(pfilesize);
+	return ProbeSuccess;
+}
+
+
+bool CSoundFile::ReadDMF(FileReader &file, ModLoadingFlags loadFlags)
+{
+	file.Rewind();
+
+	DMFFileHeader fileHeader;
+	if(!file.ReadStruct(fileHeader))
+	{
+		return false;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return false;
+	}
+	if(loadFlags == onlyVerifyHeader)
 	{
 		return true;
 	}
@@ -963,25 +949,19 @@ bool CSoundFile::ReadDMF(FileReader &file, ModLoadingFlags loadFlags)
 	// Read order list
 	DMFSequence seqHeader;
 	chunk = chunks.GetChunk(DMFChunk::idSEQU);
-	if(!chunk.ReadConvertEndianness(seqHeader))
+	if(!chunk.ReadStruct(seqHeader))
 	{
 		return false;
 	}
-	const ORDERINDEX numOrders = std::min(MAX_ORDERS, static_cast<ORDERINDEX>((chunk.GetLength() - sizeof(DMFSequence)) / 2));
-	Order.resize(numOrders, Order.GetInvalidPatIndex());
-
-	for(ORDERINDEX i = 0; i < numOrders; i++)
-	{
-		Order[i] = chunk.ReadUint16LE();
-	}
+	ReadOrderFromFile<uint16le>(Order(), chunk, (chunk.GetLength() - sizeof(DMFSequence)) / 2);
 
 	// Read patterns
 	chunk = chunks.GetChunk(DMFChunk::idPATT);
 	if(chunk.IsValid() && (loadFlags & loadPatternData))
 	{
 		DMFPatterns patHeader;
-		chunk.ReadConvertEndianness(patHeader);
-		m_nChannels = Clamp(patHeader.numTracks, uint8(1), uint8(32)) + 1;	// + 1 for global track (used for tempo stuff)
+		chunk.ReadStruct(patHeader);
+		m_nChannels = Clamp<uint8, uint8>(patHeader.numTracks, 1, 32) + 1;	// + 1 for global track (used for tempo stuff)
 
 		std::vector<FileReader> patternChunks;
 		patternChunks.reserve(patHeader.numPatterns);
@@ -990,7 +970,7 @@ bool CSoundFile::ReadDMF(FileReader &file, ModLoadingFlags loadFlags)
 		for(PATTERNINDEX pat = 0; pat < patHeader.numPatterns; pat++)
 		{
 			DMFPatternHeader header;
-			chunk.ReadConvertEndianness(header);
+			chunk.ReadStruct(header);
 			chunk.SkipBack(sizeof(header));
 			patternChunks.push_back(chunk.ReadChunk(sizeof(header) + header.patternLength));
 		}
@@ -998,18 +978,19 @@ bool CSoundFile::ReadDMF(FileReader &file, ModLoadingFlags loadFlags)
 		// Now go through the order list and load them.
 		DMFPatternSettings settings(GetNumChannels());
 
-		for(ORDERINDEX ord = 0; ord < Order.GetLength(); ord++)
+		Patterns.ResizeArray(Order().GetLength());
+		for(ORDERINDEX ord = 0; ord < Order().GetLength(); ord++)
 		{
 			// Create one pattern for each order item, as the same pattern can be played with different settings
-			PATTERNINDEX pat = Order[ord];
+			PATTERNINDEX pat = Order()[ord];
 			if(pat < patternChunks.size())
 			{
 				pat = ConvertDMFPattern(patternChunks[pat], settings, *this);
-				Order[ord] = pat;
+				Order()[ord] = pat;
 				// Loop end?
-				if(pat != PATTERNINDEX_INVALID && ord == seqHeader.loopEnd && (seqHeader.loopStart > 0 || ord < Order.GetLength() - 1))
+				if(pat != PATTERNINDEX_INVALID && ord == seqHeader.loopEnd && (seqHeader.loopStart > 0 || ord < Order().GetLastIndex()))
 				{
-					Patterns[pat].WriteEffect(EffectWriter(CMD_POSITIONJUMP, static_cast<ModCommand::PARAM>(seqHeader.loopStart)).Row(Patterns[pat].GetNumRows() - 1).Retry(EffectWriter::rmTryPreviousRow));
+					Patterns[pat].WriteEffect(EffectWriter(CMD_POSITIONJUMP, static_cast<ModCommand::PARAM>(seqHeader.loopStart)).Row(Patterns[pat].GetNumRows() - 1).RetryPreviousRow());
 				}
 			}
 		}
@@ -1033,10 +1014,10 @@ bool CSoundFile::ReadDMF(FileReader &file, ModLoadingFlags loadFlags)
 
 	for(SAMPLEINDEX smp = 1; smp <= GetNumSamples(); smp++)
 	{
-		chunk.ReadString<mpt::String::spacePadded>(m_szNames[smp], chunk.ReadUint8());
+		chunk.ReadSizedString<uint8le, mpt::String::spacePadded>(m_szNames[smp]);
 		DMFSampleHeader sampleHeader;
 		ModSample &sample = Samples[smp];
-		chunk.ReadConvertEndianness(sampleHeader);
+		chunk.ReadStruct(sampleHeader);
 		sampleHeader.ConvertToMPT(sample);
 
 		if(fileHeader.version >= 8)
@@ -1073,7 +1054,7 @@ bool CSoundFile::ReadDMF(FileReader &file, ModLoadingFlags loadFlags)
 
 
 ///////////////////////////////////////////////////////////////////////
-// DMF Compression (from libmodplug)
+// DMF Compression
 
 struct DMFHNode
 {
@@ -1151,7 +1132,6 @@ struct DMFHTree
 
 
 uintptr_t DMFUnpack(uint8 *psample, const uint8 *ibuf, const uint8 *ibufmax, uint32 maxlen)
-//-----------------------------------------------------------------------------------------
 {
 	DMFHTree tree;
 

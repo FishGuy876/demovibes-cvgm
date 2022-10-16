@@ -44,6 +44,10 @@
 
 #pragma warning( disable : 4996 ) // 'foo': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _foo. See online help for details.
 
+#endif // _MSC_VER
+
+#if defined(MPT_BUILD_MSVC)
+
 #define MPT_WITH_FLAC
 #define MPT_WITH_PORTAUDIO
 
@@ -51,7 +55,7 @@
 #define FLAC__NO_DLL
 #endif
 
-#endif // _MSC_VER
+#endif // MPT_BUILD_MSVC
 
 #if defined(MPT_WITH_SDL)
 #ifndef MPT_NEEDS_THREADS
@@ -59,37 +63,6 @@
 #endif
 #endif
 
-#define OPENMPT123_VERSION_STRING "0.2"
-
-#if defined(_MSC_VER)
-#if (_MSC_VER >= 1500) && (_MSC_VER < 1600)
-#define OPENMPT123_ANCIENT_COMPILER_STDINT
-#define OPENMPT123_ANCIENT_COMPILER_FSTREAM
-#define OPENMPT123_ANCIENT_COMPILER_VECTOR
-#endif
-#endif
-
-#if defined(__GNUC__) && !defined(__clang__)
-#if (__GNUC__*10000 + __GNUC_MINOR__*100 + __GNUC_PATCHLEVEL__*1 < 40300)
-#define OPENMPT123_ANCIENT_COMPILER_STDINT
-#endif
-#if (__GNUC__*10000 + __GNUC_MINOR__*100 + __GNUC_PATCHLEVEL__*1 < 40400)
-#define OPENMPT123_ANCIENT_COMPILER_FSTREAM
-#endif
-#endif
-
-#ifdef OPENMPT123_ANCIENT_COMPILER_STDINT
-#include <stdint.h>
-namespace std {
-typedef int8_t   int8_t;
-typedef int16_t  int16_t;
-typedef int32_t  int32_t;
-typedef int64_t  int64_t;
-typedef uint8_t  uint8_t;
-typedef uint16_t uint16_t;
-typedef uint32_t uint32_t;
-typedef uint64_t uint64_t;
-}
-#endif
+#define OPENMPT123_VERSION_STRING OPENMPT_API_VERSION_STRING
 
 #endif // OPENMPT123_CONFIG_HPP

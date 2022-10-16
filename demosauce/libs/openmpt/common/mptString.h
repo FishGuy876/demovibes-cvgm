@@ -46,7 +46,6 @@ template <> struct Traits<std::wstring> {
 // Remove whitespace at start of string
 template <typename Tstring>
 inline Tstring LTrim(Tstring str, const Tstring &whitespace = Tstring(mpt::String::Traits<Tstring>::GetDefaultWhitespace()))
-//--------------------------------------------------------------------------------------------------------------------------
 {
 	typename Tstring::size_type pos = str.find_first_not_of(whitespace);
 	if(pos != Tstring::npos)
@@ -63,7 +62,6 @@ inline Tstring LTrim(Tstring str, const Tstring &whitespace = Tstring(mpt::Strin
 // Remove whitespace at end of string
 template <typename Tstring>
 inline Tstring RTrim(Tstring str, const Tstring &whitespace = Tstring(mpt::String::Traits<Tstring>::GetDefaultWhitespace()))
-//--------------------------------------------------------------------------------------------------------------------------
 {
 	typename Tstring::size_type pos = str.find_last_not_of(whitespace);
 	if(pos != Tstring::npos)
@@ -80,7 +78,6 @@ inline Tstring RTrim(Tstring str, const Tstring &whitespace = Tstring(mpt::Strin
 // Remove whitespace at start and end of string
 template <typename Tstring>
 inline Tstring Trim(Tstring str, const Tstring &whitespace = Tstring(mpt::String::Traits<Tstring>::GetDefaultWhitespace()))
-//-------------------------------------------------------------------------------------------------------------------------
 {
 	return RTrim(LTrim(str, whitespace), whitespace);
 }
@@ -88,7 +85,6 @@ inline Tstring Trim(Tstring str, const Tstring &whitespace = Tstring(mpt::String
 
 template <typename Tstring, typename Tstring2, typename Tstring3>
 inline Tstring Replace(Tstring str, const Tstring2 &oldStr_, const Tstring3 &newStr_)
-//-----------------------------------------------------------------------------------
 {
 	std::size_t pos = 0;
 	const Tstring oldStr = oldStr_;
@@ -106,7 +102,6 @@ inline Tstring Replace(Tstring str, const Tstring2 &oldStr_, const Tstring3 &new
 
 
 static inline std::size_t strnlen(const char *str, std::size_t n)
-//---------------------------------------------------------------
 {
 #if MPT_COMPILER_MSVC
 	return ::strnlen(str, n);
@@ -125,11 +120,6 @@ static inline std::size_t strnlen(const char *str, std::size_t n)
 	return n;
 #endif
 }
-
-
-#ifdef MODPLUG_TRACKER
-int strnicmp(const char *a, const char *b, size_t count);
-#endif // MODPLUG_TRACKER
 
 
 enum Charset {
@@ -264,7 +254,7 @@ std::string ToCharset(Charset to, const CString &str);
 MPT_DEPRECATED static inline CString ToCStringW(const CString &str) { return ToCString(str); }
 MPT_DEPRECATED static inline CString ToCStringW(const std::wstring &str) { return ToCString(str); }
 MPT_DEPRECATED static inline CString ToCStringW(Charset from, const std::string &str) { return ToCString(from, str); }
-MPT_DEPRECATED static inline CString ToCStringW(Charset from, const char * str) { return ToCStringW(from, str ? std::string(str) : std::string()); }
+MPT_DEPRECATED static inline CString ToCStringW(Charset from, const char * str) { return ToCString(from, str ? std::string(str) : std::string()); }
 #else // !UNICODE
 CStringW ToCStringW(const CString &str);
 CStringW ToCStringW(const std::wstring &str);
@@ -389,7 +379,7 @@ static inline CStringW ToCStringW(const mpt::ustring &str) { return ToCStringW(T
 
 #ifdef MODPLUG_TRACKER
 
-#if defined(MPT_OS_WINDOWS)
+#if MPT_OS_WINDOWS
 
 namespace String { namespace detail
 {
@@ -416,7 +406,7 @@ namespace String { namespace detail
 		STATIC_ASSERT(size > 0);
 		MemsetZero(buf);
 		std::string encoded = mpt::ToCharset(charset, str);
-		std::copy(encoded.data(), std::min(encoded.length(), size - 1), buf);
+		std::copy(encoded.data(), encoded.data() + std::min(encoded.length(), size - 1), buf);
 		buf[size - 1] = '\0';
 		return (encoded.length() <= size - 1);
 	}
@@ -427,7 +417,7 @@ namespace String { namespace detail
 		STATIC_ASSERT(size > 0);
 		MemsetZero(buf);
 		std::wstring encoded = mpt::ToWide(str);
-		std::copy(encoded.data(), std::min(encoded.length(), size - 1), buf);
+		std::copy(encoded.data(), encoded.data() + std::min(encoded.length(), size - 1), buf);
 		buf[size - 1] = L'\0';
 		return (encoded.length() <= size - 1);
 	}
@@ -480,20 +470,46 @@ inline bool ToTcharBuf(Tchar (&buf)[size], const mpt::ustring &str)
 	return mpt::String::detail::StringToBuffer<mpt::CharsetLocale>(buf, str);
 }
 
-// mpt::FromTcharStr
+// mpt::ToTcharStr
 // Converts mpt::ustring to std::basic_stringy<TCHAR>,
 // which is usable in both ANSI and UNICODE builds.
 // Useful when going through CString is not appropriate.
 
-template <typename Tchar> std::basic_string<Tchar> ToTcharStr(const mpt::ustring &str);
-template <> inline std::string ToTcharStr<char>(const mpt::ustring &str)
+template <typename Tchar> std::basic_string<Tchar> ToTcharStrImpl(const mpt::ustring &str);
+template <> inline std::string ToTcharStrImpl<char>(const mpt::ustring &str)
 {
 	return mpt::ToCharset(mpt::CharsetLocale, str);
 }
-template <> inline std::wstring ToTcharStr<wchar_t>(const mpt::ustring &str)
+template <> inline std::wstring ToTcharStrImpl<wchar_t>(const mpt::ustring &str)
 {
 	return mpt::ToWide(str);
 }
+
+inline std::basic_string<TCHAR> ToTcharStr(const mpt::ustring &str)
+{
+	return ToTcharStrImpl<TCHAR>(str);
+}
+
+#if defined(_MFC_VER)
+
+template <std::size_t size>
+inline CString CStringFromBuffer(const TCHAR (&buf)[size])
+{
+	MPT_STATIC_ASSERT(size > 0);
+	std::size_t len = std::find(buf, buf + size, _T('\0')) - buf; // terminate at \0
+	return CString(buf, len);
+}
+
+template <std::size_t size>
+inline void CopyCStringToBuffer(TCHAR (&buf)[size], const CString &str)
+{
+	MPT_STATIC_ASSERT(size > 0);
+	MemsetZero(buf);
+	std::copy(str.GetString(), str.GetString() + std::min(static_cast<std::size_t>(str.GetLength()), size - 1), buf);
+	buf[size - 1] = _T('\0');
+}
+
+#endif // _MFC_VER
 
 #endif // MPT_OS_WINDOWS
 
@@ -543,31 +559,37 @@ private:
 	
 	static mpt::ustring From8bit(const std::string &str)
 	{
-		if(charset == mpt::CharsetUTF8)
-		{
-			return mpt::ToUnicode(mpt::CharsetUTF8, str);
-		}
-		// auto utf8 detection
-		if(tryUTF8 && mpt::IsUTF8(str))
+		MPT_CONSTANT_IF(charset == mpt::CharsetUTF8)
 		{
 			return mpt::ToUnicode(mpt::CharsetUTF8, str);
 		} else
 		{
-			return mpt::ToUnicode(charset, str);
+			// auto utf8 detection
+			MPT_CONSTANT_IF(tryUTF8)
+			{
+				if(mpt::IsUTF8(str))
+				{
+					return mpt::ToUnicode(mpt::CharsetUTF8, str);
+				} else
+				{
+					return mpt::ToUnicode(charset, str);
+				}
+			} else
+			{
+				return mpt::ToUnicode(charset, str);
+			}
 		}
 	}
 
 public:
 
 	// 8 bit
-	BasicAnyString(const char *str) : mpt::ustring(str ? mpt::ToUnicode(charset, str) : mpt::ustring()) { }
-	BasicAnyString(const std::string str) : mpt::ustring(mpt::ToUnicode(charset, str)) { }
+	BasicAnyString(const char *str) : mpt::ustring(From8bit(str ? str : std::string())) { }
+	BasicAnyString(const std::string str) : mpt::ustring(From8bit(str)) { }
 
 	// unicode
 	BasicAnyString(const mpt::ustring &str) : mpt::ustring(str) { }
-#if MPT_COMPILER_HAS_RVALUE_REF
 	BasicAnyString(mpt::ustring &&str) : mpt::ustring(std::move(str)) { }
-#endif
 #if MPT_USTRING_MODE_UTF8 && MPT_WSTRING_CONVERT
 	BasicAnyString(const std::wstring &str) : mpt::ustring(mpt::ToUnicode(str)) { }
 #endif
@@ -585,9 +607,7 @@ public:
 
 	// fallback for custom string types
 	template <typename Tstring> BasicAnyString(const Tstring &str) : mpt::ustring(mpt::ToUnicode(str)) { }
-#if MPT_COMPILER_HAS_RVALUE_REF
 	template <typename Tstring> BasicAnyString(Tstring &&str) : mpt::ustring(mpt::ToUnicode(std::forward<Tstring>(str))) { }
-#endif
 
 };
 
@@ -599,9 +619,7 @@ public:
 
 	// unicode
 	AnyUnicodeString(const mpt::ustring &str) : mpt::ustring(str) { }
-#if MPT_COMPILER_HAS_RVALUE_REF
 	AnyUnicodeString(mpt::ustring &&str) : mpt::ustring(std::move(str)) { }
-#endif
 #if MPT_USTRING_MODE_UTF8 && MPT_WSTRING_CONVERT
 	AnyUnicodeString(const std::wstring &str) : mpt::ustring(mpt::ToUnicode(str)) { }
 #endif
@@ -619,9 +637,7 @@ public:
 
 	// fallback for custom string types
 	template <typename Tstring> AnyUnicodeString(const Tstring &str) : mpt::ustring(mpt::ToUnicode(str)) { }
-#if MPT_COMPILER_HAS_RVALUE_REF
 	template <typename Tstring> AnyUnicodeString(Tstring &&str) : mpt::ustring(mpt::ToUnicode(std::forward<Tstring>(str))) { }
-#endif
 
 };
 

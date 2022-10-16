@@ -80,7 +80,7 @@ bool ReadPage(FileReader &file, PageInfo &pageInfo, std::vector<uint8> &pageData
 	}
 	file.SkipBack(4);
 	FileReader filePageReader = file; // do not modify original file read position
-	if(!filePageReader.ReadConvertEndianness(pageInfo.header))
+	if(!filePageReader.ReadStruct(pageInfo.header))
 	{
 		return false;
 	}
@@ -98,13 +98,13 @@ bool ReadPage(FileReader &file, PageInfo &pageInfo, std::vector<uint8> &pageData
 	{
 		return false;
 	}
-	filePageReader.ReadVectorLE(pageData, pageDataSize);
+	filePageReader.ReadVector(pageData, pageDataSize);
 	filePageReader.SkipBack(pageInfo.GetPagePhysicalSize());
 	{
 		mpt::crc32_ogg calculatedCRC;
 		uint8 rawHeader[sizeof(PageHeader)];
 		MemsetZero(rawHeader);
-		filePageReader.ReadArrayLE(rawHeader);
+		filePageReader.ReadArray(rawHeader);
 		std::memset(rawHeader + 22, 0, 4); // clear out old crc
 		calculatedCRC.process(rawHeader, rawHeader + sizeof(rawHeader));
 		calculatedCRC.process(pageInfo.segment_table, pageInfo.segment_table + pageInfo.header.page_segments);
@@ -157,10 +157,8 @@ bool UpdatePageCRC(PageInfo &pageInfo, const std::vector<uint8> &pageData)
 	}
 	mpt::crc32_ogg crc;
 	pageInfo.header.CRC_checksum = 0;
-	pageInfo.header.ConvertEndianness();
 	char rawHeader[sizeof(PageHeader)];
 	std::memcpy(rawHeader, &pageInfo.header, sizeof(PageHeader));
-	pageInfo.header.ConvertEndianness();
 	crc.process(rawHeader, rawHeader + sizeof(PageHeader));
 	crc.process(pageInfo.segment_table, pageInfo.segment_table + pageInfo.header.page_segments);
 	crc.process(pageData);

@@ -191,20 +191,27 @@ inline bool WriteRaw(Tfile & f, const Tbyte * data, std::size_t size)
 template <typename Tbinary, typename Tfile>
 inline bool Read(Tfile & f, Tbinary & v)
 {
-	return IO::ReadRaw(f, mpt::GetRawBytes(v), sizeof(Tbinary)) == sizeof(Tbinary);
+	return IO::ReadRaw(f, mpt::as_raw_memory(v), sizeof(Tbinary)) == sizeof(Tbinary);
 }
 
 template <typename Tbinary, typename Tfile>
 inline bool Write(Tfile & f, const Tbinary & v)
 {
-	return IO::WriteRaw(f, mpt::GetRawBytes(v), sizeof(Tbinary));
+	return IO::WriteRaw(f, mpt::as_raw_memory(v), sizeof(Tbinary));
+}
+
+template <typename T, typename Tfile>
+inline bool WritePartial(Tfile & f, const T & v, size_t size = sizeof(T))
+{
+	MPT_ASSERT(size <= sizeof(T));
+	return IO::WriteRaw(f, mpt::as_raw_memory(v), size);
 }
 
 template <typename T, typename Tfile>
 inline bool ReadBinaryTruncatedLE(Tfile & f, T & v, std::size_t size)
 {
 	bool result = false;
-	STATIC_ASSERT(std::numeric_limits<T>::is_integer);
+	MPT_STATIC_ASSERT(std::numeric_limits<T>::is_integer);
 	mpt::byte bytes[sizeof(T)];
 	std::memset(bytes, 0, sizeof(T));
 	const IO::Offset readResult = IO::ReadRaw(f, bytes, std::min(size, sizeof(T)));
@@ -239,7 +246,7 @@ inline bool ReadIntLE(Tfile & f, T & v)
 	}
 	T val = 0;
 	std::memcpy(&val, bytes, sizeof(T));
-	v = SwapBytesReturnLE(val);
+	v = SwapBytesLE(val);
 	return result;
 }
 
@@ -260,7 +267,7 @@ inline bool ReadIntBE(Tfile & f, T & v)
 	}
 	T val = 0;
 	std::memcpy(&val, bytes, sizeof(T));
-	v = SwapBytesReturnBE(val);
+	v = SwapBytesBE(val);
 	return result;
 }
 
@@ -355,7 +362,7 @@ template <typename T, typename Tfile>
 inline bool WriteIntLE(Tfile & f, const T v)
 {
 	STATIC_ASSERT(std::numeric_limits<T>::is_integer);
-	const T val = SwapBytesReturnLE(v);
+	const T val = SwapBytesLE(v);
 	mpt::byte bytes[sizeof(T)];
 	std::memcpy(bytes, &val, sizeof(T));
 	return IO::WriteRaw(f, bytes, sizeof(T));
@@ -365,7 +372,7 @@ template <typename T, typename Tfile>
 inline bool WriteIntBE(Tfile & f, const T v)
 {
 	STATIC_ASSERT(std::numeric_limits<T>::is_integer);
-	const T val = SwapBytesReturnBE(v);
+	const T val = SwapBytesBE(v);
 	mpt::byte bytes[sizeof(T)];
 	std::memcpy(bytes, &val, sizeof(T));
 	return IO::WriteRaw(f, bytes, sizeof(T));
@@ -461,7 +468,7 @@ bool WriteVarInt(Tfile & f, const T v, size_t *bytesWritten = nullptr)
 		}
 	}
 	out[numBytes++] = static_cast<mpt::byte>(v & 0x7F);
-	MPT_ASSERT(numBytes <= CountOf(out));
+	MPT_ASSERT(numBytes <= mpt::size(out));
 	if(bytesWritten != nullptr) *bytesWritten = numBytes;
 	return mpt::IO::WriteRaw(f, out, numBytes);
 }
@@ -486,13 +493,34 @@ inline bool WriteSizedStringLE(Tfile & f, const std::string & str)
 	return true;
 }
 
-template <typename T, typename Tfile>
-inline bool WriteConvertEndianness(Tfile & f, T & v)
+template <typename Tfile>
+inline bool WriteText(Tfile &f, const std::string &s)
 {
-	v.ConvertEndianness();
-	bool result = IO::WriteRaw(f, reinterpret_cast<const mpt::byte *>(&v), sizeof(T));
-	v.ConvertEndianness();
-	return result;
+	return mpt::IO::WriteRaw(f, s.data(), s.size());
+}
+
+template <typename Tfile>
+inline bool WriteTextCRLF(Tfile &f)
+{
+	return mpt::IO::WriteText(f, "\r\n");
+}
+
+template <typename Tfile>
+inline bool WriteTextLF(Tfile &f)
+{
+	return mpt::IO::WriteText(f, "\n");
+}
+
+template <typename Tfile>
+inline bool WriteTextCRLF(Tfile &f, const std::string &s)
+{
+	return mpt::IO::WriteText(f, s) && mpt::IO::WriteTextCRLF(f);
+}
+
+template <typename Tfile>
+inline bool WriteTextLF(Tfile &f, const std::string &s)
+{
+	return mpt::IO::WriteText(f, s) && mpt::IO::WriteTextLF(f);
 }
 
 } // namespace IO
@@ -513,6 +541,7 @@ public:
 	virtual ~IFileDataContainer() { }
 public:
 	virtual bool IsValid() const = 0;
+	virtual bool HasFastGetLength() const = 0;
 	virtual bool HasPinnedView() const = 0;
 	virtual const mpt::byte *GetRawData() const = 0;
 	virtual off_t GetLength() const = 0;
@@ -554,6 +583,11 @@ public:
 		return false;
 	}
 
+	bool HasFastGetLength() const
+	{
+		return true;
+	}
+
 	bool HasPinnedView() const
 	{
 		return true;
@@ -578,16 +612,20 @@ public:
 class FileDataContainerWindow : public IFileDataContainer
 {
 private:
-	MPT_SHARED_PTR<IFileDataContainer> data;
+	std::shared_ptr<const IFileDataContainer> data;
 	const off_t dataOffset;
 	const off_t dataLength;
 public:
-	FileDataContainerWindow(MPT_SHARED_PTR<IFileDataContainer> src, off_t off, off_t len) : data(src), dataOffset(off), dataLength(len) { }
+	FileDataContainerWindow(std::shared_ptr<const IFileDataContainer> src, off_t off, off_t len) : data(src), dataOffset(off), dataLength(len) { }
 	virtual ~FileDataContainerWindow() { }
 
 	bool IsValid() const
 	{
 		return data->IsValid();
+	}
+	bool HasFastGetLength() const
+	{
+		return data->HasFastGetLength();
 	}
 	bool HasPinnedView() const
 	{
@@ -650,6 +688,7 @@ private:
 public:
 
 	bool IsValid() const;
+	bool HasFastGetLength() const;
 	bool HasPinnedView() const;
 	const mpt::byte *GetRawData() const;
 	off_t GetLength() const;
@@ -712,6 +751,7 @@ private:
 public:
 
 	bool IsValid() const;
+	bool HasFastGetLength() const;
 	bool HasPinnedView() const;
 	const mpt::byte *GetRawData() const;
 	off_t GetLength() const;
@@ -813,7 +853,7 @@ private:
 
 public:
 	FileDataContainerMemory() : streamData(nullptr), streamLength(0) { }
-	FileDataContainerMemory(mpt::span<const mpt::byte> data) : streamData(data.data()), streamLength(data.size()) { }
+	FileDataContainerMemory(mpt::const_byte_span data) : streamData(data.data()), streamLength(data.size()) { }
 #if defined(MPT_FILEREADER_STD_ISTREAM)
 	virtual
 #endif
@@ -824,6 +864,11 @@ public:
 	bool IsValid() const
 	{
 		return streamData != nullptr;
+	}
+
+	bool HasFastGetLength() const
+	{
+		return true;
 	}
 
 	bool HasPinnedView() const

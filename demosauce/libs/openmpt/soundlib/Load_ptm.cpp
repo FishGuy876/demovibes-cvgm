@@ -14,47 +14,29 @@
 
 OPENMPT_NAMESPACE_BEGIN
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(push, 1)
-#endif
-
-struct PACKED PTMFileHeader
+struct PTMFileHeader
 {
-	char   songname[28];	// Name of song, asciiz string
-	uint8  dosEOF;			// 26
-	uint8  versionLo;		// 03 version of file, currently 0203h
-	uint8  versionHi;		// 02
-	uint8  reserved1;		// Reserved, set to 0
-	uint16 numOrders;		// Number of orders (0..256)
-	uint16 numSamples;		// Number of instruments (1..255)
-	uint16 numPatterns;		// Number of patterns (1..128)
-	uint16 numChannels;		// Number of channels (voices) used (1..32)
-	uint16 flags;			// Set to 0
-	uint8  reserved2[2];	// Reserved, set to 0
-	char   magic[4];		// Song identification, 'PTMF'
-	uint8  reserved3[16];	// Reserved, set to 0
-	uint8  chnPan[32];		// Channel panning settings, 0..15, 0 = left, 7 = middle, 15 = right
-	uint8  orders[256];		// Order list, valid entries 0..nOrders-1
-	uint16 patOffsets[128];	// Pattern offsets (*16)
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(numOrders);
-		SwapBytesLE(numSamples);
-		SwapBytesLE(numPatterns);
-		SwapBytesLE(numChannels);
-		SwapBytesLE(flags);
-		for(std::size_t i = 0; i < CountOf(patOffsets); i++)
-		{
-			SwapBytesLE(patOffsets[i]);
-		}
-	}
+	char     songname[28];		// Name of song, asciiz string
+	uint8le  dosEOF;			// 26
+	uint8le  versionLo;			// 03 version of file, currently 0203h
+	uint8le  versionHi;			// 02
+	uint8le  reserved1;			// Reserved, set to 0
+	uint16le numOrders;			// Number of orders (0..256)
+	uint16le numSamples;		// Number of instruments (1..255)
+	uint16le numPatterns;		// Number of patterns (1..128)
+	uint16le numChannels;		// Number of channels (voices) used (1..32)
+	uint16le flags;				// Set to 0
+	uint8le  reserved2[2];		// Reserved, set to 0
+	char     magic[4];			// Song identification, 'PTMF'
+	uint8le  reserved3[16];		// Reserved, set to 0
+	uint8le  chnPan[32];		// Channel panning settings, 0..15, 0 = left, 7 = middle, 15 = right
+	uint8le  orders[256];		// Order list, valid entries 0..nOrders-1
+	uint16le patOffsets[128];	// Pattern offsets (*16)
 };
 
-STATIC_ASSERT(sizeof(PTMFileHeader) == 608);
+MPT_BINARY_STRUCT(PTMFileHeader, 608)
 
-struct PACKED PTMSampleHeader
+struct PTMSampleHeader
 {
 	enum SampleFlags
 	{
@@ -66,34 +48,24 @@ struct PACKED PTMSampleHeader
 		smp16Bit	= 0x10,
 	};
 
-	uint8  flags;			// Sample type (see SampleFlags)
-	char   filename[12];	// Name of external sample file
-	uint8  volume;			// Default volume
-	uint16 c4speed;			// C-4 speed (yep, not C-5)
-	uint8  smpSegment[2];	// Sample segment (used internally)
-	uint32 dataOffset;		// Offset of sample data
-	uint32 length;			// Sample size (in bytes)
-	uint32 loopStart;		// Start of loop
-	uint32 loopEnd;			// End of loop
-	uint8  gusdata[14];
-	char   samplename[28];	// Name of sample, ASCIIZ
-	char   magic[4];		// Sample identification, 'PTMS'
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(c4speed);
-		SwapBytesLE(dataOffset);
-		SwapBytesLE(length);
-		SwapBytesLE(loopStart);
-		SwapBytesLE(loopEnd);
-	}
+	uint8le  flags;				// Sample type (see SampleFlags)
+	char     filename[12];		// Name of external sample file
+	uint8le  volume;			// Default volume
+	uint16le c4speed;			// C-4 speed (yep, not C-5)
+	uint8le  smpSegment[2];		// Sample segment (used internally)
+	uint32le dataOffset;		// Offset of sample data
+	uint32le length;			// Sample size (in bytes)
+	uint32le loopStart;			// Start of loop
+	uint32le loopEnd;			// End of loop
+	uint8le  gusdata[14];
+	char     samplename[28];	// Name of sample, ASCIIZ
+	char     magic[4];			// Sample identification, 'PTMS'
 
 	// Convert an PTM sample header to OpenMPT's internal sample header.
 	SampleIO ConvertToMPT(ModSample &mptSmp) const
 	{
 		mptSmp.Initialize(MOD_TYPE_S3M);
-		mptSmp.nVolume = std::min(volume, uint8(64)) * 4;
+		mptSmp.nVolume = std::min<uint8>(volume, 64) * 4;
 		mptSmp.nC5Speed = c4speed * 2;
 
 		mpt::String::Read<mpt::String::maybeNullTerminated>(mptSmp.filename, filename);
@@ -129,21 +101,12 @@ struct PACKED PTMSampleHeader
 	}
 };
 
-STATIC_ASSERT(sizeof(PTMSampleHeader) == 80);
-
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(pop)
-#endif
+MPT_BINARY_STRUCT(PTMSampleHeader, 80)
 
 
-bool CSoundFile::ReadPTM(FileReader &file, ModLoadingFlags loadFlags)
-//-------------------------------------------------------------------
+static bool ValidateHeader(const PTMFileHeader &fileHeader)
 {
-	file.Rewind();
-
-	PTMFileHeader fileHeader;
-	if(!file.ReadConvertEndianness(fileHeader)
-		|| memcmp(fileHeader.magic, "PTMF", 4)
+	if(std::memcmp(fileHeader.magic, "PTMF", 4)
 		|| fileHeader.dosEOF != 26
 		|| fileHeader.versionHi > 2
 		|| fileHeader.flags != 0
@@ -152,10 +115,53 @@ bool CSoundFile::ReadPTM(FileReader &file, ModLoadingFlags loadFlags)
 		|| !fileHeader.numOrders || fileHeader.numOrders > 256
 		|| !fileHeader.numSamples || fileHeader.numSamples > 255
 		|| !fileHeader.numPatterns || fileHeader.numPatterns > 128
-		|| !file.CanRead(fileHeader.numSamples * sizeof(PTMSampleHeader)))
+		)
 	{
 		return false;
-	} else if(loadFlags == onlyVerifyHeader)
+	}
+	return true;
+}
+
+
+static uint64 GetHeaderMinimumAdditionalSize(const PTMFileHeader &fileHeader)
+{
+	return fileHeader.numSamples * sizeof(PTMSampleHeader);
+}
+
+
+CSoundFile::ProbeResult CSoundFile::ProbeFileHeaderPTM(MemoryFileReader file, const uint64 *pfilesize)
+{
+	PTMFileHeader fileHeader;
+	if(!file.ReadStruct(fileHeader))
+	{
+		return ProbeWantMoreData;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return ProbeFailure;
+	}
+	return ProbeAdditionalSize(file, pfilesize, GetHeaderMinimumAdditionalSize(fileHeader));
+}
+
+
+bool CSoundFile::ReadPTM(FileReader &file, ModLoadingFlags loadFlags)
+{
+	file.Rewind();
+
+	PTMFileHeader fileHeader;
+	if(!file.ReadStruct(fileHeader))
+	{
+		return false;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return false;
+	}
+	if(!file.CanRead(mpt::saturate_cast<FileReader::off_t>(GetHeaderMinimumAdditionalSize(fileHeader))))
+	{
+		return false;
+	}
+	if(loadFlags == onlyVerifyHeader)
 	{
 		return true;
 	}
@@ -164,11 +170,11 @@ bool CSoundFile::ReadPTM(FileReader &file, ModLoadingFlags loadFlags)
 
 	mpt::String::Read<mpt::String::maybeNullTerminated>(m_songName, fileHeader.songname);
 
-	m_madeWithTracker = mpt::String::Print("PolyTracker %1.%2", fileHeader.versionHi, mpt::fmt::hex0<2>(fileHeader.versionLo));
+	m_madeWithTracker = mpt::format(MPT_USTRING("PolyTracker %1.%2"))(fileHeader.versionHi.get(), mpt::ufmt::hex0<2>(fileHeader.versionLo.get()));
 	m_SongFlags = SONG_ITCOMPATGXX | SONG_ITOLDEFFECTS;
 	m_nChannels = fileHeader.numChannels;
 	m_nSamples = std::min<SAMPLEINDEX>(fileHeader.numSamples, MAX_SAMPLES - 1);
-	Order.ReadFromArray(fileHeader.orders, fileHeader.numOrders, 0xFF, 0xFE);
+	ReadOrderFromArray(Order(), fileHeader.orders, fileHeader.numOrders, 0xFF, 0xFE);
 
 	// Reading channel panning
 	for(CHANNELINDEX chn = 0; chn < m_nChannels; chn++)
@@ -182,7 +188,7 @@ bool CSoundFile::ReadPTM(FileReader &file, ModLoadingFlags loadFlags)
 	for(SAMPLEINDEX smp = 0; smp < m_nSamples; smp++)
 	{
 		PTMSampleHeader sampleHeader;
-		sampleHeaderChunk.ReadConvertEndianness(sampleHeader);
+		sampleHeaderChunk.ReadStruct(sampleHeader);
 
 		ModSample &sample = Samples[smp + 1];
 		mpt::String::Read<mpt::String::maybeNullTerminated>(m_szNames[smp + 1], sampleHeader.samplename);
@@ -200,6 +206,7 @@ bool CSoundFile::ReadPTM(FileReader &file, ModLoadingFlags loadFlags)
 		return true;
 	}
 
+	Patterns.ResizeArray(fileHeader.numPatterns);
 	for(PATTERNINDEX pat = 0; pat < fileHeader.numPatterns; pat++)
 	{
 		if(!Patterns.Insert(pat, 64)
@@ -209,7 +216,7 @@ bool CSoundFile::ReadPTM(FileReader &file, ModLoadingFlags loadFlags)
 			continue;
 		}
 
-		ModCommand *rowBase = Patterns[pat];
+		ModCommand *rowBase = Patterns[pat].GetpModCommand(0, 0);
 		ROWINDEX row = 0;
 		while(row < 64 && file.CanRead(1))
 		{
@@ -239,7 +246,7 @@ bool CSoundFile::ReadPTM(FileReader &file, ModLoadingFlags loadFlags)
 				m.command = file.ReadUint8();
 				m.param = file.ReadUint8();
 
-				const ModCommand::COMMAND effTrans[] = { CMD_GLOBALVOLUME, CMD_RETRIG, CMD_FINEVIBRATO, CMD_NOTESLIDEUP, CMD_NOTESLIDEDOWN, CMD_NOTESLIDEUPRETRIG, CMD_NOTESLIDEDOWNRETRIG, CMD_REVERSEOFFSET };
+				static const EffectCommand effTrans[] = { CMD_GLOBALVOLUME, CMD_RETRIG, CMD_FINEVIBRATO, CMD_NOTESLIDEUP, CMD_NOTESLIDEDOWN, CMD_NOTESLIDEUPRETRIG, CMD_NOTESLIDEDOWNRETRIG, CMD_REVERSEOFFSET };
 				if(m.command < 0x10)
 				{
 					// Beware: Effect letters are as in MOD, but portamento and volume slides behave like in S3M (i.e. fine slides share the same effect letters)

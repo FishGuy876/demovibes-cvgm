@@ -11,104 +11,87 @@
 #pragma once
 
 #include "ChunkReader.h"
-#include "Tagging.h"
+#include "Loaders.h"
+#include "../common/mptUUID.h"
 
 OPENMPT_NAMESPACE_BEGIN
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(push, 1)
-#endif
+struct FileTags;
 
 // RIFF header
-struct PACKED RIFFHeader
+struct RIFFHeader
 {
 	// 32-Bit chunk identifiers
 	enum RIFFMagic
 	{
-		idRIFF	= 0x46464952,	// magic for WAV files
-		idLIST	= 0x5453494C,	// magic for samples in DLS banks
-		idWAVE	= 0x45564157,	// type for WAV files
-		idwave	= 0x65766177,	// type for samples in DLS banks
+		idRIFF	= MAGIC4LE('R','I','F','F'),	// magic for WAV files
+		idLIST	= MAGIC4LE('L','I','S','T'),	// magic for samples in DLS banks
+		idWAVE	= MAGIC4LE('W','A','V','E'),	// type for WAV files
+		idwave	= MAGIC4LE('w','a','v','e'),	// type for samples in DLS banks
 	};
 
-	uint32 magic;	// RIFF (in WAV files) or LIST (in DLS banks)
-	uint32 length;	// Size of the file, not including magic and length
-	uint32 type;	// WAVE (in WAV files) or wave (in DLS banks)
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(magic);
-		SwapBytesLE(length);
-		SwapBytesLE(type);
-	}
+	uint32le magic;		// RIFF (in WAV files) or LIST (in DLS banks)
+	uint32le length;	// Size of the file, not including magic and length
+	uint32le type;		// WAVE (in WAV files) or wave (in DLS banks)
 };
 
-STATIC_ASSERT(sizeof(RIFFHeader) == 12);
+MPT_BINARY_STRUCT(RIFFHeader, 12)
 
 
 // General RIFF Chunk header
-struct PACKED RIFFChunk
+struct RIFFChunk
 {
 	// 32-Bit chunk identifiers
 	enum ChunkIdentifiers
 	{
-		idfmt_	= 0x20746D66,	// "fmt "
-		iddata	= 0x61746164,	// "data"
-		idpcm_	= 0x206d6370,	// "pcm " (IMA ADPCM samples)
-		idfact	= 0x74636166,	// "fact" (compressed samples)
-		idsmpl	= 0x6C706D73,	// "smpl"
-		idLIST	= 0x5453494C,	// "LIST"
-		idxtra	= 0x61727478,	// "xtra"
-		idcue_	= 0x20657563,	// "cue "
-		idwsmp	= 0x706D7377,	// "wsmp" (DLS bank samples)
+		idfmt_	= MAGIC4LE('f','m','t',' '),	// Sample format information
+		iddata	= MAGIC4LE('d','a','t','a'),	// Sample data
+		idpcm_	= MAGIC4LE('p','c','m',' '),	// IMA ADPCM samples
+		idfact	= MAGIC4LE('f','a','c','t'),	// Compressed samples
+		idsmpl	= MAGIC4LE('s','m','p','l'),	// Sampler and loop information
+		idinst	= MAGIC4LE('i','n','s','t'),	// Instrument information
+		idLIST	= MAGIC4LE('L','I','S','T'),	// List of chunks
+		idxtra	= MAGIC4LE('x','t','r','a'),	// OpenMPT extra infomration
+		idcue_	= MAGIC4LE('c','u','e',' '),	// Cue points
+		idwsmp	= MAGIC4LE('w','s','m','p'),	// DLS bank samples
 		id____	= 0x00000000,	// Found when loading buggy MPT samples
 
 		// Identifiers in "LIST" chunk
-		idINAM	= 0x4D414E49, // title
-		idISFT	= 0x54465349, // software
-		idICOP	= 0x504F4349, // copyright
-		idIART	= 0x54524149, // artist
-		idIPRD	= 0x44525049, // product (album)
-		idICMT	= 0x544D4349, // comment
-		idIENG	= 0x474E4549, // engineer
-		idISBJ	= 0x4A425349, // subject
-		idIGNR	= 0x524E4749, // genre
-		idICRD	= 0x44524349, // date created
+		idINAM	= MAGIC4LE('I','N','A','M'), // title
+		idISFT	= MAGIC4LE('I','S','F','T'), // software
+		idICOP	= MAGIC4LE('I','C','O','P'), // copyright
+		idIART	= MAGIC4LE('I','A','R','T'), // artist
+		idIPRD	= MAGIC4LE('I','P','R','D'), // product (album)
+		idICMT	= MAGIC4LE('I','C','M','T'), // comment
+		idIENG	= MAGIC4LE('I','E','N','G'), // engineer
+		idISBJ	= MAGIC4LE('I','S','B','J'), // subject
+		idIGNR	= MAGIC4LE('I','G','N','R'), // genre
+		idICRD	= MAGIC4LE('I','C','R','D'), // date created
 
-		idYEAR  = 0x52414559, // year
-		idTRCK  = 0x4B435254, // track number
-		idTURL  = 0x4C535554, // url
+		idYEAR  = MAGIC4LE('Y','E','A','R'), // year
+		idTRCK  = MAGIC4LE('T','R','C','K'), // track number
+		idTURL  = MAGIC4LE('T','U','R','L'), // url
 	};
 
-	typedef ChunkIdentifiers id_type;
-
-	uint32 id;		// See ChunkIdentifiers
-	uint32 length;	// Chunk size without header
+	uint32le id;		// See ChunkIdentifiers
+	uint32le length;	// Chunk size without header
 
 	size_t GetLength() const
 	{
-		return SwapBytesReturnLE(length);
+		return length;
 	}
 
-	id_type GetID() const
+	ChunkIdentifiers GetID() const
 	{
-		return static_cast<id_type>(SwapBytesReturnLE(id));
-	}
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(id);
-		SwapBytesLE(length);
+		return static_cast<ChunkIdentifiers>(id.get());
 	}
 };
 
-STATIC_ASSERT(sizeof(RIFFChunk) == 8);
+MPT_BINARY_STRUCT(RIFFChunk, 8)
 
 
 // Format Chunk
-struct PACKED WAVFormatChunk
+struct WAVFormatChunk
 {
 	// Sample formats
 	enum SampleFormats
@@ -122,84 +105,52 @@ struct PACKED WAVFormatChunk
 		fmtExtensible	= 0xFFFE,
 	};
 
-	uint16 format;			// Sample format, see SampleFormats
-	uint16 numChannels;		// Number of audio channels
-	uint32 sampleRate;		// Sample rate in Hz
-	uint32 byteRate;		// Bytes per second (should be freqHz * blockAlign)
-	uint16 blockAlign;		// Size of a sample, in bytes (do not trust this value, it's incorrect in some files)
-	uint16 bitsPerSample;	// Bits per sample
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(format);
-		SwapBytesLE(numChannels);
-		SwapBytesLE(sampleRate);
-		SwapBytesLE(byteRate);
-		SwapBytesLE(blockAlign);
-		SwapBytesLE(bitsPerSample);
-	}
+	uint16le format;			// Sample format, see SampleFormats
+	uint16le numChannels;		// Number of audio channels
+	uint32le sampleRate;		// Sample rate in Hz
+	uint32le byteRate;			// Bytes per second (should be freqHz * blockAlign)
+	uint16le blockAlign;		// Size of a sample, in bytes (do not trust this value, it's incorrect in some files)
+	uint16le bitsPerSample;		// Bits per sample
 };
 
-STATIC_ASSERT(sizeof(WAVFormatChunk) == 16);
+MPT_BINARY_STRUCT(WAVFormatChunk, 16)
 
 
 // Extension of the WAVFormatChunk structure, used if format == formatExtensible
-struct PACKED WAVFormatChunkExtension
+struct WAVFormatChunkExtension
 {
-	uint16 size;
-	uint16 validBitsPerSample;
-	uint32 channelMask;
-	uint16 subFormat;
-	uint8  guid[14];
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(size);
-		SwapBytesLE(validBitsPerSample);
-		SwapBytesLE(channelMask);
-		SwapBytesLE(subFormat);
-	}
+	uint16le size;
+	uint16le validBitsPerSample;
+	uint32le channelMask;
+	GUIDms   subFormat;
 };
 
-STATIC_ASSERT(sizeof(WAVFormatChunkExtension) == 24);
+MPT_BINARY_STRUCT(WAVFormatChunkExtension, 24)
 
 
 // Sample information chunk
-struct PACKED WAVSampleInfoChunk
+struct WAVSampleInfoChunk
 {
-	uint32 manufacturer;
-	uint32 product;
-	uint32 samplePeriod;	// 1000000000 / sampleRate
-	uint32 baseNote;		// MIDI base note of sample
-	uint32 pitchFraction;
-	uint32 SMPTEFormat;
-	uint32 SMPTEOffset;
-	uint32 numLoops;		// number of loops
-	uint32 samplerData;
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(manufacturer);
-		SwapBytesLE(product);
-		SwapBytesLE(samplePeriod);
-		SwapBytesLE(baseNote);
-		SwapBytesLE(pitchFraction);
-		SwapBytesLE(SMPTEFormat);
-		SwapBytesLE(SMPTEOffset);
-		SwapBytesLE(numLoops);
-		SwapBytesLE(samplerData);
-	}
+	uint32le manufacturer;
+	uint32le product;
+	uint32le samplePeriod;	// 1000000000 / sampleRate
+	uint32le baseNote;		// MIDI base note of sample
+	uint32le pitchFraction;
+	uint32le SMPTEFormat;
+	uint32le SMPTEOffset;
+	uint32le numLoops;		// number of loops
+	uint32le samplerData;
 
 	// Set up information
-	void ConvertToWAV(uint32 freq)
+	void ConvertToWAV(uint32 freq, uint8 rootNote)
 	{
 		manufacturer = 0;
 		product = 0;
 		samplePeriod = 1000000000 / freq;
-		baseNote = NOTE_MIDDLEC - NOTE_MIN;
+		if(rootNote != 0)
+			baseNote = rootNote - NOTE_MIN;
+		else
+			baseNote = NOTE_MIDDLEC - NOTE_MIN;
 		pitchFraction = 0;
 		SMPTEFormat = 0;
 		SMPTEOffset = 0;
@@ -208,11 +159,11 @@ struct PACKED WAVSampleInfoChunk
 	}
 };
 
-STATIC_ASSERT(sizeof(WAVSampleInfoChunk) == 36);
+MPT_BINARY_STRUCT(WAVSampleInfoChunk, 36)
 
 
 // Sample loop information chunk (found after WAVSampleInfoChunk in "smpl" chunk)
-struct PACKED WAVSampleLoop
+struct WAVSampleLoop
 {
 	// Sample Loop Types
 	enum LoopType
@@ -222,23 +173,12 @@ struct PACKED WAVSampleLoop
 		loopBackward	= 2,
 	};
 
-	uint32 identifier;
-	uint32 loopType;		// See LoopType
-	uint32 loopStart;		// Loop start in samples
-	uint32 loopEnd;			// Loop end in samples
-	uint32 fraction;
-	uint32 playCount;		// Loop Count, 0 = infinite
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(identifier);
-		SwapBytesLE(loopType);
-		SwapBytesLE(loopStart);
-		SwapBytesLE(loopEnd);
-		SwapBytesLE(fraction);
-		SwapBytesLE(playCount);
-	}
+	uint32le identifier;
+	uint32le loopType;		// See LoopType
+	uint32le loopStart;		// Loop start in samples
+	uint32le loopEnd;		// Loop end in samples
+	uint32le fraction;
+	uint32le playCount;		// Loop Count, 0 = infinite
 
 	// Apply WAV loop information to a mod sample.
 	void ApplyToSample(SmpLength &start, SmpLength &end, SmpLength sampleLength, SampleFlags &flags, ChannelFlags enableFlag, ChannelFlags bidiFlag, bool mptLoopFix) const;
@@ -247,35 +187,41 @@ struct PACKED WAVSampleLoop
 	void ConvertToWAV(SmpLength start, SmpLength end, bool bidi);
 };
 
-STATIC_ASSERT(sizeof(WAVSampleLoop) == 24);
+MPT_BINARY_STRUCT(WAVSampleLoop, 24)
+
+
+// Instrument information chunk
+struct WAVInstrumentChunk
+{
+	uint8 unshiftedNote;	// Root key of sample, 0...127
+	int8  finetune;			// Finetune of root key in cents
+	int8  gain;				// in dB
+	uint8 lowNote;			// Note range, 0...127
+	uint8 highNote;
+	uint8 lowVelocity;		// Velocity range, 0...127
+	uint8 highVelocity;
+};
+
+MPT_BINARY_STRUCT(WAVInstrumentChunk, 7)
 
 
 // MPT-specific "xtra" chunk
-struct PACKED WAVExtraChunk
+struct WAVExtraChunk
 {
 	enum Flags
 	{
 		setPanning	= 0x20,
 	};
 
-	uint32 flags;
-	uint16 defaultPan;
-	uint16 defaultVolume;
-	uint16 globalVolume;
-	uint16 reserved;
-	uint8  vibratoType;
-	uint8  vibratoSweep;
-	uint8  vibratoDepth;
-	uint8  vibratoRate;
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(flags);
-		SwapBytesLE(defaultPan);
-		SwapBytesLE(defaultVolume);
-		SwapBytesLE(globalVolume);
-	}
+	uint32le flags;
+	uint16le defaultPan;
+	uint16le defaultVolume;
+	uint16le globalVolume;
+	uint16le reserved;
+	uint8le  vibratoType;
+	uint8le  vibratoSweep;
+	uint8le  vibratoDepth;
+	uint8le  vibratoRate;
 
 	// Set up sample information
 	void ConvertToWAV(const ModSample &sample, MODTYPE modType)
@@ -304,29 +250,18 @@ struct PACKED WAVExtraChunk
 	}
 };
 
-STATIC_ASSERT(sizeof(WAVExtraChunk) == 16);
+MPT_BINARY_STRUCT(WAVExtraChunk, 16)
 
 
 // Sample cue point structure for the "cue " chunk
-struct PACKED WAVCuePoint
+struct WAVCuePoint
 {
-	uint32 id;			// Unique identification value
-	uint32 position;	// Play order position
-	uint32 riffChunkID;	// RIFF ID of corresponding data chunk
-	uint32 chunkStart;	// Byte Offset of Data Chunk
-	uint32 blockStart;	// Byte Offset to sample of First Channel
-	uint32 offset;		// Byte Offset to sample byte of First Channel
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(id);
-		SwapBytesLE(position);
-		SwapBytesLE(riffChunkID);
-		SwapBytesLE(chunkStart);
-		SwapBytesLE(blockStart);
-		SwapBytesLE(offset);
-	}
+	uint32le id;			// Unique identification value
+	uint32le position;		// Play order position
+	uint32le riffChunkID;	// RIFF ID of corresponding data chunk
+	uint32le chunkStart;	// Byte Offset of Data Chunk
+	uint32le blockStart;	// Byte Offset to sample of First Channel
+	uint32le offset;		// Byte Offset to sample byte of First Channel
 
 	// Set up sample information
 	void ConvertToWAV(uint32 id_, SmpLength offset_)
@@ -340,27 +275,20 @@ struct PACKED WAVCuePoint
 	}
 };
 
-STATIC_ASSERT(sizeof(WAVCuePoint) == 24);
+MPT_BINARY_STRUCT(WAVCuePoint, 24)
 
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(pop)
-#endif
-
-
-//=============
 class WAVReader
-//=============
 {
 protected:
 	ChunkReader file;
-	FileReader sampleData, smplChunk, xtraChunk, wsmpChunk, cueChunk;
+	FileReader sampleData, smplChunk, instChunk, xtraChunk, wsmpChunk, cueChunk;
 	ChunkReader::ChunkList<RIFFChunk> infoChunk;
 
 	FileReader::off_t sampleLength;
-	bool isDLS;
 	WAVFormatChunk formatInfo;
-	uint16 extFormat;
+	uint16 subFormat;
+	bool isDLS;
 	bool mayBeCoolEdit16_8;
 
 public:
@@ -371,7 +299,7 @@ public:
 	void FindMetadataChunks(ChunkReader::ChunkList<RIFFChunk> &chunks);
 
 	// Self-explanatory getters.
-	WAVFormatChunk::SampleFormats GetSampleFormat() const { return IsExtensibleFormat() ? static_cast<WAVFormatChunk::SampleFormats>(extFormat) : static_cast<WAVFormatChunk::SampleFormats>(formatInfo.format); }
+	WAVFormatChunk::SampleFormats GetSampleFormat() const { return IsExtensibleFormat() ? static_cast<WAVFormatChunk::SampleFormats>(subFormat) : static_cast<WAVFormatChunk::SampleFormats>(formatInfo.format.get()); }
 	uint16 GetNumChannels() const { return formatInfo.numChannels; }
 	uint16 GetBitsPerSample() const { return formatInfo.bitsPerSample; }
 	uint32 GetSampleRate() const { return formatInfo.sampleRate; }
@@ -385,7 +313,7 @@ public:
 	uint16 GetSampleSize() const { return ((GetNumChannels() * GetBitsPerSample()) + 7) / 8; }
 
 	// Get sample length (in samples)
-	SmpLength GetSampleLength() const { return sampleLength; }
+	SmpLength GetSampleLength() const { return mpt::saturate_cast<SmpLength>(sampleLength); }
 
 	// Apply sample settings from file (loop points, MPT extra settings, ...) to a sample.
 	void ApplySampleSettings(ModSample &sample, char (&sampleName)[MAX_SAMPLENAME]);
@@ -394,9 +322,7 @@ public:
 
 #ifndef MODPLUG_NO_FILESAVE
 
-//=============
 class WAVWriter
-//=============
 {
 protected:
 	// When writing to a stream: Stream pointer
@@ -428,7 +354,7 @@ public:
 	// Finalize the file by closing the last open chunk and updating the file header. Returns total size of file.
 	size_t Finalize();
 	// Begin writing a new chunk to the file.
-	void StartChunk(RIFFChunk::id_type id);
+	void StartChunk(RIFFChunk::ChunkIdentifiers id);
 
 	// Skip some bytes... For example after writing sample data.
 	void Skip(size_t numBytes) { Seek(position + numBytes); }
@@ -480,7 +406,7 @@ protected:
 	void Write(const void *data, size_t numBytes);
 
 	// Write a single tag into a open idLIST chunk
-	void WriteTag(RIFFChunk::id_type id, const mpt::ustring &utext);
+	void WriteTag(RIFFChunk::ChunkIdentifiers id, const mpt::ustring &utext);
 };
 
 #endif // MODPLUG_NO_FILESAVE

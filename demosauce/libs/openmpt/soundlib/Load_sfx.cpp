@@ -14,36 +14,25 @@
 
 OPENMPT_NAMESPACE_BEGIN
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(push, 1)
-#endif
-
 // File Header
-struct PACKED SFXFileHeader
+struct SFXFileHeader
 {
-	uint8 numOrders;
-	uint8 restartPos;
-	uint8 orderList[128];
+	uint8be numOrders;
+	uint8be restartPos;
+	uint8be orderList[128];
 };
 
-STATIC_ASSERT(sizeof(SFXFileHeader) == 130);
+MPT_BINARY_STRUCT(SFXFileHeader, 130)
 
 // Sample Header
-struct PACKED SFXSampleHeader
+struct SFXSampleHeader
 {
-	char   name[22];
-	char   dummy[2];	// Supposedly sample length, but almost always incorrect
-	uint8  finetune;
-	uint8  volume;
-	uint16 loopStart;
-	uint16 loopLength;
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesBE(loopStart);
-		SwapBytesBE(loopLength);
-	}
+	char     name[22];
+	char     dummy[2];	// Supposedly sample length, but almost always incorrect
+	uint8be  finetune;
+	uint8be  volume;
+	uint16be loopStart;
+	uint16be loopLength;
 
 	// Convert an MOD sample header to OpenMPT's internal sample header.
 	void ConvertToMPT(ModSample &mptSmp, uint32 length) const
@@ -51,7 +40,7 @@ struct PACKED SFXSampleHeader
 		mptSmp.Initialize(MOD_TYPE_MOD);
 		mptSmp.nLength = length;
 		mptSmp.nFineTune = MOD2XMFineTune(finetune);
-		mptSmp.nVolume = 4u * std::min(volume, uint8(64));
+		mptSmp.nVolume = 4u * std::min<uint8>(volume, 64);
 
 		SmpLength lStart = loopStart;
 		SmpLength lLength = loopLength * 2u;
@@ -83,13 +72,9 @@ struct PACKED SFXSampleHeader
 	}
 };
 
-STATIC_ASSERT(sizeof(SFXSampleHeader) == 30);
+MPT_BINARY_STRUCT(SFXSampleHeader, 30)
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(pop)
-#endif
 static uint8 ClampSlideParam(uint8 value, uint8 lowNote, uint8 highNote)
-//----------------------------------------------------------------------
 {
 	uint16 lowPeriod, highPeriod;
 
@@ -110,8 +95,86 @@ static uint8 ClampSlideParam(uint8 value, uint8 lowNote, uint8 highNote)
 	return 0;
 }
 
+
+static bool ValidateHeader(const SFXFileHeader &fileHeader)
+{
+	if(fileHeader.numOrders > 128)
+	{
+		return false;
+	}
+	return true;
+}
+
+
+CSoundFile::ProbeResult CSoundFile::ProbeFileHeaderSFX(MemoryFileReader file, const uint64 *pfilesize)
+{
+	SAMPLEINDEX numSamples = 0;
+	if(numSamples == 0)
+	{
+		file.Rewind();
+		if(!file.CanRead(0x40))
+		{
+			return ProbeWantMoreData;
+		}
+		if(file.Seek(0x3c) && file.ReadMagic("SONG"))
+		{
+			numSamples = 15;
+		}
+	}
+	if(numSamples == 0)
+	{
+		file.Rewind();
+		if(!file.CanRead(0x80))
+		{
+			return ProbeWantMoreData;
+		}
+		if(file.Seek(0x7c) && file.ReadMagic("SO31"))
+		{
+			numSamples = 31;
+		}
+	}
+	if(numSamples == 0)
+	{
+		return ProbeFailure;
+	}
+	file.Rewind();
+	for(SAMPLEINDEX smp = 0; smp < numSamples; smp++)
+	{
+		if(file.ReadUint32BE() > 131072)
+		{
+			return ProbeFailure;
+		}
+	}
+	file.Skip(4);
+	if(!file.CanRead(2))
+	{
+		return ProbeWantMoreData;
+	}
+	uint16 speed = file.ReadUint16BE();
+	if(speed < 178)
+	{
+		return ProbeFailure;
+	}
+	if(!file.CanRead(sizeof(SFXSampleHeader) * numSamples))
+	{
+		return ProbeWantMoreData;
+	}
+	file.Skip(sizeof(SFXSampleHeader) * numSamples);
+	SFXFileHeader fileHeader;
+	if(!file.ReadStruct(fileHeader))
+	{
+		return ProbeWantMoreData;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return ProbeFailure;
+	}
+	MPT_UNREFERENCED_PARAMETER(pfilesize);
+	return ProbeSuccess;
+}
+
+
 bool CSoundFile::ReadSFX(FileReader &file, ModLoadingFlags loadFlags)
-//-------------------------------------------------------------------
 {
 	if(file.Seek(0x3C), file.ReadMagic("SONG"))
 	{
@@ -142,7 +205,6 @@ bool CSoundFile::ReadSFX(FileReader &file, ModLoadingFlags loadFlags)
 	m_nMinPeriod = 14 * 4;
 	m_nMaxPeriod = 3424 * 4;
 	m_nSamplePreAmp = 64;
-	m_SongFlags.reset();
 
 	// Setup channel pan positions and volume
 	SetupMODPanning(true);
@@ -161,7 +223,7 @@ bool CSoundFile::ReadSFX(FileReader &file, ModLoadingFlags loadFlags)
 	{
 		SFXSampleHeader sampleHeader;
 
-		file.ReadConvertEndianness(sampleHeader);
+		file.ReadStruct(sampleHeader);
 		sampleHeader.ConvertToMPT(Samples[smp], sampleLen[smp - 1]);
 
 		// Get rid of weird characters in sample names.
@@ -179,12 +241,18 @@ bool CSoundFile::ReadSFX(FileReader &file, ModLoadingFlags loadFlags)
 	}
 
 	SFXFileHeader fileHeader;
-	file.ReadStruct(fileHeader);
-
-	if(fileHeader.numOrders > 128)
+	if(!file.ReadStruct(fileHeader))
+	{
 		return false;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return false;
+	}
 	if(loadFlags == onlyVerifyHeader)
+	{
 		return true;
+	}
 
 	PATTERNINDEX numPatterns = 0;
 	for(ORDERINDEX ord = 0; ord < fileHeader.numOrders; ord++)
@@ -193,11 +261,11 @@ bool CSoundFile::ReadSFX(FileReader &file, ModLoadingFlags loadFlags)
 	}
 
 	if(fileHeader.restartPos < fileHeader.numOrders)
-		Order.SetRestartPos(fileHeader.restartPos);
+		Order().SetRestartPos(fileHeader.restartPos);
 	else
-		Order.SetRestartPos(0);
+		Order().SetRestartPos(0);
 
-	Order.ReadFromArray(fileHeader.orderList, fileHeader.numOrders);
+	ReadOrderFromArray(Order(), fileHeader.orderList, fileHeader.numOrders);
 
 	// SFX v2 / MMS modules have 4 extra bytes here for some reason
 	if(m_nSamples == 31)
@@ -208,6 +276,8 @@ bool CSoundFile::ReadSFX(FileReader &file, ModLoadingFlags loadFlags)
 	uint8 slideRate[4] = {0};
 
 	// Reading patterns
+	if(loadFlags & loadPatternData)
+		Patterns.ResizeArray(numPatterns);
 	for(PATTERNINDEX pat = 0; pat < numPatterns; pat++)
 	{
 		if(!(loadFlags & loadPatternData) || !Patterns.Insert(pat, 64))

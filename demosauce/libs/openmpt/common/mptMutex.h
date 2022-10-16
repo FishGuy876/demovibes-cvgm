@@ -11,9 +11,9 @@
 
 #include <vector> // some C++ header in order to have the C++ standard library version information available
 
-#if MPT_OS_ANDROID
+#if !MPT_PLATFORM_MULTITHREADED
 #define MPT_MUTEX_STD     0
-#define MPT_MUTEX_PTHREAD 1
+#define MPT_MUTEX_PTHREAD 0
 #define MPT_MUTEX_WIN32   0
 #elif MPT_OS_EMSCRIPTEN
 #define MPT_MUTEX_STD     0
@@ -23,19 +23,19 @@
 #define MPT_MUTEX_STD     1
 #define MPT_MUTEX_PTHREAD 0
 #define MPT_MUTEX_WIN32   0
-#elif MPT_MSVC_AT_LEAST(2012,0) && !defined(MPT_QUIRK_NO_CPP_THREAD)
+#elif MPT_COMPILER_MSVC && !defined(MPT_QUIRK_NO_CPP_THREAD)
 #define MPT_MUTEX_STD     1
 #define MPT_MUTEX_PTHREAD 0
 #define MPT_MUTEX_WIN32   0
-#elif MPT_GCC_AT_LEAST(4,4,0) && !MPT_OS_WINDOWS && !defined(MPT_QUIRK_NO_CPP_THREAD)
+#elif MPT_COMPILER_GCC && !MPT_OS_WINDOWS && !defined(MPT_QUIRK_NO_CPP_THREAD)
 #define MPT_MUTEX_STD     1
 #define MPT_MUTEX_PTHREAD 0
 #define MPT_MUTEX_WIN32   0
-#elif MPT_CLANG_AT_LEAST(3,2,0) && defined(__GLIBCXX__) && !defined(MPT_QUIRK_NO_CPP_THREAD)
+#elif MPT_COMPILER_CLANG && defined(__GLIBCXX__) && !defined(MPT_QUIRK_NO_CPP_THREAD)
 #define MPT_MUTEX_STD     1
 #define MPT_MUTEX_PTHREAD 0
 #define MPT_MUTEX_WIN32   0
-#elif (MPT_OS_MACOSX_OR_IOS || MPT_OS_FREEBSD) && MPT_CLANG_AT_LEAST(3,0,0) && !defined(MPT_QUIRK_NO_CPP_THREAD)
+#elif (MPT_OS_MACOSX_OR_IOS || MPT_OS_FREEBSD) && MPT_COMPILER_CLANG && !defined(MPT_QUIRK_NO_CPP_THREAD)
 #define MPT_MUTEX_STD     1
 #define MPT_MUTEX_PTHREAD 0
 #define MPT_MUTEX_WIN32   0

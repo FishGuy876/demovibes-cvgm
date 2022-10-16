@@ -9,7 +9,7 @@
  */
 
 
-#include <stdafx.h>
+#include "stdafx.h"
 #include <ostream>
 #include "ITCompression.h"
 #include "../common/misc_util.h"
@@ -26,8 +26,8 @@ struct IT16BitParams
 	typedef int16 sample_t;
 	static const int16 lowerTab[];
 	static const int16 upperTab[];
-	static const int fetchA = 4, lowerB = -8, upperB = 7, defWidth = 17;
-	static int Clamp(sample_t v) { return int(v) & 0xFFFF; }
+	static const int8 fetchA = 4, lowerB = -8, upperB = 7, defWidth = 17;
+	static const int mask = 0xFFFF;
 };
 
 const int16 IT16BitParams::lowerTab[] = { 0, -1, -3, -7, -15, -31, -56, -120, -248, -504, -1016, -2040, -4088, -8184, -16376, -32760, -32768 };
@@ -39,14 +39,14 @@ struct IT8BitParams
 	typedef int8 sample_t;
 	static const int8 lowerTab[];
 	static const int8 upperTab[];
-	static const int fetchA = 3, lowerB = -4, upperB = 3, defWidth = 9;
-	static int Clamp(sample_t v) { return int(v) & 0xFF; }
+	static const int8 fetchA = 3, lowerB = -4, upperB = 3, defWidth = 9;
+	static const int mask = 0xFF;
 };
 
 const int8 IT8BitParams::lowerTab[] = { 0, -1, -3, -7, -15, -31, -60, -124, -128 };
 const int8 IT8BitParams::upperTab[] = { 0, 1, 3, 7, 15, 31, 59, 123, 127 };
 
-static const int ITWidthChangeSize[] = { 4, 5, 6, 7, 8, 9, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 };
+static const int8 ITWidthChangeSize[] = { 4, 5, 6, 7, 8, 9, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 };
 
 //////////////////////////////////////////////////////////////////////////////
 // IT 2.14 compression
@@ -56,7 +56,6 @@ ITCompression::ITCompression(const ModSample &sample, bool it215, std::ostream *
 	: file(f)
 	, mptSample(sample)
 	, is215(it215)
-//-----------------------------------------------------------------------------------------------------
 {
 	packedData = new (std::nothrow) uint8[bufferSize];
 	sampleData = new (std::nothrow) uint8[blockSize];
@@ -85,7 +84,7 @@ ITCompression::ITCompression(const ModSample &sample, bool it215, std::ostream *
 			else
 				Compress<IT8BitParams>(sample.pSample8 + chn, offset, remain);
 
-			if(file) mpt::IO::WriteRaw(*file, &packedData[0], packedLength);
+			if(file) mpt::IO::WriteRaw(*file, packedData, packedLength);
 			packedTotalLength += packedLength;
 
 			offset += baseLength;
@@ -100,7 +99,6 @@ ITCompression::ITCompression(const ModSample &sample, bool it215, std::ostream *
 
 template<typename T>
 void ITCompression::CopySample(void *target, const void *source, SmpLength offset, SmpLength length, SmpLength skip)
-//------------------------------------------------------------------------------------------------------------------
 {
 	T *out = static_cast<T *>(target);
 	const T *in = static_cast<const T *>(source) + offset * skip;
@@ -114,7 +112,6 @@ void ITCompression::CopySample(void *target, const void *source, SmpLength offse
 // Convert sample to delta values.
 template<typename T>
 void ITCompression::Deltafy()
-//---------------------------
 {
 	T *p = static_cast<T *>(sampleData);
 	int oldVal = 0;
@@ -129,7 +126,6 @@ void ITCompression::Deltafy()
 
 template<typename Properties>
 void ITCompression::Compress(const void *data, SmpLength offset, SmpLength actualLength)
-//--------------------------------------------------------------------------------------
 {
 	baseLength = std::min(actualLength, SmpLength(blockSize / sizeof(typename Properties::sample_t)));
 
@@ -141,7 +137,7 @@ void ITCompression::Compress(const void *data, SmpLength offset, SmpLength actua
 		Deltafy<typename Properties::sample_t>();
 	}
 
-	const int defWidth = Properties::defWidth; // gcc static const member reference workaround
+	const int8 defWidth = Properties::defWidth; // gcc static const member reference workaround
 
 	// Initialise bit width table with initial values
 	bwt.assign(baseLength, defWidth);
@@ -151,7 +147,7 @@ void ITCompression::Compress(const void *data, SmpLength offset, SmpLength actua
 	
 	// Write those bits!
 	const typename Properties::sample_t *p = static_cast<typename Properties::sample_t *>(sampleData);
-	int width = defWidth;
+	int8 width = defWidth;
 	for(size_t i = 0; i < baseLength; i++)
 	{
 		if(bwt[i] != width)
@@ -176,21 +172,20 @@ void ITCompression::Compress(const void *data, SmpLength offset, SmpLength actua
 
 			width = bwt[i];
 		}
-		WriteBits(width, Properties::Clamp(p[i]));
+		WriteBits(width, static_cast<int>(p[i]) & Properties::mask);
 	}
 
 	// Write last byte and update block length
 	WriteByte(byteVal);
-	packedData[0] = uint8((packedLength - 2) & 0xFF);
-	packedData[1] = uint8((packedLength - 2) >> 8);
+	packedData[0] = static_cast<uint8>((packedLength - 2) & 0xFF);
+	packedData[1] = static_cast<uint8>((packedLength - 2) >> 8);
 }
 
 
-int ITCompression::GetWidthChangeSize(int w, bool is16)
-//-----------------------------------------------------
+int8 ITCompression::GetWidthChangeSize(int8 w, bool is16)
 {
 	MPT_ASSERT(w > 0 && static_cast<unsigned int>(w) <= CountOf(ITWidthChangeSize));
-	int wcs = ITWidthChangeSize[w - 1];
+	int8 wcs = ITWidthChangeSize[w - 1];
 	if(w <= 6 && is16)
 		wcs++;
 	return wcs;
@@ -198,8 +193,7 @@ int ITCompression::GetWidthChangeSize(int w, bool is16)
 
 
 template<typename Properties>
-void ITCompression::SquishRecurse(int sWidth, int lWidth, int rWidth, int width, SmpLength offset, SmpLength length)
-//------------------------------------------------------------------------------------------------------------------
+void ITCompression::SquishRecurse(int8 sWidth, int8 lWidth, int8 rWidth, int8 width, SmpLength offset, SmpLength length)
 {
 	if(width + 1 < 1)
 	{
@@ -226,13 +220,13 @@ void ITCompression::SquishRecurse(int sWidth, int lWidth, int rWidth, int width,
 			}
 
 			const SmpLength blockLength = i - start;
-			const int xlwidth = start == offset ? lWidth : sWidth;
-			const int xrwidth = i == end ? rWidth : sWidth;
+			const int8 xlwidth = start == offset ? lWidth : sWidth;
+			const int8 xrwidth = i == end ? rWidth : sWidth;
 
 			const bool is16 = sizeof(typename Properties::sample_t) > 1;
-			const int wcsl = GetWidthChangeSize(xlwidth, is16);
-			const int wcss = GetWidthChangeSize(sWidth, is16);
-			const int wcsw = GetWidthChangeSize(width + 1, is16);
+			const int8 wcsl = GetWidthChangeSize(xlwidth, is16);
+			const int8 wcss = GetWidthChangeSize(sWidth, is16);
+			const int8 wcsw = GetWidthChangeSize(width + 1, is16);
 
 			bool comparison;
 			if(i == baseLength)
@@ -266,8 +260,7 @@ void ITCompression::SquishRecurse(int sWidth, int lWidth, int rWidth, int width,
 }
 
 
-int ITCompression::ConvertWidth(int curWidth, int newWidth)
-//---------------------------------------------------------
+int8 ITCompression::ConvertWidth(int8 curWidth, int8 newWidth)
 {
 	curWidth--;
 	newWidth--;
@@ -278,8 +271,7 @@ int ITCompression::ConvertWidth(int curWidth, int newWidth)
 }
 
 
-void ITCompression::WriteBits(int width, int v)
-//---------------------------------------------
+void ITCompression::WriteBits(int8 width, int v)
 {
 	while(width > remBits)
 	{
@@ -302,7 +294,6 @@ void ITCompression::WriteBits(int width, int v)
 
 
 void ITCompression::WriteByte(uint8 v)
-//------------------------------------
 {
 	if(packedLength < bufferSize)
 	{
@@ -322,15 +313,16 @@ void ITCompression::WriteByte(uint8 v)
 ITDecompression::ITDecompression(FileReader &file, ModSample &sample, bool it215)
 	: mptSample(sample)
 	, is215(it215)
-//-------------------------------------------------------------------------------
 {
 	for(uint8 chn = 0; chn < mptSample.GetNumChannels(); chn++)
 	{
 		writtenSamples = writePos = 0;
 		while(writtenSamples < sample.nLength && file.CanRead(sizeof(uint16)))
 		{
-			chunk = file.ReadChunk(file.ReadUint16LE());
-			chunkView = chunk.GetPinnedRawDataView();
+			dataSize = file.ReadUint16LE();
+			if(!dataSize)
+				continue;	// Malformed sample?
+			file.ReadRaw(chunk, dataSize);
 
 			// Initialise bit reader
 			dataPos = 0;
@@ -349,7 +341,6 @@ ITDecompression::ITDecompression(FileReader &file, ModSample &sample, bool it215
 
 template<typename Properties>
 void ITDecompression::Uncompress(typename Properties::sample_t *target)
-//---------------------------------------------------------------------
 {
 	curLength = std::min(mptSample.nLength - writtenSamples, SmpLength(ITCompression::blockSize / sizeof(typename Properties::sample_t)));
 
@@ -358,7 +349,7 @@ void ITDecompression::Uncompress(typename Properties::sample_t *target)
 	int width = defWidth;
 	while(curLength > 0)
 	{
-		if(width < 1 || width > defWidth || dataPos >= chunkView.size())
+		if(width < 1 || width > defWidth || dataPos >= dataSize)
 		{
 			// Error!
 			return;
@@ -392,26 +383,31 @@ void ITDecompression::Uncompress(typename Properties::sample_t *target)
 }
 
 
+#if MPT_MSVC_AT_LEAST(2017,3) && MPT_MSVC_BEFORE(2017,5)
+// Work-around compiler crash in VS2017.3 / cl 19.11.25506
+// https://developercommunity.visualstudio.com/content/problem/96687/c1063-and-c1001-while-compiling-trivial-code-in-vs.html
+MPT_NOINLINE
+#endif
 void ITDecompression::ChangeWidth(int &curWidth, int width)
-//---------------------------------------------------------
 {
 	width++;
 	if(width >= curWidth)
 		width++;
-
-	MPT_ASSERT(curWidth != width);
 	curWidth = width;
 }
 
 
+#if MPT_MSVC_AT_LEAST(2017,3) && MPT_MSVC_BEFORE(2017,5)
+// Work-around compiler crash in VS2017.3 / cl 19.11.25506
+// https://developercommunity.visualstudio.com/content/problem/96687/c1063-and-c1001-while-compiling-trivial-code-in-vs.html
+MPT_NOINLINE
+#endif
 int ITDecompression::ReadBits(int width)
-//--------------------------------------
 {
-	const mpt::byte *data = chunkView.begin();
 	int v = 0, vPos = 0, vMask = (1 << width) - 1;
-	while(width >= remBits && dataPos < chunkView.size())
+	while(width >= remBits && dataPos < dataSize)
 	{
-		v |= (data[dataPos] >> bitPos) << vPos;
+		v |= (chunk[dataPos] >> bitPos) << vPos;
 		vPos += remBits;
 		width -= remBits;
 		dataPos++;
@@ -419,9 +415,9 @@ int ITDecompression::ReadBits(int width)
 		bitPos = 0;
 	}
 
-	if(width > 0 && dataPos < chunkView.size())
+	if(width > 0 && dataPos < dataSize)
 	{
-		v |= (data[dataPos] >> bitPos) << vPos;
+		v |= (chunk[dataPos] >> bitPos) << vPos;
 		v &= vMask;
 		remBits -= width;
 		bitPos += width;
@@ -432,13 +428,12 @@ int ITDecompression::ReadBits(int width)
 
 template<typename Properties>
 void ITDecompression::Write(int v, int topBit, typename Properties::sample_t *target)
-//-----------------------------------------------------------------------------------
 {
 	if(v & topBit)
 		v -= (topBit << 1);
 	mem1 += v;
 	mem2 += mem1;
-	target[writePos] = static_cast<typename Properties::sample_t>(is215 ? (int)mem2 : (int)mem1);
+	target[writePos] = static_cast<typename Properties::sample_t>(static_cast<int>(is215 ? mem2 : mem1));
 	writtenSamples++;
 	writePos += mptSample.GetNumChannels();
 	curLength--;

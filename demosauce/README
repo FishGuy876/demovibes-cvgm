@@ -16,6 +16,8 @@ replaygain, openmpt, hively
 optional libs:
 bass
 
+If BASS cannot be found after successfully compiling the tools, copy the libs/libbass.so to the /usr/lib/ folder so it can be found (debian) or /usr/local/lib/ (Ubuntu). If you still have issues, use ldd to figure out where it's looking for the library files. FishGuy876
+
 BASS is a proprietary lib for module playback (mod, s3m, xm, it, etc). it is widely used in the demoscene and most modules are tested against it. the configure script can download the lib if required.  http://www.un4seen.com/bass.html.
 
 SETUP
@@ -32,7 +34,7 @@ GPLv3 http://www.gnu.org/licenses/gpl.txt
 
 FAQ
 ==================
-if you have a question, contact me (maep) via irc: #nectarine on irc.eu.esper.net
+if you have a question, find me on scenestream.net
 
 the control script can send the following extra key=value pairs to control playback.
 

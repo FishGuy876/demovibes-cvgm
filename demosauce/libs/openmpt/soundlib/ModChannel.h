@@ -13,6 +13,7 @@
 #include "ModSample.h"
 #include "ModInstrument.h"
 #include "modcommand.h"
+#include "Paula.h"
 
 OPENMPT_NAMESPACE_BEGIN
 
@@ -36,22 +37,18 @@ struct ModChannel
 	};
 
 	// Information used in the mixer (should be kept tight for better caching)
-	// Byte sizes are for 32-bit builds and 32-bit integer / float mixer
+	SamplePosition position;	// Current play position (fixed point)
+	SamplePosition increment;	// Sample speed relative to mixing frequency (fixed point)
 	const void *pCurrentSample;	// Currently playing sample (nullptr if no sample is playing)
-	uint32 nPos;			// Current play position
-	uint32 nPosLo;			// 16-bit fractional part of play position
-	int32 nInc;				// 16.16 fixed point sample speed relative to mixing frequency (0x10000 = one sample per output sample, 0x20000 = two samples per output sample, etc...)
 	int32 leftVol;			// 0...4096 (12 bits, since 16 bits + 12 bits = 28 bits = 0dB in integer mixer, see MIXING_ATTENUATION)
 	int32 rightVol;			// Ditto
 	int32 leftRamp;			// Ramping delta, 20.12 fixed point (see VOLUMERAMPPRECISION)
 	int32 rightRamp;		// Ditto
-	// Up to here: 32 bytes
 	int32 rampLeftVol;		// Current ramping volume, 20.12 fixed point (see VOLUMERAMPPRECISION)
 	int32 rampRightVol;		// Ditto
 	mixsample_t nFilter_Y[2][2];					// Filter memory - two history items per sample channel
 	mixsample_t nFilter_A0, nFilter_B0, nFilter_B1;	// Filter coeffs
 	mixsample_t nFilter_HP;
-	// Up to here: 72 bytes
 
 	SmpLength nLength;
 	SmpLength nLoopStart;
@@ -59,9 +56,9 @@ struct ModChannel
 	FlagSet<ChannelFlags> dwFlags;
 	mixsample_t nROfs, nLOfs;
 	uint32 nRampLength;
-	// Up to here: 100 bytes
 
 	const ModSample *pModSample;			// Currently assigned sample slot (may already be stopped)
+	Paula::State paulaState;
 
 	// Information not used in the mixer
 	const ModInstrument *pModInstrument;	// Currently assigned instrument slot
@@ -79,12 +76,11 @@ struct ModChannel
 	int32 nInsVol;		// Sample / Instrument volume (SV * IV in ITTECH.TXT)
 	int32 nFineTune, nTranspose;
 	int32 nPortamentoSlide, nAutoVibDepth;
-	uint32 nAutoVibPos, nVibratoPos, nTremoloPos, nPanbrelloPos;
-	int32 nVolSwing, nPanSwing;
-	int32 nCutSwing, nResSwing;
-	int32 nRestorePanOnNewNote; //If > 0, nPan should be set to nRestorePanOnNewNote - 1 on new note. Used to recover from panswing.
 	uint32 nEFxOffset; // offset memory for Invert Loop (EFx, .MOD only)
-	int32 nRetrigCount, nRetrigParam;
+	int16 nVolSwing, nPanSwing;
+	int16 nCutSwing, nResSwing;
+	int16 nRestorePanOnNewNote; //If > 0, nPan should be set to nRestorePanOnNewNote - 1 on new note. Used to recover from panswing.
+	int16 nRetrigCount, nRetrigParam;
 	ROWINDEX nPatternLoop;
 	CHANNELINDEX nMasterChn;
 	ModCommand rowCommand;
@@ -97,9 +93,10 @@ struct ModChannel
 	uint8 nArpeggioLastNote, nArpeggioBaseNote;	// For plugin arpeggio
 	uint8 nNewNote, nNewIns, nOldIns, nCommand, nArpeggio;
 	uint8 nOldVolumeSlide, nOldFineVolUpDown;
-	uint8 nOldPortaUpDown, nOldFinePortaUpDown, nOldExtraFinePortaUpDown;
+	uint8 nOldPortaUp, nOldPortaDown, nOldFinePortaUpDown, nOldExtraFinePortaUpDown;
 	uint8 nOldPanSlide, nOldChnVolSlide;
 	uint8 nOldGlobalVolSlide;
+	uint8 nAutoVibPos, nVibratoPos, nTremoloPos, nPanbrelloPos;
 	uint8 nVibratoType, nVibratoSpeed, nVibratoDepth;
 	uint8 nTremoloType, nTremoloSpeed, nTremoloDepth;
 	uint8 nPanbrelloType, nPanbrelloSpeed, nPanbrelloDepth;
@@ -128,7 +125,6 @@ struct ModChannel
 	int32 m_PortamentoFineSteps, m_PortamentoTickSlide;
 
 	uint32 m_Freq;
-	float m_VibratoDepth;
 	//<----
 
 	//NOTE_PCs memory.
@@ -155,7 +151,7 @@ struct ModChannel
 
 	EnvInfo &GetEnvelope(EnvelopeType envType)
 	{
-		return const_cast<EnvInfo &>(static_cast<const ModChannel &>(*this).GetEnvelope(envType));
+		return const_cast<EnvInfo &>(static_cast<const ModChannel *>(this)->GetEnvelope(envType));
 	}
 
 	void ResetEnvelopes()
@@ -177,8 +173,11 @@ struct ModChannel
 	void Reset(ResetFlags resetMask, const CSoundFile &sndFile, CHANNELINDEX sourceChannel);
 	void Stop();
 
-	typedef uint32 volume_t;
-	volume_t GetVSTVolume() { return (pModInstrument) ? pModInstrument->nGlobalVol * 4 : nVolume; }
+	bool IsSamplePlaying() const { return !increment.IsZero(); }
+
+	uint32 GetVSTVolume() { return (pModInstrument) ? pModInstrument->nGlobalVol * 4 : nVolume; }
+
+	ModCommand::NOTE GetPluginNote(bool realNoteMapping) const;
 
 	// Check if the channel has a valid MIDI output. This function guarantees that pModInstrument != nullptr.
 	bool HasMIDIOutput() const { return pModInstrument != nullptr && pModInstrument->HasValidMIDIChannel(); }
@@ -186,11 +185,7 @@ struct ModChannel
 	// Check if currently processed loop is a sustain loop. pModSample is not checked for validity!
 	bool InSustainLoop() const { return (dwFlags & (CHN_LOOP | CHN_KEYOFF)) == CHN_LOOP && pModSample->uFlags[CHN_SUSTAINLOOP]; }
 
-	ModChannel()
-	{
-		memset(this, 0, sizeof(*this));
-	}
-
+	void UpdateInstrumentVolume(const ModSample *smp, const ModInstrument *ins);
 };
 
 

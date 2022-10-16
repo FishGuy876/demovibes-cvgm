@@ -17,7 +17,7 @@ class CSoundFile;
 // Sample Struct
 struct ModSample
 {
-	SmpLength nLength;						// In samples, not bytes
+	SmpLength nLength;						// In frames
 	SmpLength nLoopStart, nLoopEnd;			// Ditto
 	SmpLength nSustainStart, nSustainEnd;	// Ditto
 	union
@@ -28,7 +28,7 @@ struct ModSample
 	};
 	uint32 nC5Speed;						// Frequency of middle-C, in Hz (for IT/S3M/MPTM)
 	uint16 nPan;							// Default sample panning (if pan flag is set), 0...256
-	uint16 nVolume;							// Default volume, 0...256
+	uint16 nVolume;							// Default volume, 0...256 (ignored if uFlags[SMP_NODEFAULTVOLUME] is set)
 	uint16 nGlobalVol;						// Global volume (sample volume is multiplied by this), 0...64
 	SampleFlags uFlags;						// Sample flags (see ChannelFlags enum)
 	int8   RelativeTone;					// Relative note to middle c (for MOD/XM)
@@ -37,7 +37,9 @@ struct ModSample
 	uint8  nVibSweep;						// Auto vibrato sweep (i.e. how long it takes until the vibrato effect reaches its full strength)
 	uint8  nVibDepth;						// Auto vibrato depth
 	uint8  nVibRate;						// Auto vibrato rate (speed)
-	//char name[MAX_SAMPLENAME];			// Maybe it would be nicer to have sample names here, but that would require some refactoring. Also, the current structure size is 64 Bytes - would adding the sample name here slow down the mixer (cache misses)?
+	uint8  rootNote;						// For multisample import
+
+	//char name[MAX_SAMPLENAME];			// Maybe it would be nicer to have sample names here, but that would require some refactoring.
 	char filename [MAX_SAMPLEFILENAME];
 	SmpLength cues[9];
 
@@ -55,7 +57,7 @@ struct ModSample
 	// Return the number of channels in the sample.
 	uint8 GetNumChannels() const { return (uFlags & CHN_STEREO) ? 2 : 1; }
 
-	// Return the number of bytes per sampling point. (Channels * Elementary Sample Size)
+	// Return the number of bytes per frame (Channels * Elementary Sample Size)
 	uint8 GetBytesPerSample() const { return GetElementarySampleSize() * GetNumChannels(); }
 
 	// Return the size which pSample is at least.
@@ -97,6 +99,9 @@ struct ModSample
 	void TransposeToFrequency();
 	static int FrequencyToTranspose(uint32 freq);
 	void FrequencyToTranspose();
+
+	// Transpose the sample by amount specified in octaves (i.e. amount=1 transposes one octave up)
+	void Transpose(double amount);
 
 	// Check if the sample's cue points are the default cue point set.
 	bool HasCustomCuePoints() const;

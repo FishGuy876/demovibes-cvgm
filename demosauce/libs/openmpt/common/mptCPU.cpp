@@ -61,7 +61,6 @@ struct cpuid_result {
 
 
 static cpuid_result cpuid(uint32 function)
-//----------------------------------------
 {
 	cpuid_result result;
 	int CPUInfo[4];
@@ -74,32 +73,24 @@ static cpuid_result cpuid(uint32 function)
 }
 
 
+#if 0
+
 static cpuid_result cpuidex(uint32 function_a, uint32 function_c)
-//---------------------------------------------------------------
 {
 	cpuid_result result;
-	#if MPT_MSVC_AT_LEAST(2010,0)
-		int CPUInfo[4];
-		__cpuidex(CPUInfo, function_a, function_c);
-		result.a = CPUInfo[0];
-		result.b = CPUInfo[1];
-		result.c = CPUInfo[2];
-		result.d = CPUInfo[3];
-	#else
-		// just do not test modern cpuid features with older compiler
-		MPT_UNREFERENCED_PARAMETER(function_a);
-		MPT_UNREFERENCED_PARAMETER(function_c);
-		result.a = 0;
-		result.b = 0;
-		result.c = 0;
-		result.d = 0;
-	#endif
+	int CPUInfo[4];
+	__cpuidex(CPUInfo, function_a, function_c);
+	result.a = CPUInfo[0];
+	result.b = CPUInfo[1];
+	result.c = CPUInfo[2];
+	result.d = CPUInfo[3];
 	return result;
 }
 
+#endif
+
 
 static MPT_NOINLINE bool has_cpuid()
-//----------------------------------
 {
 	const size_t eflags_cpuid = 1 << 21;
 	size_t eflags_old = __readeflags();
@@ -112,7 +103,6 @@ static MPT_NOINLINE bool has_cpuid()
 
 
 void InitProcSupport()
-//--------------------
 {
 
 	RealProcSupport = 0;
@@ -140,17 +130,39 @@ void InitProcSupport()
 			uint32 BaseFamily = (StandardFeatureFlags.a >>  8) & 0x0f;
 			uint32 ExtModel   = (StandardFeatureFlags.a >> 16) & 0x0f;
 			uint32 ExtFamily  = (StandardFeatureFlags.a >> 20) & 0xff;
-			if(BaseFamily < 0xf)
+			if(VendorString.as_string() == "GenuineIntel")
+			{
+				if(BaseFamily == 0xf)
+				{
+					ProcFamily = static_cast<uint16>(ExtFamily + BaseFamily);
+				} else
+				{
+					ProcFamily = static_cast<uint16>(BaseFamily);
+				}
+				if(BaseFamily == 0x6 || BaseFamily == 0xf)
+				{
+					ProcModel = static_cast<uint8>((ExtModel << 4) | (BaseModel << 0));
+				} else
+				{
+					ProcModel = static_cast<uint8>(BaseModel);
+				}
+			} else if(VendorString.as_string() == "AuthenticAMD")
+			{
+				if(BaseFamily == 0xf)
+				{
+					ProcFamily = static_cast<uint16>(ExtFamily + BaseFamily);
+					ProcModel = static_cast<uint8>((ExtModel << 4) | (BaseModel << 0));
+				} else
+				{
+					ProcFamily = static_cast<uint16>(BaseFamily);
+					ProcModel = static_cast<uint8>(BaseModel);
+				}
+			} else
 			{
 				ProcFamily = static_cast<uint16>(BaseFamily);
 				ProcModel = static_cast<uint8>(BaseModel);
-				ProcStepping = static_cast<uint8>(Stepping);
-			} else
-			{
-				ProcFamily = static_cast<uint16>(ExtFamily + BaseFamily);
-				ProcModel = static_cast<uint8>((ExtModel << 4) | (BaseModel << 0));
-				ProcStepping = static_cast<uint8>(Stepping);
 			}
+			ProcStepping = static_cast<uint8>(Stepping);
 			if(StandardFeatureFlags.d & (1<< 4)) ProcSupport |= PROCSUPPORT_TSC;
 			if(StandardFeatureFlags.d & (1<<15)) ProcSupport |= PROCSUPPORT_CMOV;
 			if(StandardFeatureFlags.d & (1<< 0)) ProcSupport |= PROCSUPPORT_FPU;
@@ -277,7 +289,6 @@ void InitProcSupport()
 
 
 void InitProcSupport()
-//--------------------
 {
 	ProcSupport = 0;
 }
@@ -291,8 +302,32 @@ void InitProcSupport()
 #ifdef MODPLUG_TRACKER
 
 
+uint32 GetMinimumProcSupportFlags()
+{
+	uint32 flags = 0;
+	#ifdef ENABLE_ASM
+		#if MPT_COMPILER_MSVC
+			#if defined(_M_X64)
+				flags |= PROCSUPPORT_AMD64;
+			#elif defined(_M_IX86)
+				#if defined(_M_IX86_FP)
+					#if (_M_IX86_FP >= 2)
+						flags |= PROCSUPPORT_x86_SSE2;
+					#elif (_M_IX86_FP == 1)
+						flags |= PROCSUPPORT_x86_SSE;
+					#endif
+				#else
+					flags |= PROCSUPPORT_i586;
+				#endif
+			#endif
+		#endif	
+	#endif // ENABLE_ASM
+	return flags;
+}
+
+
+
 int GetMinimumSSEVersion()
-//------------------------
 {
 	int minimumSSEVersion = 0;
 	#if MPT_COMPILER_MSVC
@@ -313,7 +348,6 @@ int GetMinimumSSEVersion()
 
 
 int GetMinimumAVXVersion()
-//------------------------
 {
 	int minimumAVXVersion = 0;
 	#if MPT_COMPILER_MSVC

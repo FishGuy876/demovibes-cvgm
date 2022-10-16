@@ -14,49 +14,32 @@ How to compile
 
  -  Supported Visual Studio versions:
 
-     -  Visual Studio 2008 Service Pack 1 Standard/Professional/Team Edition
-        (Express Edition is not supported as it does not include MFC).
-
-        You need the DirectX SDK 2010-June to enable DirectSound output. If you
-        don't want this, comment out `#define MPT_WITH_DSOUND` in the file
-        `common/BuildSettings.h`.
-
-        To compile the project, open `build/vs2008/OpenMPT.sln` and hit the
-        compile button.
-
-     -  Visual Studio 2010 Service Pack 1 Professional/Premium/Ultimate (Express
-        version is not supported as it does not include MFC).
-
-        You need the DirectX SDK 2010-June to enable DirectSound output. If you
-        don't want this, comment out `#define MPT_WITH_DSOUND` in the file
-        `common/BuildSettings.h`.
-
-        To compile the project, open `build/vs2010/OpenMPT.sln` and hit the
-        compile button.
-
-     -  Visual Studio 2012 Update 4 Professional/Premium/Ultimate (Express
-        version is not supported as it does not include MFC).
-
-        To compile the project, open `build/vs2012/OpenMPT.sln` and hit the
-        compile button.
-
-     -  Visual Studio 2013 Update 4 Community/Professional/Premium/Ultimate
-        Edition with MBCS MFC Add-On (available at
-        [microsoft.com](https://www.microsoft.com/en-us/download/details.aspx?id=40770)
-        ).
-
-        To compile the project, open `build/vs2013/OpenMPT.sln` and hit the
-        compile button.
-
      -  Visual Studio 2015 Update 3 Community/Professional/Enterprise
 
         To compile the project, open `build/vs2015/OpenMPT.sln` and hit the
         compile button.
 
+     -  Visual Studio 2017 Community/Professional/Enterprise
+
+        To compile the project, open `build/vs2017/OpenMPT.sln` and hit the
+        compile button.
+
+ -  The Windows 8.1 SDK and Microsoft Foundation Classes (MFC) are required to
+    build OpenMPT (both are included with Visual Studio, however may need to be
+    selected explicitly during setup). In order to build OpenMPT for Windows XP,
+    the XP targetting toolset also needs to be installed.
+
  -  The VST and ASIO SDKs are needed for compiling with VST and ASIO support.
 
     If you don't want this, uncomment `#define NO_VST` and comment out
     `#define MPT_WITH_ASIO` in the file `common/BuildSettings.h`.
+
+    The ASIO and VST SDKs can be downloaded automatically on Windows 7 or later
+    with 7-Zip installed by just running the `build/download_externals.cmd`
+    script.
+
+    If you do not want to or cannot use this script, you may follow these manual
+    steps instead:
 
      -  ASIO:
 
@@ -85,13 +68,13 @@ How to compile
         [steinberg.net](http://www.steinberg.net/en/company/developers.html) to
         download the SDK.
 
-    Alternatively, both, the ASIO and the VST SDK, can be downloaded
-    automatically on Windows 7 or later with 7-Zip installed by just running the
-    `build/download_externals.cmd` script (works when run from either the
-    project root or directly from the build directory).
-
     If you need further help with the VST and ASIO SDKs, get in touch with the
-    main developers. 
+    main OpenMPT developers. 
+
+ -  7-Zip is required to be installed in the default path in order to build the
+    required files for OpenMPT Wine integration.
+
+    Please visit [7-zip.org](http://www.7-zip.org/) to download 7-Zip.
 
 
 ### libopenmpt and openmpt123
@@ -109,22 +92,24 @@ For detailed requirements, see `libopenmpt/dox/quickstart.md`.
 
  -  Visual Studio:
 
-     -  You will find solutions for Visual Studio 2008 to 2015 in the
+     -  You will find solutions for Visual Studio 2015 to 2017 in the
         corresponding `build/vsVERSION/` folder.
+        Projects that target Windows versions before Windows 7 are available in
+        `build/vsVERSIONxp/`
         Most projects are supported with any of the mentioned Visual Studio
         verions, with the following exceptions:
-
-         -  libopenmpt_example_cxx: Requires VS2010 because it makes use of
-            C++11 features that VS2008 does not support..
-
-         -  foo_openmpt: Requires VS2010 because the foobar2000 SDK uses VS2010.
 
          -  in_openmpt: Requires Visual Studio with MFC.
 
          -  xmp-openmpt: Requires Visual Studio with MFC.
 
-     -  You will need the Winamp 5 SDK and the xmplay SDK if you want to
-        compile the plugins for these 2 players:
+     -  You will need the Winamp 5 SDK and the XMPlay SDK if you want to
+        compile the plugins for these 2 players. They can be downloaded
+        automatically on Windows 7 or later with 7-Zip installed by just running
+        the `build/download_externals.cmd` script.
+
+        If you do not want to or cannot use this script, you may follow these
+        manual steps instead:
 
          -  Winamp 5 SDK:
 
@@ -136,33 +121,27 @@ For detailed requirements, see `libopenmpt/dox/quickstart.md`.
             download the SDK.
             You can disable in_openmpt in the solution configuration.
 
-         -  xmplay SDK:
+         -  XMPlay SDK:
 
-            To build libopenmpt with xmplay input plugin support, copy the
+            To build libopenmpt with XMPlay input plugin support, copy the
             contents of xmp-sdk.zip into include/xmplay/.
 
             Please visit [un4seen.com](http://www.un4seen.com/xmplay.html) to
-            download to SDK.
+            download the SDK.
             You can disable xmp-openmpt in the solution configuration.
-
-        Alternatively, both, the Winamp and the xmplay SDK, can be downloaded
-        automatically on Windows 7 or later with 7-Zip installed by just running
-        the `build/download_externals.cmd` script (works when run from either
-        the project root or directly from the build directory).
 
  -  Makefile
 
     The makefile supports different build environments and targets via the
     `CONFIG=` parameter directly to the make invocation.
-    Use 'make CONFIG=$newconfig clean' when switching between different configs
+    Use `make CONFIG=$newconfig clean` when switching between different configs
     because the makefile cleans only intermediates and target that are active
     for the current config and no configuration state is kept around across
     invocations.
 
      -  mingw-w64:
 
-        The required version should be at least 4.3. Only 4.6 and up are
-        tested.
+        The required version is at least 4.8.
 
             make CONFIG=mingw64-win32    # for win32
 
@@ -172,9 +151,9 @@ For detailed requirements, see `libopenmpt/dox/quickstart.md`.
 
         The minimum required compiler versions are:
 
-         -  gcc 4.3
+         -  gcc 4.8
 
-         -  clang 3.0
+         -  clang 3.4
 
         The Makefile requires pkg-config for native builds.
         For sound output in openmpt123, PortAudio or SDL is required.
@@ -195,13 +174,9 @@ For detailed requirements, see `libopenmpt/dox/quickstart.md`.
 
         which will try to guess the compiler based on your operating system.
 
-        GCC versions 4.1 and 4.2 are partially supported, run:
-
-            make CONFIG=gcc ANCIENT=1
-
      -  emscripten (on Unix-like systems):
 
-        libopenmpt has been tested and verified to work with emscripten 1.21 or
+        libopenmpt has been tested and verified to work with emscripten 1.31 or
         later (earlier versions might or might not work).
 
         Run:
@@ -214,11 +189,6 @@ For detailed requirements, see `libopenmpt/dox/quickstart.md`.
         `node.js` binary, you might have to edit
         `build/make/config-emscripten.mk`.
 
-        Older and obsolete versions of emscripten may require a slightly
-        different configuration:
-
-            make CONFIG=emscripten-old
-
      -  Haiku:
 
         To compile libopenmpt on Haiku (using the 32-bit gcc2h), run:
@@ -228,11 +198,18 @@ For detailed requirements, see `libopenmpt/dox/quickstart.md`.
      -  American Fuzzy Lop:
 
         To compile libopenmpt with fuzzing instrumentation for afl-fuzz, run:
-
+        
             make CONFIG=afl
         
         For more detailed instructions, read contrib/fuzzing/readme.md
 
+     -  other compilers:
+
+        To compiler libopenmpt with other C++11 compliant compilers, run:
+        
+            make CONFIG=generic
+        
+    
     The `Makefile` supports some customizations. You might want to read the top
     which should get you some possible make settings, like e.g.
     `make DYNLINK=0` or similar. Cross compiling or different compiler would
@@ -271,8 +248,6 @@ Coding conventions
 
 (see below for an example)
 
-- Functions / methods are "underlined" (The `//------` comment, see below for
-  an example what it should look like).
 - Place curly braces at the beginning of the line, not at the end
 - Generally make use of the custom index types like `SAMPLEINDEX` or
   `ORDERINDEX` when referring to samples, orders, etc.
@@ -286,7 +261,6 @@ Coding conventions
 
 ~~~~{.cpp}
 void Foo::Bar(int foobar)
-//-----------------------
 {
     while(true)
     {
@@ -394,33 +368,3 @@ int foo::bar() const {
 
 } // namespace openmpt
 ~~~~
-
-
-A few words from the readme of the original MPT 1.16 source drop by Olivier
----------------------------------------------------------------------------
-
-> The sound library was originally written to support VOC/WAV and MOD files under
-> DOS, and supported such things as PC-Speaker, SoundBlaster 1/2/Pro, and the
-> famous Gravis UltraSound.
-> 
-> It was then ported to Win32 in 1995 (through the Mod95 project, mostly for use
-> within Render32).
-> 
-> What does this mean?
-> It means the code base is quite old and is showing its age (over 10 years now)
-> It means that many things are poorly named (CSoundFile), and not very clean, and
-> if I was to rewrite the engine today, it would look much different.
-> 
-> Some tips for future development and cleanup:
-> - Probably the main improvement would be to separate the Song, Channel, Mixer
-> and Low-level mixing routines in separate interface-based classes.
-> - Get rid of globals (many globals creeped up over time, mostly because of the
-> hack to allow simultaneous playback of 2 songs in Modplug Player -> ReadMix()).
-> This is a major problem for writing a DShow source filter, or any other COM
-> object (A DShow source would allow playback of MOD files in WMP, which would be
-> much easier than rewriting a different player).
-> - The MPT UI code is MFC-based, and I would say is fairly clean (as a rough
-> rule, the more recent the code is, the cleaner it is), though the UI code is
-> tightly integrated with the implementation (this could make it somewhat more
-> difficult to implement such things as a skin-based UI - but hey, if it was easy,
-> I probably would have done it already :).

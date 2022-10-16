@@ -21,7 +21,6 @@ OPENMPT_NAMESPACE_BEGIN
 
 // Translate sample properties between two given formats.
 void ModSample::Convert(MODTYPE fromType, MODTYPE toType)
-//-------------------------------------------------------
 {
 	// Convert between frequency and transpose values if necessary.
 	if((!(toType & (MOD_TYPE_MOD | MOD_TYPE_XM))) && (fromType & (MOD_TYPE_MOD | MOD_TYPE_XM)))
@@ -90,7 +89,7 @@ void ModSample::Convert(MODTYPE fromType, MODTYPE toType)
 		if(nVibRate != 0 && nVibDepth != 0)
 		{
 			if(nVibSweep != 0)
-				nVibSweep = mpt::saturate_cast<uint8>(Util::muldivr_unsigned(nVibDepth, 256, nVibSweep));
+				nVibSweep = mpt::saturate_cast<decltype(nVibSweep)>(Util::muldivr_unsigned(nVibDepth, 256, nVibSweep));
 			else
 				nVibSweep = 255;
 		}
@@ -114,7 +113,6 @@ void ModSample::Convert(MODTYPE fromType, MODTYPE toType)
 
 // Initialize sample slot with default values.
 void ModSample::Initialize(MODTYPE type)
-//--------------------------------------
 {
 	nLength = 0;
 	nLoopStart = nLoopEnd = 0;
@@ -134,6 +132,7 @@ void ModSample::Initialize(MODTYPE type)
 	nVibSweep = 0;
 	nVibDepth = 0;
 	nVibRate = 0;
+	rootNote = 0;
 	filename[0] = '\0';
 
 	// Default cues compatible with old-style volume column offset
@@ -146,10 +145,9 @@ void ModSample::Initialize(MODTYPE type)
 
 // Returns sample rate of the sample.
 uint32 ModSample::GetSampleRate(const MODTYPE type) const
-//-------------------------------------------------------
 {
 	uint32 rate;
-	if(type & (MOD_TYPE_MOD | MOD_TYPE_XM))
+	if(CSoundFile::UseFinetuneAndTranspose(type))
 		rate = TransposeToFrequency(RelativeTone, nFineTune);
 	else
 		rate = nC5Speed;
@@ -163,7 +161,6 @@ uint32 ModSample::GetSampleRate(const MODTYPE type) const
 // Allocate sample based on a ModSample's properties.
 // Returns number of bytes allocated, 0 on failure.
 size_t ModSample::AllocateSample()
-//--------------------------------
 {
 	FreeSample();
 
@@ -180,7 +177,6 @@ size_t ModSample::AllocateSample()
 // Allocate sample memory. On sucess, a pointer to the silenced sample buffer is returned. On failure, nullptr is returned.
 // numSamples must contain the sample length, bytesPerSample the size of a sampling point multiplied with the number of channels.
 void *ModSample::AllocateSample(SmpLength numSamples, size_t bytesPerSample)
-//--------------------------------------------------------------------------
 {
 	const size_t allocSize = GetRealSampleBufferSize(numSamples, bytesPerSample);
 
@@ -199,19 +195,18 @@ void *ModSample::AllocateSample(SmpLength numSamples, size_t bytesPerSample)
 
 // Compute sample buffer size in bytes, including any overhead introduced by pre-computed loops and such. Returns 0 if sample is too big.
 size_t ModSample::GetRealSampleBufferSize(SmpLength numSamples, size_t bytesPerSample)
-//------------------------------------------------------------------------------------
 {
 	// Number of required lookahead samples:
-	// * 1x InterpolationMaxLookahead samples before the actual sample start. NOTE: This is currently hardcoded to 16!
+	// * 1x InterpolationMaxLookahead samples before the actual sample start. This is set to MaxSamplingPointSize due to the way AllocateSample/FreeSample currently work.
 	// * 1x InterpolationMaxLookahead samples of silence after the sample end (if normal loop end == sample end, this can be optimized out).
 	// * 2x InterpolationMaxLookahead before the loop point (because we start at InterpolationMaxLookahead before the loop point and will look backwards from there as well)
 	// * 2x InterpolationMaxLookahead after the loop point (for wrap-around)
 	// * 4x InterpolationMaxLookahead for the sustain loop (same as the two points above)
 	
 	const SmpLength maxSize = Util::MaxValueOfType(numSamples);
-	const SmpLength lookaheadBufferSize = 16 + (1 + 4 + 4) * InterpolationMaxLookahead;
+	const SmpLength lookaheadBufferSize = (MaxSamplingPointSize + 1 + 4 + 4) * InterpolationMaxLookahead;
 
-	if(numSamples > MAX_SAMPLE_LENGTH || lookaheadBufferSize > maxSize - numSamples)
+	if(numSamples == 0 || numSamples > MAX_SAMPLE_LENGTH || lookaheadBufferSize > maxSize - numSamples)
 	{
 		return 0;
 	}
@@ -227,7 +222,6 @@ size_t ModSample::GetRealSampleBufferSize(SmpLength numSamples, size_t bytesPerS
 
 
 void ModSample::FreeSample()
-//--------------------------
 {
 	FreeSample(pSample);
 	pSample = nullptr;
@@ -235,7 +229,6 @@ void ModSample::FreeSample()
 
 
 void ModSample::FreeSample(void *samplePtr)
-//-----------------------------------------
 {
 	if(samplePtr)
 	{
@@ -246,7 +239,6 @@ void ModSample::FreeSample(void *samplePtr)
 
 // Set loop points and update loop wrap-around buffer
 void ModSample::SetLoop(SmpLength start, SmpLength end, bool enable, bool pingpong, CSoundFile &sndFile)
-//------------------------------------------------------------------------------------------------------
 {
 	nLoopStart = start;
 	nLoopEnd = end;
@@ -266,7 +258,6 @@ void ModSample::SetLoop(SmpLength start, SmpLength end, bool enable, bool pingpo
 
 // Set sustain loop points and update loop wrap-around buffer
 void ModSample::SetSustainLoop(SmpLength start, SmpLength end, bool enable, bool pingpong, CSoundFile &sndFile)
-//-------------------------------------------------------------------------------------------------------------
 {
 	nSustainStart = start;
 	nSustainEnd = end;
@@ -285,7 +276,6 @@ void ModSample::SetSustainLoop(SmpLength start, SmpLength end, bool enable, bool
 
 
 void ModSample::PrecomputeLoops(CSoundFile &sndFile, bool updateChannels)
-//-----------------------------------------------------------------------
 {
 	ctrlSmp::PrecomputeLoops(*this, sndFile, updateChannels);
 }
@@ -293,7 +283,6 @@ void ModSample::PrecomputeLoops(CSoundFile &sndFile, bool updateChannels)
 
 // Remove loop points if they're invalid.
 void ModSample::SanitizeLoops()
-//-----------------------------
 {
 	LimitMax(nSustainEnd, nLength);
 	LimitMax(nLoopEnd, nLength);
@@ -314,14 +303,12 @@ void ModSample::SanitizeLoops()
 // Transpose <-> Frequency conversions
 
 uint32 ModSample::TransposeToFrequency(int transpose, int finetune)
-//-----------------------------------------------------------------
 {
 	return Util::Round<uint32>(std::pow(2.0, (transpose * 128.0 + finetune) * (1.0 / (12.0 * 128.0))) * 8363.0);
 }
 
 
 void ModSample::TransposeToFrequency()
-//------------------------------------
 {
 	nC5Speed = TransposeToFrequency(RelativeTone, nFineTune);
 }
@@ -329,14 +316,12 @@ void ModSample::TransposeToFrequency()
 
 // Return tranpose.finetune as 25.7 fixed point value.
 int ModSample::FrequencyToTranspose(uint32 freq)
-//----------------------------------------------
 {
 	return Util::Round<int>(std::log(freq * (1.0 / 8363.0)) * (12.0 * 128.0 * (1.0 / M_LN2)));
 }
 
 
 void ModSample::FrequencyToTranspose()
-//------------------------------------
 {
 	int f2t;
 	if(nC5Speed)
@@ -350,15 +335,21 @@ void ModSample::FrequencyToTranspose()
 		transpose++;
 		finetune -= 128;
 	}
-	Limit(transpose, -127, 127);
+	Limit(transpose, -127, 128);
 	RelativeTone = static_cast<int8>(transpose);
 	nFineTune = static_cast<int8>(finetune);
 }
 
 
+// Transpose the sample by amount specified in octaves (i.e. amount=1 transposes one octave up)
+void ModSample::Transpose(double amount)
+{
+	nC5Speed = Util::Round<uint32>(nC5Speed * std::pow(2.0, amount));
+}
+
+
 // Check if the sample's cue points are the default cue point set.
 bool ModSample::HasCustomCuePoints() const
-//----------------------------------------
 {
 	for(SmpLength i = 0; i < CountOf(cues); i++)
 	{

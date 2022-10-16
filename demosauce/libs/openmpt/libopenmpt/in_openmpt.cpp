@@ -16,6 +16,7 @@
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501 // _WIN32_WINNT_WINXP
 #endif
+#define _AFX_NO_MFC_CONTROLS_IN_DIALOGS // Avoid binary bloat from linking unused MFC controls
 #define NOMINMAX
 #include <afxwin.h>
 #include <afxcmn.h>
@@ -177,6 +178,7 @@ static void apply_options() {
 		self->mod->set_render_param( openmpt::module::RENDER_STEREOSEPARATION_PERCENT, self->settings.stereoseparation );
 		self->mod->set_render_param( openmpt::module::RENDER_INTERPOLATIONFILTER_LENGTH, self->settings.interpolationfilterlength );
 		self->mod->set_render_param( openmpt::module::RENDER_VOLUMERAMPING_STRENGTH, self->settings.ramping );
+		self->mod->ctl_set( "render.resampler.emulate_amiga", self->settings.use_amiga_resampler ? "1" : "0" );
 	}
 	self->settings.save();
 }
@@ -207,7 +209,7 @@ static void config( HWND hwndParent ) {
 static void about( HWND hwndParent ) {
 	std::ostringstream about;
 	about << SHORT_TITLE << " version " << openmpt::string::get( "library_version" ) << " " << "(built " << openmpt::string::get( "build" ) << ")" << std::endl;
-	about << " Copyright (c) 2013-2017 OpenMPT developers (https://openmpt.org/)" << std::endl;
+	about << " Copyright (c) 2013-2018 OpenMPT developers (https://lib.openmpt.org/)" << std::endl;
 	about << " OpenMPT version " << openmpt::string::get( "core_version" ) << std::endl;
 	about << std::endl;
 	about << openmpt::string::get( "contact" ) << std::endl;

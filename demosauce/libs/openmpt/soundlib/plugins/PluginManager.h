@@ -127,13 +127,11 @@ public:
 };
 
 
-//=====================
 class CVstPluginManager
-//=====================
 {
 #ifndef NO_PLUGINS
 protected:
-#if MPT_OS_WINDOWS && !defined(NO_DMO)
+#ifndef NO_DMO
 	bool MustUnInitilizeCOM;
 #endif
 	std::vector<VSTPluginLib *> pluginList;
@@ -160,7 +158,7 @@ public:
 	static void ReportPlugException(const std::string &msg);
 
 protected:
-	void EnumerateDirectXDMOs(bool loadDMOSystemUnknown);
+	void EnumerateDirectXDMOs();
 
 #else // NO_PLUGINS
 public:

@@ -16,22 +16,18 @@
 
 OPENMPT_NAMESPACE_BEGIN
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(push, 1)
-#endif
-
 // MDL file header
-struct PACKED MDLFileHeader
+struct MDLFileHeader
 {
 	char  id[4];	// "DMDL"
 	uint8 version;
 };
 
-STATIC_ASSERT(sizeof(MDLFileHeader) == 5);
+MPT_BINARY_STRUCT(MDLFileHeader, 5)
 
 
 // RIFF-style Chunk
-struct PACKED MDLChunk
+struct MDLChunk
 {
 	// 16-Bit chunk identifiers
 	enum ChunkIdentifiers
@@ -49,219 +45,71 @@ struct PACKED MDLChunk
 		ifSampleData	= MAGIC2LE('S','A'),
 	};
 
-	typedef ChunkIdentifiers id_type;
-
-	uint16 id;
-	uint32 length;
+	uint16le id;
+	uint32le length;
 
 	size_t GetLength() const
 	{
-		return SwapBytesReturnLE(length);
+		return length;
 	}
 
-	id_type GetID() const
+	ChunkIdentifiers GetID() const
 	{
-		return static_cast<id_type>(SwapBytesReturnLE(id));
+		return static_cast<ChunkIdentifiers>(id.get());
 	}
 };
 
-STATIC_ASSERT(sizeof(MDLChunk) == 6);
+MPT_BINARY_STRUCT(MDLChunk, 6)
 
 
-struct PACKED MDLInfoBlock
+struct MDLInfoBlock
 {
-	char   title[32];
-	char   composer[20];
-	uint16 numOrders;
-	uint16 restartPos;
-	uint8  globalVol;		// 1...255
-	uint8  speed;			// 1...255
-	uint8  tempo;			// 4...255
-	uint8  chnSetup[32];
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(numOrders);
-		SwapBytesLE(restartPos);
-	}
+	char     title[32];
+	char     composer[20];
+	uint16le numOrders;
+	uint16le restartPos;
+	uint8le  globalVol;	// 1...255
+	uint8le  speed;		// 1...255
+	uint8le  tempo;		// 4...255
+	uint8le  chnSetup[32];
 };
 
-STATIC_ASSERT(sizeof(MDLInfoBlock) == 91);
+MPT_BINARY_STRUCT(MDLInfoBlock, 91)
 
 
 // Sample header in II block
-struct PACKED MDLSampleHeader
+struct MDLSampleHeader
 {
-	uint8  smpNum;
-	uint8  lastNote;
-	uint8  volume;
-	uint8  volEnvFlags; // 6 bits env #, 2 bits flags
-	uint8  panning;
-	uint8  panEnvFlags;
-	uint16 fadeout;
-	uint8  vibSpeed;
-	uint8  vibDepth;
-	uint8  vibSweep;
-	uint8  vibType;
-	uint8  reserved; // zero
-	uint8  freqEnvFlags;
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(fadeout);
-	}
+	uint8le  smpNum;
+	uint8le  lastNote;
+	uint8le  volume;
+	uint8le  volEnvFlags;	// 6 bits env #, 2 bits flags
+	uint8le  panning;
+	uint8le  panEnvFlags;
+	uint16le fadeout;
+	uint8le  vibSpeed;
+	uint8le  vibDepth;
+	uint8le  vibSweep;
+	uint8le  vibType;
+	uint8le  reserved;		// zero
+	uint8le  freqEnvFlags;
 };
 
-STATIC_ASSERT(sizeof(MDLSampleHeader) == 14);
+MPT_BINARY_STRUCT(MDLSampleHeader, 14)
 
 
 // Part of the sample header that's common between v0 and v1.
-struct PACKED MDLSampleInfoCommon
+struct MDLSampleInfoCommon
 {
-	uint8 sampleIndex;
-	char  name[32];
-	char  filename[8];
+	uint8le sampleIndex;
+	char    name[32];
+	char    filename[8];
 };
 
-STATIC_ASSERT(sizeof(MDLSampleInfoCommon) == 41);
+MPT_BINARY_STRUCT(MDLSampleInfoCommon, 41)
 
 
-struct PACKED MDLSampleInfov0
-{
-	enum SampleFlags
-	{
-		smp16Bit		= 0x01,
-		smpPingPong		= 0x02,
-
-		smpNoPack		= 0x00,
-		smpPack8Bit		= 0x04,
-		smpPack16Bit	= 0x08,
-		smpPackMask		= 0x0C,
-	};
-
-	uint16 c4speed;
-	uint32 length;
-	uint32 loopStart;
-	uint32 loopLength;
-	uint8  volume;
-	uint8  flags;
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(c4speed);
-		SwapBytesLE(length);
-		SwapBytesLE(loopStart);
-		SwapBytesLE(loopLength);
-	}
-
-	// Convert an MDL sample header to OpenMPT's internal sample header.
-	SampleIO ConvertToMPT(ModSample &mptSmp) const
-	{
-		mptSmp.nC5Speed = c4speed * 2;
-		mptSmp.nLength = length;
-		mptSmp.nVolume = volume;
-		mptSmp.nLoopStart = loopStart;
-		mptSmp.nLoopEnd = loopLength;
-		if(loopLength != 0)
-		{
-			mptSmp.nLoopEnd += mptSmp.nLoopStart;
-			mptSmp.uFlags.set(CHN_LOOP);
-		}
-
-		if(flags & smp16Bit)
-		{
-			mptSmp.uFlags.set(CHN_16BIT);
-			mptSmp.nLength /= 2;
-			mptSmp.nLoopStart /= 2;
-			mptSmp.nLoopEnd /= 2;
-		}
-
-		if(flags & smpPingPong)
-		{
-			mptSmp.uFlags.set(CHN_PINGPONGLOOP);
-		}
-
-		return SampleIO(
-			(flags & smp16Bit) ? SampleIO::_16bit : SampleIO::_8bit,
-			SampleIO::mono,
-			SampleIO::littleEndian,
-			(flags & smpPackMask) ? SampleIO::MDL : SampleIO::signedPCM);
-	}
-};
-
-STATIC_ASSERT(sizeof(MDLSampleInfov0) == 16);
-
-
-struct PACKED MDLSampleInfo
-{
-	enum SampleFlags
-	{
-		smp16Bit		= 0x01,
-		smpPingPong		= 0x02,
-
-		smpNoPack		= 0x00,
-		smpPack8Bit		= 0x04,
-		smpPack16Bit	= 0x08,
-		smpPackMask		= 0x0C,
-	};
-
-	uint32 c4speed;
-	uint32 length;
-	uint32 loopStart;
-	uint32 loopLength;
-	uint8  unused;		// was volume in v0.0, why it was changed I have no idea
-	uint8  flags;
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(c4speed);
-		SwapBytesLE(length);
-		SwapBytesLE(loopStart);
-		SwapBytesLE(loopLength);
-	}
-
-	// Convert an MDL sample header to OpenMPT's internal sample header.
-	SampleIO ConvertToMPT(ModSample &mptSmp) const
-	{
-		mptSmp.nC5Speed = c4speed * 2;
-		mptSmp.nLength = length;
-		mptSmp.nLoopStart = loopStart;
-		mptSmp.nLoopEnd = loopLength;
-		if(loopLength != 0)
-		{
-			mptSmp.nLoopEnd += mptSmp.nLoopStart;
-			mptSmp.uFlags.set(CHN_LOOP);
-		}
-
-		if(flags & smp16Bit)
-		{
-			mptSmp.uFlags.set(CHN_16BIT);
-			mptSmp.nLength /= 2;
-			mptSmp.nLoopStart /= 2;
-			mptSmp.nLoopEnd /= 2;
-		}
-
-		if(flags & smpPingPong)
-		{
-			mptSmp.uFlags.set(CHN_PINGPONGLOOP);
-		}
-
-		return SampleIO(
-			(flags & smp16Bit) ? SampleIO::_16bit : SampleIO::_8bit,
-			SampleIO::mono,
-			SampleIO::littleEndian,
-			(flags & smpPackMask) ? SampleIO::MDL : SampleIO::signedPCM);
-	}
-};
-
-STATIC_ASSERT(sizeof(MDLSampleInfo) == 18);
-
-
-struct PACKED MDLEnvelope
+struct MDLEnvelope
 {
 	uint8 envNum;
 	struct
@@ -295,22 +143,17 @@ struct PACKED MDLEnvelope
 	}
 };
 
-STATIC_ASSERT(sizeof(MDLEnvelope) == 33);
+MPT_BINARY_STRUCT(MDLEnvelope, 33)
 
 
-struct PACKED MDLPatternHeader
+struct MDLPatternHeader
 {
-	uint8 channels;
-	uint8 lastRow;
-	char  name[16];
+	uint8le channels;
+	uint8le lastRow;
+	char    name[16];
 };
 
-STATIC_ASSERT(sizeof(MDLPatternHeader) == 18);
-
-
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(pop)
-#endif
+MPT_BINARY_STRUCT(MDLPatternHeader, 18)
 
 
 enum
@@ -358,7 +201,6 @@ static const ModCommand::COMMAND MDLEffTrans[] =
 
 // receive an MDL effect, give back a 'normal' one.
 static void ConvertMDLCommand(uint8_t &cmd, uint8_t &param)
-//---------------------------------------------------------
 {
 	if(cmd >= CountOf(MDLEffTrans))
 		return;
@@ -472,7 +314,6 @@ static void ConvertMDLCommand(uint8_t &cmd, uint8_t &param)
 
 // Returns true if command was lost
 static bool ImportMDLCommands(ModCommand &m, uint8 vol, uint8 e1, uint8 e2, uint8 p1, uint8 p2)
-//---------------------------------------------------------------------------------------------
 {
 	// Map second effect values 1-6 to effects G-L
 	if(e2 >= 1 && e2 <= 6)
@@ -552,7 +393,6 @@ static bool ImportMDLCommands(ModCommand &m, uint8 vol, uint8 e1, uint8 e2, uint
 
 
 static void MDLReadEnvelopes(FileReader file, std::vector<MDLEnvelope> &envelopes)
-//--------------------------------------------------------------------------------
 {
 	if(!file.CanRead(1))
 		return;
@@ -570,7 +410,6 @@ static void MDLReadEnvelopes(FileReader file, std::vector<MDLEnvelope> &envelope
 
 
 static void CopyEnvelope(InstrumentEnvelope &mptEnv, uint8 flags, std::vector<MDLEnvelope> &envelopes)
-//----------------------------------------------------------------------------------------------------
 {
 	uint8 envNum = flags & 0x3F;
 	if(envNum < envelopes.size())
@@ -579,17 +418,46 @@ static void CopyEnvelope(InstrumentEnvelope &mptEnv, uint8 flags, std::vector<MD
 }
 
 
-bool CSoundFile::ReadMDL(FileReader &file, ModLoadingFlags loadFlags)
-//-------------------------------------------------------------------
+static bool ValidateHeader(const MDLFileHeader &fileHeader)
 {
-	file.Rewind();
-	MDLFileHeader fileHeader;
-	if(!file.ReadStruct(fileHeader)
-		|| memcmp(fileHeader.id, "DMDL", 4)
+	if(std::memcmp(fileHeader.id, "DMDL", 4)
 		|| fileHeader.version >= 0x20)
 	{
 		return false;
-	} else if(loadFlags == onlyVerifyHeader)
+	}
+	return true;
+}
+
+
+CSoundFile::ProbeResult CSoundFile::ProbeFileHeaderMDL(MemoryFileReader file, const uint64 *pfilesize)
+{
+	MDLFileHeader fileHeader;
+	if(!file.ReadStruct(fileHeader))
+	{
+		return ProbeWantMoreData;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return ProbeFailure;
+	}
+	MPT_UNREFERENCED_PARAMETER(pfilesize);
+	return ProbeSuccess;
+}
+
+
+bool CSoundFile::ReadMDL(FileReader &file, ModLoadingFlags loadFlags)
+{
+	file.Rewind();
+	MDLFileHeader fileHeader;
+	if(!file.ReadStruct(fileHeader))
+	{
+		return false;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return false;
+	}
+	if(loadFlags == onlyVerifyHeader)
 	{
 		return true;
 	}
@@ -600,7 +468,7 @@ bool CSoundFile::ReadMDL(FileReader &file, ModLoadingFlags loadFlags)
 	// Read global info
 	FileReader chunk = chunks.GetChunk(MDLChunk::idInfo);
 	MDLInfoBlock info;
-	if(!chunk.IsValid() || !chunk.ReadConvertEndianness(info))
+	if(!chunk.IsValid() || !chunk.ReadStruct(info))
 	{
 		return false;
 	}
@@ -611,11 +479,11 @@ bool CSoundFile::ReadMDL(FileReader &file, ModLoadingFlags loadFlags)
 	m_playBehaviour.reset(kITVibratoTremoloPanbrello);
 	m_playBehaviour.reset(kITSCxStopsSample);	// Gate effect in underbeat.mdl
 
-	m_madeWithTracker = std::string("Digitrakker ") + (
-		(fileHeader.version == 0x11) ? "3" // really could be 2.99b - close enough
-		: (fileHeader.version == 0x10) ? "2.3"
-		: (fileHeader.version == 0x00) ? "2.0 - 2.2b" // there was no 1.x release
-		: "");
+	m_madeWithTracker = MPT_USTRING("Digitrakker ") + (
+		(fileHeader.version == 0x11) ? MPT_USTRING("3") // really could be 2.99b - close enough
+		: (fileHeader.version == 0x10) ? MPT_USTRING("2.3")
+		: (fileHeader.version == 0x00) ? MPT_USTRING("2.0 - 2.2b") // there was no 1.x release
+		: MPT_USTRING(""));
 
 	mpt::String::Read<mpt::String::spacePadded>(m_songName, info.title);
 	{
@@ -625,11 +493,11 @@ bool CSoundFile::ReadMDL(FileReader &file, ModLoadingFlags loadFlags)
 	}
 
 	m_nDefaultGlobalVolume = info.globalVol + 1;
-	m_nDefaultSpeed = Clamp(info.speed, uint8(1), uint8(255));
-	m_nDefaultTempo.Set(Clamp(info.tempo, uint8(4), uint8(255)));
+	m_nDefaultSpeed = Clamp<uint8, uint8>(info.speed, 1, 255);
+	m_nDefaultTempo.Set(Clamp<uint8, uint8>(info.tempo, 4, 255));
 
-	Order.ReadAsByte(chunk, info.numOrders);
-	Order.SetRestartPos(info.restartPos);
+	ReadOrderFromFile<uint8>(Order(), chunk, info.numOrders);
+	Order().SetRestartPos(info.restartPos);
 
 	m_nChannels = 0;
 	for(CHANNELINDEX c = 0; c < 32; c++)
@@ -677,20 +545,43 @@ bool CSoundFile::ReadMDL(FileReader &file, ModLoadingFlags loadFlags)
 			mpt::String::Read<mpt::String::spacePadded>(m_szNames[header.sampleIndex], header.name);
 			mpt::String::Read<mpt::String::spacePadded>(sample.filename, header.filename);
 
-			SampleIO sampleIO;
-			if(fileHeader.version >= 0x10)
+			uint32 c4speed;
+			if(fileHeader.version < 0x10)
+				c4speed = chunk.ReadUint16LE();
+			else
+				c4speed = chunk.ReadUint32LE();
+			sample.nC5Speed = c4speed * 2u;
+			sample.nLength = chunk.ReadUint32LE();
+			sample.nLoopStart = chunk.ReadUint32LE();
+			sample.nLoopEnd = chunk.ReadUint32LE();
+			if(sample.nLoopEnd != 0)
 			{
-				MDLSampleInfo sampleHeader;
-				chunk.ReadConvertEndianness(sampleHeader);
-				sampleIO = sampleHeader.ConvertToMPT(sample);
-			} else
+				sample.uFlags.set(CHN_LOOP);
+				sample.nLoopEnd += sample.nLoopStart;
+			}
+			if(fileHeader.version < 0x10)
+				sample.nVolume = chunk.ReadUint8();
+			else
+				chunk.Skip(1);
+			uint8 flags = chunk.ReadUint8();
+
+			if(flags & 0x01)
 			{
-				MDLSampleInfov0 sampleHeader;
-				chunk.ReadConvertEndianness(sampleHeader);
-				sampleIO = sampleHeader.ConvertToMPT(sample);
+				sample.uFlags.set(CHN_16BIT);
+				sample.nLength /= 2u;
+				sample.nLoopStart /= 2u;
+				sample.nLoopEnd /= 2u;
 			}
 
-			if((loadFlags & loadSampleData) && (sample.nLength || sampleIO.GetEncoding() == SampleIO::MDL))
+			sample.uFlags.set(CHN_PINGPONGLOOP, (flags & 0x02) != 0);
+
+			SampleIO sampleIO(
+				(flags & 0x01) ? SampleIO::_16bit : SampleIO::_8bit,
+				SampleIO::mono,
+				SampleIO::littleEndian,
+				(flags & 0x0C) ? SampleIO::MDL : SampleIO::signedPCM);
+
+			if(loadFlags & loadSampleData)
 			{
 				sampleIO.ReadSample(sample, dataChunk);
 			}
@@ -719,13 +610,12 @@ bool CSoundFile::ReadMDL(FileReader &file, ModLoadingFlags loadFlags)
 				chunk.Skip(32 + sizeof(MDLSampleHeader) * numSamples);
 				continue;
 			}
-			m_nInstruments = std::max<INSTRUMENTINDEX>(m_nInstruments, ins);
 
 			chunk.ReadString<mpt::String::spacePadded>(mptIns->name, 32);
 			while(numSamples--)
 			{
 				MDLSampleHeader sampleHeader;
-				chunk.ReadConvertEndianness(sampleHeader);
+				chunk.ReadStruct(sampleHeader);
 				if(sampleHeader.smpNum == 0)
 					continue;
 				#if 1
@@ -754,20 +644,22 @@ bool CSoundFile::ReadMDL(FileReader &file, ModLoadingFlags loadFlags)
 					mptIns->VolEnv.nLoopStart = mptIns->VolEnv.nLoopEnd = static_cast<uint8>(mptIns->VolEnv.size() - 1);
 					mptIns->VolEnv.dwFlags.set(ENV_LOOP);
 				}
-				for(InstrumentEnvelope::iterator it = mptIns->PitchEnv.begin(); it != mptIns->PitchEnv.end(); it++)
+				for(auto &p : mptIns->PitchEnv)
 				{
 					// Scale pitch envelope
-					it->value = (it->value * 6u) / 16u;
+					p.value = (p.value * 6u) / 16u;
 				}
 #endif // MODPLUG_TRACKER
 
 				// Samples were already initialized above. Let's hope they are not going to be re-used with different volume / panning / vibrato...
 				ModSample &mptSmp = Samples[sampleHeader.smpNum];
 
-				// Not quite correct - this flag literally enables and disables the default volume of a sample. If you disable this flag,
+				// This flag literally enables and disables the default volume of a sample. If you disable this flag,
 				// the sample volume of a previously sample is re-used, even if you put an instrument number next to the note.
 				if(sampleHeader.volEnvFlags & 0x40)
 					mptSmp.nVolume = sampleHeader.volume;
+				else
+					mptSmp.uFlags.set(SMP_NODEFAULTVOLUME);
 				mptSmp.nPan = std::min<uint16>(sampleHeader.panning * 2, 254);
 				mptSmp.nVibType = MDLVibratoType[sampleHeader.vibType & 3];
 				mptSmp.nVibSweep = sampleHeader.vibSweep;
@@ -816,6 +708,7 @@ bool CSoundFile::ReadMDL(FileReader &file, ModLoadingFlags loadFlags)
 		}
 		chunk.Seek(1);
 
+		Patterns.ResizeArray(numPats);
 		for(PATTERNINDEX pat = 0; pat < numPats; pat++)
 		{
 			CHANNELINDEX numChans = 32;
@@ -936,7 +829,6 @@ bool CSoundFile::ReadMDL(FileReader &file, ModLoadingFlags loadFlags)
 
 // MDL Huffman ReadBits compression
 uint8 MDLReadBits(uint32 &bitbuf, int32 &bitnum, const uint8 *(&ibuf), size_t &bytesLeft, int8 n)
-//-----------------------------------------------------------------------------------------------
 {
 	if(bitnum < n)
 	{

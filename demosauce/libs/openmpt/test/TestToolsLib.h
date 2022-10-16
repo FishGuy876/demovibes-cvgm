@@ -16,7 +16,12 @@
 #ifndef MODPLUG_TRACKER
 
 
+//#define MPT_TEST_CXX11
+
+
+#include "../common/Endianness.h"
 #include "../common/FlagSet.h"
+#include "../soundlib/Snd_defs.h"
 
 
 OPENMPT_NAMESPACE_BEGIN
@@ -69,7 +74,18 @@ struct ToStringHelper
 {
 	std::string operator () (const T &x)
 	{
-		return mpt::ToString(x);
+		return mpt::fmt::val(x);
+	}
+};
+
+#ifdef MPT_TEST_CXX11
+
+template<>
+struct ToStringHelper<mpt::endian_type>
+{
+	std::string operator () (const mpt::endian_type &x)
+	{
+		return mpt::fmt::val(x.value);
 	}
 };
 
@@ -78,23 +94,62 @@ struct ToStringHelper<FlagSet<enum_t, store_t> >
 {
 	std::string operator () (const FlagSet<enum_t, store_t> &x)
 	{
-		return mpt::ToString(x.GetRaw());
+		return mpt::fmt::val(x.GetRaw());
 	}
 };
+
+template<typename enum_t>
+struct ToStringHelper<enum_value_type<enum_t> >
+{
+	std::string operator () (const enum_value_type<enum_t> &x)
+	{
+		return mpt::fmt::val(x.as_bits());
+	}
+};
+
+template<typename Ta, typename Tb>
+struct ToStringHelper<std::pair<Ta, Tb> >
+{
+	std::string operator () (const std::pair<Ta, Tb> &x)
+	{
+		return std::string("{") + mpt::fmt::val(x.first) + std::string(",") + mpt::fmt::val(x.second) + std::string("}");
+	}
+};
+
+template<std::size_t FRACT, typename T>
+struct ToStringHelper<FPInt<FRACT, T> >
+{
+	std::string operator () (const FPInt<FRACT, T> &x)
+	{
+		return std::string("FPInt<") + mpt::fmt::val(FRACT) + std::string(",") + mpt::fmt::val(typeid(T).name()) + std::string(">{") + mpt::fmt::val(x.GetInt()) + std::string(".") + mpt::fmt::val(x.GetFract()) + std::string("}");
+	}
+};
+
+template<>
+struct ToStringHelper<SamplePosition>
+{
+	std::string operator () (const SamplePosition &x)
+	{
+		return mpt::fmt::val(x.GetInt()) + std::string(".") + std::string("0x") + mpt::fmt::hex0<8>(x.GetFract());
+	}
+};
+
+#endif // MPT_TEST_CXX11
+
 
 namespace Test {
 
 // We do not generally have type_traits from C++03-TR1
 // and std::numeric_limits does not provide a is_integer which is useable as template argument.
-template <typename T> struct is_integer : public mpt::false_type { };
-template <> struct is_integer<signed short>     : public mpt::true_type { };
-template <> struct is_integer<signed int>       : public mpt::true_type { };
-template <> struct is_integer<signed long>      : public mpt::true_type { };
-template <> struct is_integer<signed long long> : public mpt::true_type { };
-template <> struct is_integer<unsigned short>     : public mpt::true_type { };
-template <> struct is_integer<unsigned int>       : public mpt::true_type { };
-template <> struct is_integer<unsigned long>      : public mpt::true_type { };
-template <> struct is_integer<unsigned long long> : public mpt::true_type { };
+template <typename T> struct is_integer : public std::false_type { };
+template <> struct is_integer<signed short>     : public std::true_type { };
+template <> struct is_integer<signed int>       : public std::true_type { };
+template <> struct is_integer<signed long>      : public std::true_type { };
+template <> struct is_integer<signed long long> : public std::true_type { };
+template <> struct is_integer<unsigned short>     : public std::true_type { };
+template <> struct is_integer<unsigned int>       : public std::true_type { };
+template <> struct is_integer<unsigned long>      : public std::true_type { };
+template <> struct is_integer<unsigned long long> : public std::true_type { };
 
 class Testcase
 {
@@ -127,25 +182,25 @@ public:
 private:
 
 	template <typename Tx, typename Ty>
-	inline bool IsEqual(const Tx &x, const Ty &y, mpt::false_type, mpt::false_type)
+	inline bool IsEqual(const Tx &x, const Ty &y, std::false_type, std::false_type)
 	{
 		return (x == y);
 	}
 
 	template <typename Tx, typename Ty>
-	inline bool IsEqual(const Tx &x, const Ty &y, mpt::false_type, mpt::true_type)
+	inline bool IsEqual(const Tx &x, const Ty &y, std::false_type, std::true_type)
 	{
 		return (x == y);
 	}
 
 	template <typename Tx, typename Ty>
-	inline bool IsEqual(const Tx &x, const Ty &y, mpt::true_type, mpt::false_type)
+	inline bool IsEqual(const Tx &x, const Ty &y, std::true_type, std::false_type)
 	{
 		return (x == y);
 	}
 
 	template <typename Tx, typename Ty>
-	inline bool IsEqual(const Tx &x, const Ty &y, mpt::true_type /* is_integer */, mpt::true_type /* is_integer */ )
+	inline bool IsEqual(const Tx &x, const Ty &y, std::true_type /* is_integer */, std::true_type /* is_integer */ )
 	{
 		// Avoid signed-unsigned-comparison warnings and test equivalence in case of either type conversion direction.
 		return ((x == static_cast<Tx>(y)) && (static_cast<Ty>(x) == y));
@@ -159,7 +214,7 @@ private:
 
 public:
 
-#if 0 // C++11 version
+#ifdef MPT_TEST_CXX11
 
 private:
 
@@ -168,17 +223,17 @@ private:
 	{
 		if(!IsEqual(x, y, is_integer<Tx>(), is_integer<Ty>()))
 		{
-			throw TestFailed(mpt::String::Print("%1 != %2", ToStringHelper<Tx>()(x), ToStringHelper<Ty>()(y)));
+			throw TestFailed(mpt::format(std::string("%1 != %2"))(ToStringHelper<Tx>()(x), ToStringHelper<Ty>()(y)));
 			//throw TestFailed();
 		}
 	}
 
-	template <typename Tx, typename Ty>
-	MPT_NOINLINE void TypeCompareHelper(const Tx &x, const Ty &y, const Tesp &eps)
+	template <typename Tx, typename Ty, typename Teps>
+	MPT_NOINLINE void TypeCompareHelper(const Tx &x, const Ty &y, const Teps &eps)
 	{
 		if(!IsEqualEpsilon(x, y, eps))
 		{
-			throw TestFailed(mpt::String::Print("%1 != %2", ToStringHelper<Tx>()(x), ToStringHelper<Ty>()(y)));
+			throw TestFailed(mpt::format(std::string("%1 != %2"))(ToStringHelper<Tx>()(x), ToStringHelper<Ty>()(y)));
 			//throw TestFailed();
 		}
 	}
@@ -227,7 +282,7 @@ public:
 	#define VERIFY_EQUAL_NONCONT(x,y)       Test::Testcase(Test::FatalityStop    , Test::VerbosityNormal, #x " == " #y , MPT_TEST_CONTEXT_CURRENT() )( [&](){return (x) ;}, [&](){return (y) ;} )
 	#define VERIFY_EQUAL_QUIET_NONCONT(x,y) Test::Testcase(Test::FatalityStop    , Test::VerbosityQuiet , #x " == " #y , MPT_TEST_CONTEXT_CURRENT() )( [&](){return (x) ;}, [&](){return (y) ;} )
 
-	#define VERIFY_EQUAL_EPS(x,y)               Test::Testcase(Test::FatalityContinue, Test::VerbosityNormal, #x " == " #y , MPT_TEST_CONTEXT_CURRENT() )( [&](){return (x) ;}, [&](){return (y) ;}, (eps) )
+	#define VERIFY_EQUAL_EPS(x,y,eps)       Test::Testcase(Test::FatalityContinue, Test::VerbosityNormal, #x " == " #y , MPT_TEST_CONTEXT_CURRENT() )( [&](){return (x) ;}, [&](){return (y) ;}, (eps) )
 
 #else
 
@@ -241,7 +296,7 @@ public:
 		{
 			if(!IsEqual(x, y, is_integer<Tx>(), is_integer<Ty>()))
 			{
-				//throw TestFailed(mpt::String::Print("%1 != %2", x, y));
+				//throw TestFailed(mpt::format(std::string("%1 != %2"))(x, y));
 				throw TestFailed();
 			}
 			ReportPassed();
@@ -259,7 +314,7 @@ public:
 		{
 			if(!IsEqualEpsilon(x, y, eps))
 			{
-				//throw TestFailed(mpt::String::Print("%1 != %2", x, y));
+				//throw TestFailed(mpt::format(std::string("%1 != %2"))(x, y));
 				throw TestFailed();
 			}
 			ReportPassed();

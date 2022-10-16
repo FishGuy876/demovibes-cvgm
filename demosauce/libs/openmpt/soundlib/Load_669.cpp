@@ -15,51 +15,27 @@
 
 OPENMPT_NAMESPACE_BEGIN
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(push, 1)
-#endif
-
-struct PACKED _669FileHeader
+struct _669FileHeader
 {
-	enum MagicBytes
-	{
-		magic669	= 0x6669,	// 'if'
-		magic669Ext	= 0x4E4A	// 'JN'
-	};
-
-	uint16 sig;					// 'if' or 'JN'
-	char   songMessage[108];	// Song Message
-	uint8  samples;				// number of samples (1-64)
-	uint8  patterns;			// number of patterns (1-128)
-	uint8  restartPos;
-	uint8  orders[128];
-	uint8  tempoList[128];
-	uint8  breaks[128];
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(sig);
-	}
+	char  magic[2];			// 'if' (0x6669, ha ha) or 'JN'
+	char  songMessage[108];	// Song Message
+	uint8 samples;			// number of samples (1-64)
+	uint8 patterns;			// number of patterns (1-128)
+	uint8 restartPos;
+	uint8 orders[128];
+	uint8 tempoList[128];
+	uint8 breaks[128];
 };
 
-STATIC_ASSERT(sizeof(_669FileHeader) == 497);
+MPT_BINARY_STRUCT(_669FileHeader, 497)
 
 
-struct PACKED _669Sample
+struct _669Sample
 {
-	char   filename[13];
-	uint32 length;
-	uint32 loopStart;
-	uint32 loopEnd;
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(length);
-		SwapBytesLE(loopStart);
-		SwapBytesLE(loopEnd);
-	}
+	char     filename[13];
+	uint32le length;
+	uint32le loopStart;
+	uint32le loopEnd;
 
 	// Convert a 669 sample header to OpenMPT's internal sample header.
 	void ConvertToMPT(ModSample &mptSmp) const
@@ -83,38 +59,79 @@ struct PACKED _669Sample
 	}
 };
 
-STATIC_ASSERT(sizeof(_669Sample) == 25);
+MPT_BINARY_STRUCT(_669Sample, 25)
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(pop)
-#endif
+
+static bool ValidateHeader(const _669FileHeader &fileHeader)
+{
+	if((std::memcmp(fileHeader.magic, "if", 2) && std::memcmp(fileHeader.magic, "JN", 2))
+		|| fileHeader.samples > 64
+		|| fileHeader.restartPos >= 128
+		|| fileHeader.patterns > 128)
+	{
+		return false;
+	}
+	for(std::size_t i = 0; i < CountOf(fileHeader.breaks); i++)
+	{
+		if(fileHeader.orders[i] >= 128 && fileHeader.orders[i] < 0xFE)
+		{
+			return false;
+		}
+		if(fileHeader.orders[i] < 128 && fileHeader.tempoList[i] == 0)
+		{
+			return false;
+		}
+		if(fileHeader.breaks[i] >= 64)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+
+static uint64 GetHeaderMinimumAdditionalSize(const _669FileHeader &fileHeader)
+{
+	return fileHeader.samples * sizeof(_669Sample) + fileHeader.patterns * 1536u;
+}
+
+
+CSoundFile::ProbeResult CSoundFile::ProbeFileHeader669(MemoryFileReader file, const uint64 *pfilesize)
+{
+	_669FileHeader fileHeader;
+	if(!file.ReadStruct(fileHeader))
+	{
+		return ProbeWantMoreData;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return ProbeFailure;
+	}
+	return ProbeAdditionalSize(file, pfilesize, GetHeaderMinimumAdditionalSize(fileHeader));
+}
 
 
 bool CSoundFile::Read669(FileReader &file, ModLoadingFlags loadFlags)
-//-------------------------------------------------------------------
 {
 	_669FileHeader fileHeader;
 
 	file.Rewind();
-	if(!file.ReadConvertEndianness(fileHeader)
-		|| (fileHeader.sig != _669FileHeader::magic669 && fileHeader.sig != _669FileHeader::magic669Ext)
-		|| fileHeader.samples > 64
-		|| fileHeader.restartPos >= 128
-		|| fileHeader.patterns > 128
-		|| !file.CanRead(fileHeader.samples * sizeof(_669Sample)))
+	if(!file.ReadStruct(fileHeader))
 	{
 		return false;
 	}
-	
-	for(size_t i = 0; i < CountOf(fileHeader.breaks); i++)
+	if(!ValidateHeader(fileHeader))
 	{
-		if(fileHeader.breaks[i] > 64)
-			return false;
+		return false;
 	}
-
 	if(loadFlags == onlyVerifyHeader)
 	{
 		return true;
+	}
+	
+	if(!file.CanRead(mpt::saturate_cast<FileReader::off_t>(GetHeaderMinimumAdditionalSize(fileHeader))))
+	{
+		return false;
 	}
 
 	InitializeGlobals(MOD_TYPE_669);
@@ -128,16 +145,16 @@ bool CSoundFile::Read669(FileReader &file, ModLoadingFlags loadFlags)
 	m_SongFlags.set(SONG_LINEARSLIDES);
 #endif // MODPLUG_TRACKER
 
-	if(fileHeader.sig == _669FileHeader::magic669)
-		m_madeWithTracker = "Composer 669";
+	if(!memcmp(fileHeader.magic, "if", 2))
+		m_madeWithTracker = MPT_USTRING("Composer 669");
 	else
-		m_madeWithTracker = "UNIS 669";
+		m_madeWithTracker = MPT_USTRING("UNIS 669");
 
 	m_nSamples = fileHeader.samples;
 	for(SAMPLEINDEX smp = 1; smp <= m_nSamples; smp++)
 	{
 		_669Sample sampleHeader;
-		file.ReadConvertEndianness(sampleHeader);
+		file.ReadStruct(sampleHeader);
 		// Since 669 files have very unfortunate magic bytes ("if") and can
 		// hardly be validated, reject any file with far too big samples.
 		if(sampleHeader.length >= 0x4000000)
@@ -152,9 +169,9 @@ bool CSoundFile::Read669(FileReader &file, ModLoadingFlags loadFlags)
 	m_songMessage.ReadFixedLineLength(mpt::byte_cast<const mpt::byte*>(fileHeader.songMessage), 108, 36, 0);
 
 	// Reading Orders
-	Order.ReadFromArray(fileHeader.orders, CountOf(fileHeader.orders), 0xFF, 0xFE);
-	if(Order[fileHeader.restartPos] < fileHeader.patterns)
-		Order.SetRestartPos(fileHeader.restartPos);
+	ReadOrderFromArray(Order(), fileHeader.orders, MPT_ARRAY_COUNT(fileHeader.orders), 0xFF, 0xFE);
+	if(Order()[fileHeader.restartPos] < fileHeader.patterns)
+		Order().SetRestartPos(fileHeader.restartPos);
 
 	// Set up panning
 	for(CHANNELINDEX chn = 0; chn < 8; chn++)
@@ -164,6 +181,7 @@ bool CSoundFile::Read669(FileReader &file, ModLoadingFlags loadFlags)
 	}
 
 	// Reading Patterns
+	Patterns.ResizeArray(fileHeader.patterns);
 	for(PATTERNINDEX pat = 0; pat < fileHeader.patterns; pat++)
 	{
 		if(!(loadFlags & loadPatternData) || !Patterns.Insert(pat, 64))
@@ -287,10 +305,10 @@ bool CSoundFile::Read669(FileReader &file, ModLoadingFlags loadFlags)
 		// Write pattern break
 		if(fileHeader.breaks[pat] < 63)
 		{
-			Patterns[pat].WriteEffect(EffectWriter(CMD_PATTERNBREAK, 0).Row(fileHeader.breaks[pat]).Retry(EffectWriter::rmTryNextRow));
+			Patterns[pat].WriteEffect(EffectWriter(CMD_PATTERNBREAK, 0).Row(fileHeader.breaks[pat]).RetryNextRow());
 		}
 		// And of course the speed...
-		Patterns[pat].WriteEffect(EffectWriter(CMD_SPEED, fileHeader.tempoList[pat]).Retry(EffectWriter::rmTryNextRow));
+		Patterns[pat].WriteEffect(EffectWriter(CMD_SPEED, fileHeader.tempoList[pat]).RetryNextRow());
 	}
 
 	if(loadFlags & loadSampleData)

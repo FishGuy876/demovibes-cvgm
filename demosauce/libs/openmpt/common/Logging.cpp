@@ -13,7 +13,7 @@
 #include "Logging.h"
 #include "mptFileIO.h"
 #if defined(MODPLUG_TRACKER)
-#include "mptAtomic.h"
+#include <atomic>
 #endif
 #include "version.h"
 
@@ -89,7 +89,6 @@ bool IsFacilityActive(const char *facility)
 
 
 void Logger::SendLogMessage(const Context &context, LogLevel level, const char *facility, const mpt::ustring &text)
-//-----------------------------------------------------------------------------------------------------------------
 {
 #ifdef MPT_LOG_IS_DISABLED
 	MPT_UNREFERENCED_PARAMETER(context);
@@ -185,13 +184,11 @@ void Logger::SendLogMessage(const Context &context, LogLevel level, const char *
 }
 
 void LegacyLogger::operator () (const AnyStringLocale &text)
-//----------------------------------------------------------
 {
 	SendLogMessage(context, MPT_LEGACY_LOGLEVEL, "", text);
 }
 
 void LegacyLogger::operator () (const char *format, ...)
-//------------------------------------------------------
 {
 	static const std::size_t LOGBUF_SIZE = 1024;
 	char message[LOGBUF_SIZE];
@@ -204,7 +201,6 @@ void LegacyLogger::operator () (const char *format, ...)
 }
 
 void LegacyLogger::operator () (LogLevel level, const mpt::ustring &text)
-//-----------------------------------------------------------------------
 {
 	SendLogMessage(context, level, "", text);
 }
@@ -254,11 +250,12 @@ inline bool operator < (const Entry &a, const Entry &b)
 
 static std::vector<mpt::log::Trace::Entry> Entries;
 
-static mpt::atomic_uint32_t NextIndex = 0;
+static std::atomic<uint32> NextIndex(0);
 
 static uint32 ThreadIdGUI = 0;
 static uint32 ThreadIdAudio = 0;
 static uint32 ThreadIdNotify = 0;
+static uint32 ThreadIdWatchdir = 0;
 
 void Enable(std::size_t numEntries)
 {
@@ -383,6 +380,9 @@ bool Dump(const mpt::PathString &filename)
 		} else if(entry.ThreadId == ThreadIdNotify)
 		{
 			f << " --Notify ";
+		} else if(entry.ThreadId == ThreadIdWatchdir)
+		{
+			f << " WatchDir ";
 		} else
 		{
 			f << " " << mpt::fmt::hex0<8>(entry.ThreadId) << " ";
@@ -410,7 +410,31 @@ void SetThreadId(mpt::log::Trace::ThreadKind kind, uint32 id)
 		case ThreadKindNotify:
 			ThreadIdNotify = id;
 			break;
+		case ThreadKindWatchdir:
+			ThreadIdWatchdir = id;
+			break;
 	}
+}
+
+uint32 GetThreadId(mpt::log::Trace::ThreadKind kind)
+{
+	uint32 result = 0;
+	switch(kind)
+	{
+		case ThreadKindGUI:
+			result = ThreadIdGUI;
+			break;
+		case ThreadKindAudio:
+			result = ThreadIdAudio;
+			break;
+		case ThreadKindNotify:
+			result = ThreadIdNotify;
+			break;
+		case ThreadKindWatchdir:
+			result = ThreadIdWatchdir;
+			break;
+	}
+	return result;
 }
 
 #endif // MPT_OS_WINDOWS

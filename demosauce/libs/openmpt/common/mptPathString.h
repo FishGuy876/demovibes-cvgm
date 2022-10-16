@@ -17,8 +17,11 @@
 OPENMPT_NAMESPACE_BEGIN
 
 
+
 #define MPT_DEPRECATED_PATH
 //#define MPT_DEPRECATED_PATH MPT_DEPRECATED
+
+
 
 namespace mpt
 {
@@ -29,17 +32,25 @@ typedef std::wstring RawPathString;
 typedef std::string RawPathString;
 #endif // if MPT_OS_WINDOWS
 
+
+
 class PathString
 {
+
 private:
+
 	RawPathString path;
+
 private:
+
 	PathString(const RawPathString & path)
 		: path(path)
 	{
 		return;
 	}
+
 public:
+
 	PathString()
 	{
 		return;
@@ -67,10 +78,12 @@ public:
 	{
 		return append(other);
 	}
+
 	friend PathString operator + (const PathString & a, const PathString & b)
 	{
 		return PathString(a).append(b);
 	}
+
 	friend bool operator < (const PathString & a, const PathString & b)
 	{
 		return a.AsNative() < b.AsNative();
@@ -83,17 +96,22 @@ public:
 	{
 		return a.AsNative() != b.AsNative();
 	}
+
 	bool empty() const { return path.empty(); }
 
-#if MPT_OS_WINDOWS
-	static int CompareNoCase(const PathString & a, const PathString & b);
-#endif
+	std::size_t Length() const { return path.size(); }
+
+
 
 public:
 
-	size_t Length() const { return path.size(); }
+#if MPT_OS_WINDOWS
+#if !MPT_OS_WINDOWS_WINRT
+	static int CompareNoCase(const PathString & a, const PathString & b);
+#endif // !MPT_OS_WINDOWS_WINRT
+#endif
 
-#if MPT_OS_WINDOWS && defined(MPT_ENABLE_DYNBIND)
+#if MPT_OS_WINDOWS && (defined(MPT_ENABLE_DYNBIND) || defined(MPT_ENABLE_TEMPFILE))
 
 	void SplitPath(PathString *drive, PathString *dir, PathString *fname, PathString *ext) const;
 	// \\?\ prefixes will be removed and \\?\\UNC prefixes converted to canonical \\ form.
@@ -109,7 +127,7 @@ public:
 	// Verify if this path exists and is a file on the file system.
 	bool IsFile() const;
 
-#endif // MPT_OS_WINDOWS && MPT_ENABLE_DYNBIND
+#endif // MPT_OS_WINDOWS && (MPT_ENABLE_DYNBIND || MPT_ENABLE_TEMPFILE)
 
 #if defined(MODPLUG_TRACKER) && MPT_OS_WINDOWS
 
@@ -223,6 +241,9 @@ public:
 #endif
 #endif
 
+	// Convert a path to its simplified form, i.e. remove ".\" and "..\" entries
+	mpt::PathString Simplify() const;
+
 #else // !MPT_OS_WINDOWS
 
 	// conversions
@@ -259,13 +280,19 @@ public:
 	static PathString FromNative(const RawPathString &path) { return PathString(path); }
 #endif // MPT_ENABLE_CHARSET_LOCALE
 
+	// Convert a path to its simplified form (currently only implemented on Windows)
+	MPT_DEPRECATED mpt::PathString Simplify() const { return path; }
+
 #endif // MPT_OS_WINDOWS
 
 };
 
+
+
 #if defined(MPT_ENABLE_CHARSET_LOCALE)
 MPT_DEPRECATED_PATH static inline std::string ToString(const mpt::PathString & x) { return mpt::ToCharset(mpt::CharsetLocale, x.ToUnicode()); }
 #endif
+static inline mpt::ustring ToUString(const mpt::PathString & x) { return x.ToUnicode(); }
 #if MPT_WSTRING_FORMAT
 static inline std::wstring ToWString(const mpt::PathString & x) { return x.ToWide(); }
 #endif
@@ -285,12 +312,11 @@ static inline std::wstring ToWString(const mpt::PathString & x) { return x.ToWid
 namespace mpt
 {
 
-
-
 bool IsPathSeparator(mpt::RawPathString::value_type c);
 
-bool PathIsAbsolute(const mpt::PathString &path);
 
+
+bool PathIsAbsolute(const mpt::PathString &path);
 
 #if MPT_OS_WINDOWS
 
@@ -301,10 +327,30 @@ mpt::PathString GetAbsolutePath(const mpt::PathString &path);
 
 // Deletes a complete directory tree. Handle with EXTREME care.
 // Returns false if any file could not be removed and aborts as soon as it
-// encounters any error.
+// encounters any error. path must be absolute.
 bool DeleteWholeDirectoryTree(mpt::PathString path);
 
 #endif // MODPLUG_TRACKER
+
+#endif // MPT_OS_WINDOWS
+
+#if MPT_OS_WINDOWS
+
+#if defined(MPT_ENABLE_DYNBIND) || defined(MPT_ENABLE_TEMPFILE)
+
+// Returns the application path or an empty string (if unknown), e.g. "C:\mptrack\"
+mpt::PathString GetAppPath();
+
+#endif // MPT_ENABLE_DYNBIND || MPT_ENABLE_TEMPFILE
+
+#if defined(MPT_ENABLE_DYNBIND)
+
+#if !MPT_OS_WINDOWS_WINRT
+// Returns the system directory path, e.g. "C:\Windows\System32\"
+mpt::PathString GetSystemPath();
+#endif // !MPT_OS_WINDOWS_WINRT
+
+#endif // MPT_ENABLE_DYNBIND
 
 #endif // MPT_OS_WINDOWS
 
@@ -316,6 +362,8 @@ mpt::PathString GetTempDirectory();
 
 // Returns a new unique absolute path.
 mpt::PathString CreateTempFileName(const mpt::PathString &fileNamePrefix = mpt::PathString(), const mpt::PathString &fileNameExtension = MPT_PATHSTRING("tmp"));
+
+
 
 // Scoped temporary file guard. Deletes the file when going out of scope.
 // The file itself is not created automatically.
@@ -350,6 +398,8 @@ public:
 
 } // namespace mpt
 
+
+
 #if defined(MODPLUG_TRACKER)
 
 // Sanitize a filename (remove special chars)
@@ -360,10 +410,12 @@ void SanitizeFilename(wchar_t *beg, wchar_t *end);
 
 void SanitizeFilename(std::string &str);
 void SanitizeFilename(std::wstring &str);
+#if MPT_USTRING_MODE_UTF8
+void SanitizeFilename(mpt::u8string &str);
+#endif // MPT_USTRING_MODE_UTF8
 
 template <std::size_t size>
 void SanitizeFilename(char (&buffer)[size])
-//-----------------------------------------
 {
 	STATIC_ASSERT(size > 0);
 	SanitizeFilename(buffer, buffer + size);
@@ -371,7 +423,6 @@ void SanitizeFilename(char (&buffer)[size])
 
 template <std::size_t size>
 void SanitizeFilename(wchar_t (&buffer)[size])
-//--------------------------------------------
 {
 	STATIC_ASSERT(size > 0);
 	SanitizeFilename(buffer, buffer + size);
@@ -405,11 +456,11 @@ public:
 	FileType() { }
 	FileType(const std::vector<FileType> &group)
 	{
-		for(std::vector<FileType>::const_iterator it = group.begin(); it != group.end(); ++it)
+		for(const auto &type : group)
 		{
-			m_MimeTypes.insert(m_MimeTypes.end(), it->m_MimeTypes.begin(), it->m_MimeTypes.end());
-			m_Extensions.insert(m_Extensions.end(), it->m_Extensions.begin(), it->m_Extensions.end());
-			m_Prefixes.insert(m_Prefixes.end(), it->m_Prefixes.begin(), it->m_Prefixes.end());
+			m_MimeTypes.insert(m_MimeTypes.end(), type.m_MimeTypes.begin(), type.m_MimeTypes.end());
+			m_Extensions.insert(m_Extensions.end(), type.m_Extensions.begin(), type.m_Extensions.end());
+			m_Prefixes.insert(m_Prefixes.end(), type.m_Prefixes.begin(), type.m_Prefixes.end());
 		}
 	}
 	static FileType Any()

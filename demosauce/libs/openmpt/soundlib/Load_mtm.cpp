@@ -14,55 +14,36 @@
 
 OPENMPT_NAMESPACE_BEGIN
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(push, 1)
-#endif
-
 // File Header
-struct PACKED MTMFileHeader
+struct MTMFileHeader
 {
-	char   id[3];			// MTM file marker
-	uint8  version;			// Tracker version
-	char   songName[20];	// ASCIIZ songname
-	uint16 numTracks;		// Number of tracks saved
-	uint8  lastPattern;		// Last pattern number saved
-	uint8  lastOrder;		// Last order number to play (songlength-1)
-	uint16 commentSize;		// Length of comment field
-	uint8  numSamples;		// Number of samples saved
-	uint8  attribute;		// Attribute byte (unused)
-	uint8  beatsPerTrack;	// Numbers of rows in every pattern (MultiTracker itself does not seem to support values != 64)
-	uint8  numChannels;		// Number of channels used
-	uint8  panPos[32];		// Channel pan positions
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(numTracks);
-		SwapBytesLE(commentSize);
-	}
+	char     id[3];			// MTM file marker
+	uint8le  version;		// Tracker version
+	char     songName[20];	// ASCIIZ songname
+	uint16le numTracks;		// Number of tracks saved
+	uint8le  lastPattern;	// Last pattern number saved
+	uint8le  lastOrder;		// Last order number to play (songlength-1)
+	uint16le commentSize;	// Length of comment field
+	uint8le  numSamples;	// Number of samples saved
+	uint8le  attribute;		// Attribute byte (unused)
+	uint8le  beatsPerTrack;	// Numbers of rows in every pattern (MultiTracker itself does not seem to support values != 64)
+	uint8le  numChannels;	// Number of channels used
+	uint8le  panPos[32];	// Channel pan positions
 };
 
-STATIC_ASSERT(sizeof(MTMFileHeader) == 66);
+MPT_BINARY_STRUCT(MTMFileHeader, 66)
 
 
 // Sample Header
-struct PACKED MTMSampleHeader
+struct MTMSampleHeader
 {
-	char   samplename[22];
-	uint32 length;
-	uint32 loopStart;
-	uint32 loopEnd;
-	int8   finetune;
-	uint8  volume;
-	uint8  attribute;
-
-	// Convert all multi-byte numeric values to current platform's endianness or vice versa.
-	void ConvertEndianness()
-	{
-		SwapBytesLE(length);
-		SwapBytesLE(loopStart);
-		SwapBytesLE(loopEnd);
-	}
+	char     samplename[22];
+	uint32le length;
+	uint32le loopStart;
+	uint32le loopEnd;
+	int8le   finetune;
+	uint8le  volume;
+	uint8le  attribute;
 
 	// Convert an MTM sample header to OpenMPT's internal sample header.
 	void ConvertToMPT(ModSample &mptSmp) const
@@ -91,29 +72,63 @@ struct PACKED MTMSampleHeader
 	}
 };
 
-STATIC_ASSERT(sizeof(MTMSampleHeader) == 37);
+MPT_BINARY_STRUCT(MTMSampleHeader, 37)
 
 
-#ifdef NEEDS_PRAGMA_PACK
-#pragma pack(pop)
-#endif
+static bool ValidateHeader(const MTMFileHeader &fileHeader)
+{
+	if(std::memcmp(fileHeader.id, "MTM", 3)
+		|| fileHeader.version >= 0x20
+		|| fileHeader.lastOrder > 127
+		|| fileHeader.beatsPerTrack > 64
+		|| fileHeader.numChannels > 32
+		|| fileHeader.numChannels == 0
+		)
+	{
+		return false;
+	}
+	return true;
+}
+
+
+static uint64 GetHeaderMinimumAdditionalSize(const MTMFileHeader &fileHeader)
+{
+	return sizeof(MTMSampleHeader) * fileHeader.numSamples + 128 + 192 * fileHeader.numTracks + 64 * (fileHeader.lastPattern + 1) + fileHeader.commentSize;
+}
+
+
+CSoundFile::ProbeResult CSoundFile::ProbeFileHeaderMTM(MemoryFileReader file, const uint64 *pfilesize)
+{
+	MTMFileHeader fileHeader;
+	if(!file.ReadStruct(fileHeader))
+	{
+		return ProbeWantMoreData;
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return ProbeFailure;
+	}
+	return ProbeAdditionalSize(file, pfilesize, GetHeaderMinimumAdditionalSize(fileHeader));
+}
 
 
 bool CSoundFile::ReadMTM(FileReader &file, ModLoadingFlags loadFlags)
-//-------------------------------------------------------------------
 {
 	file.Rewind();
 	MTMFileHeader fileHeader;
-	if(!file.ReadConvertEndianness(fileHeader)
-		|| memcmp(fileHeader.id, "MTM", 3)
-		|| fileHeader.lastOrder > 127
-		|| fileHeader.numChannels > 32
-		|| fileHeader.numChannels == 0
-		|| fileHeader.lastPattern >= MAX_PATTERNS
-		|| !file.CanRead(sizeof(MTMSampleHeader) * fileHeader.numSamples + 128 + 192 * fileHeader.numTracks + 64 * (fileHeader.lastPattern + 1) + fileHeader.commentSize))
+	if(!file.ReadStruct(fileHeader))
 	{
 		return false;
-	} else if(loadFlags == onlyVerifyHeader)
+	}
+	if(!ValidateHeader(fileHeader))
+	{
+		return false;
+	}
+	if(!file.CanRead(mpt::saturate_cast<FileReader::off_t>(GetHeaderMinimumAdditionalSize(fileHeader))))
+	{
+		return false;
+	}
+	if(loadFlags == onlyVerifyHeader)
 	{
 		return true;
 	}
@@ -122,13 +137,13 @@ bool CSoundFile::ReadMTM(FileReader &file, ModLoadingFlags loadFlags)
 	mpt::String::Read<mpt::String::maybeNullTerminated>(m_songName, fileHeader.songName);
 	m_nSamples = fileHeader.numSamples;
 	m_nChannels = fileHeader.numChannels;
-	m_madeWithTracker = mpt::String::Print("MultiTracker %1.%2", fileHeader.version >> 4, fileHeader.version & 0x0F);
+	m_madeWithTracker = mpt::format(MPT_USTRING("MultiTracker %1.%2"))(fileHeader.version >> 4, fileHeader.version & 0x0F);
 
 	// Reading instruments
 	for(SAMPLEINDEX smp = 1; smp <= GetNumSamples(); smp++)
 	{
 		MTMSampleHeader sampleHeader;
-		file.ReadConvertEndianness(sampleHeader);
+		file.ReadStruct(sampleHeader);
 		sampleHeader.ConvertToMPT(Samples[smp]);
 		mpt::String::Read<mpt::String::maybeNullTerminated>(m_szNames[smp], sampleHeader.samplename);
 	}
@@ -141,13 +156,16 @@ bool CSoundFile::ReadMTM(FileReader &file, ModLoadingFlags loadFlags)
 	}
 
 	// Reading pattern order
-	const ORDERINDEX readOrders = fileHeader.lastOrder + 1;
-	Order.ReadAsByte(file, 128, readOrders, 0xFF, 0xFE);
+	uint8 orders[128];
+	file.ReadArray(orders);
+	ReadOrderFromArray(Order(), orders, fileHeader.lastOrder + 1, 0xFF, 0xFE);
 
 	// Reading Patterns
-	const ROWINDEX rowsPerPat = fileHeader.beatsPerTrack ? std::min(ROWINDEX(fileHeader.beatsPerTrack), MAX_PATTERN_ROWS) : 64;
+	const ROWINDEX rowsPerPat = fileHeader.beatsPerTrack ? fileHeader.beatsPerTrack : 64;
 	FileReader tracks = file.ReadChunk(192 * fileHeader.numTracks);
 
+	if(loadFlags & loadPatternData)
+		Patterns.ResizeArray(fileHeader.lastPattern + 1);
 	for(PATTERNINDEX pat = 0; pat <= fileHeader.lastPattern; pat++)
 	{
 		if(!(loadFlags & loadPatternData) || !Patterns.Insert(pat, rowsPerPat))
