@@ -1,10 +1,10 @@
 {% extends "base/base.html" %}
-{% block title %}{{ gettext("User Profile Of") }} {{profile.user}}{% endblock %}
+{% block title %}{{ gettext("User Profile Of") }} {{profile.user}}{% endblock %}
 {% import "macro/display.html" as display -%}
 
 {% block main %}
 
-<h2><img class="icon_header" src="{{ STATIC_URL }}{{ profile.get_littleman() }}" alt="" />{{ gettext("User Profile For") }} {{ profile.user|e }}{% if profile.web_page %} <a href="{{ profile.web_page|e }}" target="_blank">[Visit User's Website]</a>{% endif %}</h2>
+<h2><img class="icon_header" src="{{ STATIC_URL }}{{ profile.get_littleman() }}" alt="" />{{ gettext("User Profile For") }} {{ profile.user|e }}{% if profile.web_page %} <a href="{{ profile.web_page|e }}" target="_blank">[Visit User's Website]</a>{% endif %}{% if user.is_staff %} <a href="/admin/auth/user/{{profile.id}}/" target="_blank">[Administer User]</a> <a href="/admin/webview/userprofile/{{profile.id}}/" target="_blank">[Administer User Profile Page]</a>{% endif %}</h2>
 
 {% if profile.avatar %}
  <img src="{{ profile.avatar.url }}" title="[{{ profile.user|e }}'s Avatar]" alt="[{{ profile.user|e }}'s Avatar]" /><br />
