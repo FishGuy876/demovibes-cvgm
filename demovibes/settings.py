@@ -22,6 +22,7 @@ DEBUG = True
 TEMPLATE_DEBUG = False
 
 #For looking up flag country on users with no flag set
+# IPCountry Lookup data can be obtained from https://db-ip.com/db/download/ip-to-country-lite
 LOOKUP_COUNTRY = True
 DEFAULT_FLAG = "nectaflag"
 

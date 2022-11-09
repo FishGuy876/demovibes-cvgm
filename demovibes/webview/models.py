@@ -66,7 +66,7 @@ SONG_LOCKTIME_FUNCTION = getattr(settings, "SONG_LOCKTIME_FUNCTION", None)
 country_by_code2 = dict ([(country.alpha2.lower(), country) for country in pycountry.countries])
 country_codes2 = country_by_code2.keys ()
 
-
+# IPCountry Lookup data can be obtained from https://db-ip.com/db/download/ip-to-country-lite
 if getattr(settings, "LOOKUP_COUNTRY", True):
     from demovibes.ip2cc import ip2cc
     ipdb = os.path.join(settings.SITE_ROOT, "ipcountry.db")
