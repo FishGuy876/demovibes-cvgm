@@ -223,4 +223,7 @@ urlpatterns = patterns('',
 
     # Statistics & Cache stuff
     url(r'^status/cache/$',                    'demovibes.webview.views.memcached_status', name = "dv-memcached"), # Show memcached status
+
+    # Spam User Administration
+    url(r'^spamcheck/$',                  'demovibes.webview.views.spammer_administration', name = "dv-spamcheck"),
 )

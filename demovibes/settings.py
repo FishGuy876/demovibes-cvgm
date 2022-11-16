@@ -223,6 +223,15 @@ RECENT_COMP_VIEW_LIMIT    = 20
 # Members will appear at the beginning of the list.
 SHOW_NEW_MEMBER_COUNT = 1
 
+# Spam Administration
+#
+# Demovibves has some limited functions for assisting staff members with detecting, and deleting, spam user
+# Accounts. These variables are limited to that process
+
+# Determine the number of user accounts to display on the Admin screen at one time. More is better, but as 
+# You purge your site of spammy users, this will eventually become all good users
+SPAM_ADMIN_USER_COUNT = 25
+
 # Auto-Approve Admin Uploads
 #
 # Anyone with a Super User status who uploads tracks will be auto approved if set to 1. No

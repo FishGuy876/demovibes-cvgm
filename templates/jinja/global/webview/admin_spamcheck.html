@@ -1,0 +1,34 @@
+{% extends "base/base.html" %}
+{% block title %}Spam User Administrator{% endblock %}
+
+{% block main %}
+<table class="recentchanges">
+<tr>
+  <td>
+    <h2><img class="recent_icon_header" src="{{ MEDIA_URL }}user_green.png" alt="" />{{ userlist|count }} Most Recently Created Users</h2>
+    {% if userlist %}{% for U in userlist %}
+    {% include "webview/t/user.html" %}<br />
+    {% endfor %}{% endif %}
+  </td>
+  <td>
+    <h2><img class="recent_icon_header" src="{{ MEDIA_URL }}group.png" alt="" />{{ profilelist|count }} Most Recently Updated Userprofiles</h2>
+    {% if profilelist %}{% for U in profilelist %}
+    {% include "webview/t/userprofile.html" %}<br />
+    {% endfor %}{% endif %}
+  </td>
+</tr>
+</table>
+
+<table class="recentchanges">
+  <tr>
+    <td>
+    {% if songcomments %}<h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />{{ songcomments|count }} Most Recently Added Song Comments</h2><br>
+    {% for comment in songcomments %}
+       <tr>{% include "webview/t/song_comment.html" %}</tr>
+       {% endfor %}
+      </table>{% endif %}
+      </td>
+    </tr>
+</table>
+
+{% endblock %}

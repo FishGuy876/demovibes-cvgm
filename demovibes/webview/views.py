@@ -2317,3 +2317,23 @@ def upload_progress(request):
         return HttpResponse(simplejson.dumps(data))
     else:
         return HttpResponseServerError('Server Error: You must provide X-Progress-ID header or query param.')
+
+@login_required
+def spammer_administration(request):
+    # Get some default stat values
+    # based on recent_changes
+
+    # How many Recent users are we going to display on this page?
+    spamadmin_user_limit = getattr(settings, 'SPAM_ADMIN_USER_COUNT', 25) # How many user accounts do we show in the preview list?
+    songcomment_user_limit = getattr(settings, 'SPAM_SONG_COMMENT_LIMIT', 25) # How many Song comments do we look at in the preview list?
+
+    if request.user.is_staff:
+        # Pull the necessary data for the template
+        userlist = m.User.objects.order_by('-date_joined')[:spamadmin_user_limit]
+        profilelist = m.Userprofile.objects.order_by('-last_changed')[:spamadmin_user_limit]
+        songcomments = m.SongComment.objects.order_by('-added')[:songcomment_user_limit]
+
+        # Template
+        return j2shim.r2r('webview/admin_spamcheck.html', {
+            'userlist' : userlist, 'profilelist' : profilelist , 'songcomments' : songcomments},
+            request=request)
