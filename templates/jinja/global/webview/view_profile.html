@@ -28,6 +28,7 @@
 <br />{% cache 86400 mkstr(profile.user.id, profile.user.last_changed, "userprofilestats") %}
 Member Since: {{ profile.user.date_joined|date("F j, Y") }}<br />
 {{ profile.get_uploadcount() }} Uploads, {{ profile.get_votecount() }} Votes, Spoken {{ profile.get_onelinercount() }} Times.<br />
+Queued {{ profile.get_queuecount() }} Songs For Playing.<br />
 Last Login: {{ profile.user.last_login|date("F j, Y") }}<br />{% endcache %}
 
 <a href="{{ url("dv-send_pm") }}?to={{ profile.user|e }}"><img src="{{ STATIC_URL }}email.png" alt="mail" /> {{ gettext("Send A Message") }}</a> | View {{ profile.user|e }}'s <a href="{{ url ("dv-user-favs", profile.user) }}">{{ gettext("Favourites List") }}</a>.<br/>

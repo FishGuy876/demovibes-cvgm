@@ -853,6 +853,13 @@ class Userprofile(models.Model):
         countlist = Oneliner.objects.filter(user=self.user)
         return len(countlist);
 
+    def get_queuecount(self):
+        """
+        How many songs has this user queued?
+        """
+        countlist = Queue.objects.filter(requested_by=self.user)
+        return len(countlist);
+
     @models.permalink
     def get_absolute_url(self):
         return ('dv-profile', [self.user.name])

@@ -22,13 +22,21 @@
 <table class="recentchanges">
   <tr>
     <td>
-    {% if songcomments %}<h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />{{ songcomments|count }} Most Recently Added Song Comments</h2><br>
-    {% for comment in songcomments %}
-       <tr>{% include "webview/t/song_comment.html" %}</tr>
-       {% endfor %}
-      </table>{% endif %}
-      </td>
-    </tr>
+    <h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />{{ songcomments|count }} Most Recently Added Song Comments</h2>
+    </td>
+  </tr>
+</table>
+
+<table id="djangoForumThreadPosts">
+  <tr>
+      <th>{{ gettext("User") }}</th>
+      <th>{{ gettext("Song Comment") }}</th>
+  </tr>
+  {% if songcomments %}
+  {% for comment in songcomments %}
+      {% include "webview/t/song_comment.html" %}
+  {% endfor %}
+  {% endif %}
 </table>
 
 {% endblock %}
