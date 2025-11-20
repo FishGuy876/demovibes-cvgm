@@ -99,6 +99,7 @@ def activate(request, activation_key,
                 'username': account.username,
                 'email': account.email,
                 'userid': account.id,
+                'userip' : request.META["REMOTE_ADDR"],
                 })
             email = EmailMessage(
                     subject='[' + site.name + '] New User Registration Activated!',

@@ -3,6 +3,7 @@
 Username: {{ username }}
 Username Link: https://{{ domain }}/demovibes/user/{{ username }}
 Email Address: {{ email }}
+IP Address: {{ userip }}
 
 To manage this user in the Admin panel, click the following link:
 https://{{ domain }}/admin/auth/user/{{ userid }}/
