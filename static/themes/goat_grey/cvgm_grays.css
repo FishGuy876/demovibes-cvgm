@@ -37,6 +37,10 @@
 	    Links in the side panels (main menu and user menu) are bit darker now (also for better contrast).
 	    Added right/bottom margins in newsfeed images for nicer text flow.
 	    Now Playing panel: song title, "by" and artist name are separated into own text blocks.
+ * version 1.12 - 11/29/2022
+        Added SpamAdmin static icon. AAK
+ * version 1.13 - 1/16/2026
+        Added Discord Icon options for sidebar. AAK
  */
  
  * {
@@ -383,7 +387,8 @@ h3
 #unap-screenshots     {background-image: url("/static/icon_screenshot.png");}
 #licenses 		{background-image: url("/static/page_white_edit.png");}
 #chat		{background-image: url("/static/lips.png");}
-
+#spamadmin {background-image: url("/static/spam.png");}
+#discord   {background-image: url("/static/DiscordIcon16.png");}
 
 #forum, #favorites, #logout
 {
