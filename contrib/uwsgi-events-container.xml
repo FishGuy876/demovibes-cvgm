@@ -1,0 +1,58 @@
+<!--
+  uWSGI 2.0 config for the Demovibes events handler (long-poll) inside the
+  CouchPotato container. Derived from contrib/uwsgi-events-local.xml.
+
+  Two sockets, deliberately:
+    3032  uwsgi protocol  - nginx proxies browser long-polls here
+    8032  http            - webview/models.py POSTs events here, container
+                            to container over the compose network only.
+                            NOT published to the host.
+
+  Async: production runs <async>800</async> with <ugreen/>. Both survive in
+  uWSGI 2.0 (the ugreen plugin still ships and is compiled into our pip
+  build); it is only the PYTHON-facing green_pause/green_unpause_all that
+  were removed, which uwsgi_eventhandler.py now handles itself.
+-->
+<uwsgi>
+  <socket>0.0.0.0:3032</socket>
+  <http-socket>0.0.0.0:8032</http-socket>
+
+  <home>/opt/cvgm_virt</home>
+  <pythonpath>/app/uwsgi_events</pythonpath>
+  <chdir>/app/uwsgi_events</chdir>
+  <module>uwsgi_eventhandler</module>
+
+  <master/>
+
+  <!-- gevent, not <async>+<ugreen/>.
+       Production uses ugreen, but its PYTHON api (green_pause /
+       green_unpause_all) was removed in 2.x. uWSGI 2.x's replacement,
+       async_sleep()+suspend(), was tried and did NOT terminate inside
+       bottle's generator handler: requests ran past <harakiri> and the
+       worker was SIGKILLed, taking all 800 in-flight requests with it.
+       gevent.event.Event restores the original semantics exactly. -->
+  <gevent>800</gevent>
+  <gevent-monkey-patch/>
+
+  <!-- Single process: `event` is module-level state shared by all the
+       coroutines in one interpreter. More than one process would give each
+       its own copy and clients would see events at random. -->
+  <processes>1</processes>
+
+  <need-app/>
+
+  <!-- Production's file says <enable-logging/>, which is NOT a real uWSGI
+       option and is silently ignored - the typo that grew a 2.0GB log. See
+       the logging gotchas in CLAUDE.md. Logging is simply left on here. -->
+
+  <!-- A long-poll is ~70s by design, so 600 lets a runaway request sit for
+       ten minutes before anything notices - which is exactly how the
+       async_sleep bug stayed invisible. 120 is a real guard here. -->
+  <harakiri>120</harakiri>
+  <reload-mercy>8</reload-mercy>
+  <socket-timeout>300</socket-timeout>
+  <no-orphans/>
+  <vacuum/>
+  <die-on-term/>
+  <log-master/>
+</uwsgi>

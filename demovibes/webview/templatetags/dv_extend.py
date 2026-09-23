@@ -709,7 +709,13 @@ class GetCss(template.Node):
         self.user = user
 
     def render(self, context):
-        user = template.resolve_variable(self.user, context)
+        try:
+            user = template.resolve_variable(self.user, context)
+        except template.VariableDoesNotExist:
+            # The 500 page is rendered with an empty context, so there is no
+            # user; fall back to the default theme rather than crashing the
+            # error page (which used to turn any error into a 504).
+            user = None
         return get_css_for_user(user)
 
 def j_get_post_count(user):

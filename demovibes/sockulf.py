@@ -8,6 +8,7 @@ from django.core.management import setup_environ
 import settings
 
 setup_environ(settings)
+from django.db import connection
 max_length = getattr(settings, 'MAX_SONG_LENGTH', False)
 
 Log = logging.getLogger("Sockulf")
@@ -50,6 +51,18 @@ class pyWhisperer(object):
                         data = data.strip()
                         Log.debug("Got message : %s" % data)
                         if data in self.COMMANDS.keys():
+                                # Drop the DB connection before every command; Django
+                                # reconnects on the next query. sockulf is a long-lived
+                                # process outside the request cycle, so Django 1.3 never
+                                # closes this connection itself. During a song longer than
+                                # MySQL's wait_timeout (6000 s on production) the server
+                                # drops it, and the next NEXTSONG died with
+                                # "OperationalError 2006: MySQL server has gone away" -
+                                # killing sockulf. demosauce then retried 3x, played 60 s
+                                # of silence, and start_sockulf.sh restarted sockulf after
+                                # `sleep 60`: the ~70 s gap after every long set. Must run
+                                # here, outside get_next_song's @commit_on_success.
+                                connection.close()
                                 result = self.COMMANDS[data]()
                                 Log.debug("Returning data : %s" % result)
                                 while i < len(result):

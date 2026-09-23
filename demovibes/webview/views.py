@@ -387,7 +387,18 @@ def list_year(request, year_id):
     }
     
     return j2shim.r2r ('webview/year_list.html', params, request)
+
+# This will display all songs, sorted by their overall length (larger songs will be displayed first)
+def list_length(request):
+    songs = m.Song.active.filter (songmetadata__active = True).order_by('-song_length')
     
+    params = {
+        'object_list' : songs,
+        'letter_url_name' : "dv-song-length"
+    }
+    
+    return j2shim.r2r ('webview/song_length.html', params, request)
+
 def list_song(request, song_id):
     song = get_object_or_404 (m.Song, id = song_id)
 
@@ -1321,15 +1332,24 @@ class RadioStatus(WebView):
         return m.Song.objects.filter (m.Song.unlocked_condition ()).order_by ('rating_votes', '?')[:100]
 
     def list_forgotten (self):
-        q = m.Song.active.filter (m.Song.unlocked_condition ())
-        q = q.annotate (last_requested = Max("queue__requested"))
-        q = q.order_by ('last_requested')
-        q = q[:100]
-        return q
+        # Was annotate(Max("queue__requested")): a LEFT JOIN of every song to the
+        # 2.7M-row queue plus a GROUP BY over every song column, ~20 s per hit.
+        # A correlated subquery answered from the (song_id, requested) index is
+        # ~1.3 s and returns identical results; the list is also cached, as it
+        # does not need to be live.
+        songs = cache.get ("radiostatus_forgotten")
+        if songs is None:
+            q = m.Song.active.filter (m.Song.unlocked_condition ())
+            q = q.extra (select = {'last_requested': "(SELECT MAX(q.requested) FROM webview_queue q WHERE q.song_id = webview_song.id)"})
+            q = q.order_by ('last_requested')
+            songs = list (q[:100])
+            cache.set ("radiostatus_forgotten", songs, 60 * 60)
+        return songs
 
     def list_random(self):
         max_id = m.Song.objects.order_by('-id')[0].id
-        max_songs = m.Song.objects.filter(status="A").count()
+        #max_songs = m.Song.objects.filter(status="A",).count()
+        max_songs = m.Song.objects.filter(m.Song.unlocked_condition()).count()
         num_songs = 100
         num_songs = num_songs < max_songs and num_songs or max_songs
         songlist = []
@@ -1343,7 +1363,9 @@ class RadioStatus(WebView):
               r = random.randint(0, max_id+1)
             r_list.append(r)
           r_done.extend(r_list)
-          songlist.extend([s for s in m.Song.objects.filter(id__in=r_list, status="A")])
+          # Only songs that are active AND not locked: max_songs above counts exactly
+          # this set, so the loop can always find enough songs and terminates.
+          songlist.extend([s for s in m.Song.objects.filter(m.Song.unlocked_condition(), id__in=r_list)])
         return songlist
 
     def list_mostvotes(self):
@@ -1632,25 +1654,49 @@ class TagDetail(WebView):
     template = "tag_detail.html"
     cache_duration = 24 * 60 * 60
 
+    # Each [+] link on the page adds a tag to the URL (/tags/a,b,c/), so the
+    # number of distinct pages is unbounded. Refuse more than MAX_TAGS tags;
+    # the template stops offering [+] once a page already has MAX_TAGS.
+    MAX_TAGS = 4
+
+    def pre_view(self):
+        if self.kwargs.get("tag", "").count(",") >= self.MAX_TAGS:
+            return HttpResponseNotFound()
+
     def get_cache_key(self):
         tag_id = cache.get ("tagver", 0)
         key = "tagdetail_%s_%s" % (self.kwargs.get("tag", ""), tag_id)
 
         return hashlib.md5(key).hexdigest()
 
+    def set_context(self):
+        # Not cached: a lazy queryset costs nothing until the template
+        # paginates it (COUNT + LIMIT). Caching it pickled every song with the
+        # tag, which for the big tags is several MB - over memcached's 1MB
+        # item limit, so the cache silently never held.
+        #
+        # The "id" tie-breaker matters now that pages are read live: many songs
+        # share a title, and with ORDER BY title alone their relative order can
+        # change between queries, so a song could repeat or vanish across pages.
+        tag = self.kwargs.get ("tag", "")
+        songs = TaggedItem.objects.get_by_model (m.Song, tag).order_by ("title", "id")
+        return {'songs'   : songs,
+                'tag'     : tag,
+                'can_add' : tag.count (",") + 1 < self.MAX_TAGS,
+                'songs_per_page' : getattr (settings, "TAG_SONGS_PER_PAGE", 50)}
+
     def set_cached_context(self):
         tag = self.kwargs.get ("tag", "")
 
-        songs = TaggedItem.objects.get_by_model (m.Song, tag)
-        related = m.quickly_get_related_tags (songs,
+        # Bare ids: avoids building a full Song object for every tagged song.
+        song_ids = list (TaggedItem.objects.get_by_model (m.Song, tag).values_list ('id', flat = True))
+        related = m.quickly_get_related_tags (song_ids,
                                               exclude_tags_str = tag,
                                               limit_to_model = m.Song,
                                               count = True)
-        related = tagging.utils.calculate_cloud (related)
+        related = list (tagging.utils.calculate_cloud (related))
 
-        return {'songs'     : songs,
-                'related'   : related,
-                'tag'       : tag}
+        return {'related' : related}
 
 class TagEdit(SongView):
     login_required=True
@@ -2306,3 +2352,23 @@ def upload_progress(request):
         return HttpResponse(simplejson.dumps(data))
     else:
         return HttpResponseServerError('Server Error: You must provide X-Progress-ID header or query param.')
+
+@login_required
+def spammer_administration(request):
+    # Get some default stat values
+    # based on recent_changes
+
+    # How many Recent users are we going to display on this page?
+    spamadmin_user_limit = getattr(settings, 'SPAM_ADMIN_USER_COUNT', 25) # How many user accounts do we show in the preview list?
+    songcomment_user_limit = getattr(settings, 'SPAM_SONG_COMMENT_LIMIT', 25) # How many Song comments do we look at in the preview list?
+
+    if request.user.is_staff:
+        # Pull the necessary data for the template
+        userlist = m.User.objects.order_by('-date_joined')[:spamadmin_user_limit]
+        profilelist = m.Userprofile.objects.order_by('-last_changed')[:spamadmin_user_limit]
+        songcomments = m.SongComment.objects.order_by('-added')[:songcomment_user_limit]
+
+        # Template
+        return j2shim.r2r('webview/admin_spamcheck.html', {
+            'userlist' : userlist, 'profilelist' : profilelist , 'songcomments' : songcomments},
+            request=request)

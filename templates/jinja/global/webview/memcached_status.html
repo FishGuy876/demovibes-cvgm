@@ -19,6 +19,9 @@
  <li>Uptime: {{ stats.uptime }}
  <li>Limit (MaxBytes): {{ stats.limit_maxbytes|filesizeformat }}
  <li>Dropped Items (Evictions): {{ stats.evictions }}
+ <li>Reclaimed Items: {{ stats.reclaimed }}
+ <li>Expired Unfeteched Items: {{ stats.expired_unfetched }}
+ <li>Evicted Unfetched Items: {{ stats.evicted_unfetched }}
  <li>Threads: {{ stats.threads }}
  <li>Total Items: {{ stats.total_items }}
  <li>Memcached version: {{ stats.version }}

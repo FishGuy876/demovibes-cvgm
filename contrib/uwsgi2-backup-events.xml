@@ -1,0 +1,39 @@
+<!--
+  uWSGI 2.0.31 config for the Demovibes EVENTS handler on the CVGM Backup.
+  Derived from contrib/uwsgi-events-container.xml; see the comments there for
+  why gevent replaces <async>+<ugreen/>.
+
+    4032  uwsgi protocol - nginx proxies browser long-polls here
+    4033  http           - the trial web app POSTs events here (loopback only)
+-->
+<uwsgi>
+  <socket>127.0.0.1:4032</socket>
+  <http-socket>127.0.0.1:4033</http-socket>
+
+  <home>/home/cvgm/cvgm_virt2</home>
+  <!-- cvgm_virt2 is the rebuilt venv (contrib/requirements-backup.txt); it
+       carries gevent 22.10.2. The old cvgm_virt is untouched. -->
+  <pythonpath>/home/cvgm/uwsgi2/code/uwsgi_events</pythonpath>
+  <chdir>/home/cvgm/uwsgi2/code/uwsgi_events</chdir>
+  <module>uwsgi_eventhandler</module>
+  <need-app/>
+
+  <master/>
+  <gevent>800</gevent>
+  <gevent-monkey-patch/>
+  <!-- ONE process: `event` is module-level state shared by every coroutine. -->
+  <processes>1</processes>
+
+  <!-- Every listener polls this handler; logging each poll is what grew the
+       2GB log. disable-logging is a real option (see CLAUDE.md gotchas). -->
+  <disable-logging/>
+
+  <harakiri>120</harakiri>
+  <reload-mercy>8</reload-mercy>
+  <socket-timeout>300</socket-timeout>
+  <no-orphans/>
+  <vacuum/>
+  <logto>/home/cvgm/uwsgi2/logs/events.log</logto>
+  <pidfile>/home/cvgm/uwsgi2/run/events.pid</pidfile>
+  <die-on-term/>
+</uwsgi>

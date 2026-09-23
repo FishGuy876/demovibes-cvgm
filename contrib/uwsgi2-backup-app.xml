@@ -1,0 +1,43 @@
+<!--
+  uWSGI 2.0.31 config for the main Demovibes app on the CVGM Backup (no
+  Docker). Trial config: runs BESIDE Cherokee's own uWSGI 0.9.5.4 (:3031) on
+  :4031, from an isolated code copy in ~/uwsgi2/code so the shared tree in
+  ~/cvgm.net is never touched. Derived from demovibes/uwsgi-local.xml;
+  differences from that file are noted inline.
+-->
+<uwsgi>
+  <socket>127.0.0.1:4031</socket>
+  <!-- Accept queue (default 100); see contrib/production/uwsgi2-prod-app.xml for why. DANGER: uWSGI 2.x REFUSES
+       TO START if this exceeds net.core.somaxconn, so install contrib/sysctl/90-cvgm-somaxconn.conf and
+       apply it (sysctl, all files) BEFORE this line goes live. -->
+  <listen>1024</listen>
+  <home>/home/cvgm/cvgm_virt2</home>
+
+  <!-- BOTH paths: webview/models.py imports demovibes.ip2cc, so the PARENT of
+       demovibes/ must be importable as well. -->
+  <pythonpath>/home/cvgm/uwsgi2/code</pythonpath>
+  <pythonpath>/home/cvgm/uwsgi2/code/demovibes</pythonpath>
+  <chdir>/home/cvgm/uwsgi2/code/demovibes</chdir>
+  <module>uwsgi-launcher</module>
+  <need-app/>
+
+  <master/>
+  <processes>8</processes>
+
+  <!-- Same limits as production. Not carried over: <bin-path> (0.9.x only)
+       and <cpu-affinity> (its meaning changed in 2.x). -->
+  <harakiri>180</harakiri>
+  <reload-mercy>8</reload-mercy>
+  <max-requests>500</max-requests>
+  <reload-on-as>256</reload-on-as>
+  <reload-on-rss>192</reload-on-rss>
+  <socket-timeout>300</socket-timeout>
+  <no-orphans/>
+  <vacuum/>
+
+  <!-- Foreground, logged to a file, so a trial can be watched and stopped
+       with SIGTERM. Production would use systemd instead of <daemonize>. -->
+  <logto>/home/cvgm/uwsgi2/logs/app.log</logto>
+  <pidfile>/home/cvgm/uwsgi2/run/app.pid</pidfile>
+  <die-on-term/>
+</uwsgi>

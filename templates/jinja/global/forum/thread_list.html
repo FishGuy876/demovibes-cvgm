@@ -64,41 +64,45 @@ Pages : {% for p in page_range %}
 
 <h2><img class="icon_header" src="{{ STATIC_URL }}page_white_edit.png" alt="" />Start A New Forum Topic</h2>
 {% if user.is_authenticated() %}
+{% include "webview/forum_preface.html" %}
 <form method='post' action='.'>
-    <table id="newThread">
-        <tr>
-            <td class="label">
-                {{ thread_form.title.label_tag() }}
-            </td>
-            <td>
-                {{ thread_form.title }}
-                {{ thread_form.title.errors }}
-            </td>
-        </tr>
-        <tr>
-            <td class="label">
-                {{ thread_form.body.label_tag() }}
-            </td>
-            <td>
-                {{ thread_form.body }}
-                {{ thread_form.body.errors }}
-            </td class="label">
-        </tr>
-        <tr>
-            <td class="label">
-                {{ thread_form.subscribe.label_tag() }}
-            </td>
-            <td>
-                {{ thread_form.subscribe }}
-                {{ thread_form.subscribe.errors }}
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2" id="postThread">
-                <input type='submit' value='Post' />
-            </td>
-        </tr>
-    </table>
+    <fieldset>
+        <legend>Create A New Forum Post</legend>
+        <table id="newThread">
+            <tr>
+                <td class="label">
+                    {{ thread_form.title.label_tag() }}
+                </td>
+                <td>
+                    {{ thread_form.title }}
+                    {{ thread_form.title.errors }}
+                </td>
+            </tr>
+            <tr>
+                <td class="label">
+                    {{ thread_form.body.label_tag() }}
+                </td>
+                <td>
+                    {{ thread_form.body }}
+                    {{ thread_form.body.errors }}
+                </td class="label">
+            </tr>
+            <tr>
+                <td class="label">
+                    {{ thread_form.subscribe.label_tag() }}
+                </td>
+                <td>
+                    {{ thread_form.subscribe }}
+                    {{ thread_form.subscribe.errors }}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" id="postThread">
+                    <input type='submit' value='Post' />
+                </td>
+            </tr>
+        </table>
+    </fieldset>
 </form>
 {% else %}
 <p>Please log in to create a new thread.</p>

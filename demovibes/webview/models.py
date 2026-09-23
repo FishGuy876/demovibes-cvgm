@@ -66,7 +66,7 @@ SONG_LOCKTIME_FUNCTION = getattr(settings, "SONG_LOCKTIME_FUNCTION", None)
 country_by_code2 = dict ([(country.alpha2.lower(), country) for country in pycountry.countries])
 country_codes2 = country_by_code2.keys ()
 
-
+# IPCountry Lookup data can be obtained from https://db-ip.com/db/download/ip-to-country-lite
 if getattr(settings, "LOOKUP_COUNTRY", True):
     from demovibes.ip2cc import ip2cc
     ipdb = os.path.join(settings.SITE_ROOT, "ipcountry.db")
@@ -80,14 +80,40 @@ else:
 
 
 uwsgi_event_server = getattr (settings, 'UWSGI_EVENT_SERVER', False)
-try:
-    # This one if preferred from uwsgi container
-    import uwsgi
-except:
-    # Otherwise (from sockulf) we use this!
+uwsgi_event_server_http = getattr(settings, 'UWSGI_EVENT_SERVER_HTTP', False)
+
+# How events reach the events handler on :3032.
+#
+# Two transports exist. The uwsgi one calls uwsgi.send_uwsgi_message() with
+# modifier1=33 ("marshalled messages"), which the handler receives through
+# uwsgi.message_manager_marshal. The HTTP one POSTs a pickle to
+# /demovibes/ajax/monitor/new/ and is what sockulf uses, since sockulf is a
+# plain Python daemon with no uwsgi module to import.
+#
+# uWSGI 2.x REMOVED send_uwsgi_message (and message_manager_marshal). The
+# original code chose its transport purely on whether `import uwsgi`
+# succeeded, which is always true inside a uWSGI worker - so on 2.x it would
+# pick the uwsgi transport and then die with AttributeError the first time an
+# event fired. That is a latent failure: it does not show up until something
+# actually changes the queue.
+#
+# So: prefer HTTP when UWSGI_EVENT_SERVER_HTTP is set, and fall back to HTTP
+# automatically if the uwsgi module lacks send_uwsgi_message. Production sets
+# neither, runs 0.9.5.4, and keeps its existing behaviour unchanged.
+if uwsgi_event_server_http:
     import pickle
     uwsgi_event_server = "HTTP"
-    uwsgi_event_server_http = getattr(settings, 'UWSGI_EVENT_SERVER_HTTP', False)
+else:
+    try:
+        # This one if preferred from uwsgi container
+        import uwsgi
+        if not hasattr (uwsgi, 'send_uwsgi_message'):
+            # uWSGI 2.x: the uwsgi-protocol transport is gone.
+            raise ImportError ("uwsgi.send_uwsgi_message removed in uWSGI 2.x")
+    except:
+        # Otherwise (from sockulf, or on uWSGI 2.x) we use this!
+        import pickle
+        uwsgi_event_server = "HTTP"
 
 
 # Used for artist / song listing
@@ -853,6 +879,13 @@ class Userprofile(models.Model):
         countlist = Oneliner.objects.filter(user=self.user)
         return len(countlist);
 
+    def get_queuecount(self):
+        """
+        How many songs has this user queued?
+        """
+        countlist = Queue.objects.filter(requested_by=self.user)
+        return len(countlist);
+
     @models.permalink
     def get_absolute_url(self):
         return ('dv-profile', [self.user.name])
@@ -1089,7 +1122,7 @@ class Screenshot(models.Model):
     description = models.TextField(verbose_name="Description", blank = True, help_text="Brief description about this image, and any other applicable notes.")
     image = models.ImageField(upload_to = 'media/screenshot/image', blank = True, null = True) # Large, unscaled image
     last_updated = models.DateTimeField(editable = False, blank = True, null = True)
-    name = models.CharField(unique = True, max_length=40, verbose_name="Screen/Image Name", help_text="Name/Title of this image. Be verbose, to make it easier to find later. Use a real name like 'fr-041: Debris' that people can find easily")
+    name = models.CharField(unique = True, max_length=100, verbose_name="Screen/Image Name", help_text="Name/Title of this image. Be verbose, to make it easier to find later. Use a real name like 'fr-041: Debris' that people can find easily")
     startswith = models.CharField(max_length=1, editable = False, db_index = True)
     status = models.CharField(max_length = 1, choices = STATUS_CHOICES, default = 'A', db_index = True)
     thumbnail = models.ImageField(upload_to = 'media/screenshot/thumb', blank = True, null = True) # Thumbnail version of the master image
@@ -1559,7 +1592,7 @@ class Song(models.Model):
             key = "pouetxml%s" % self.id
             xmldata = cache.get(key)
             if not xmldata:
-                pouetlink = "http://www.pouet.net/export/prod.xnfo.php?which=%d" % (pouetid)
+                pouetlink = "https://www.pouet.net/export/prod.xnfo.php?which=%d" % (pouetid)
                 usock = urllib.urlopen(pouetlink)
                 xmldata = usock.read()
                 usock.close()
@@ -1598,35 +1631,97 @@ class Song(models.Model):
                 return "Couldn't pull Pouet info!"
 
     def add_pouet_img_as_screenshot(self):
-        if self.get_pouetid() and not self.get_screenshots():
-            img_url = self.get_pouet_screenshot_img()
-            if not img_url:
-                return
-            try:
-                img = urllib.urlopen(img_url)
-            except:
+        """
+        Link the Pouet image for this song as a Screenshot, creating it if needed.
+
+        Runs from post_save, so it runs on every save, including every play. It must
+        therefore be idempotent, and nothing may be downloaded or written to disk unless
+        a new Screenshot row is really going to be created.
+        """
+        pouetid = self.get_pouetid()
+        # Any linked screenshot counts, whatever its status, so a rejected image stays rejected
+        if not pouetid or self.screenshots.exists():
+            return
+
+        img_url = self.get_pouet_screenshot_img()
+        if not img_url:
+            return
+        # get_pouet_screenshot_img() can save the song, which comes back through here
+        if self.screenshots.exists():
+            return
+
+        img_name = os.path.basename(img_url)
+        s = None
+
+        # Reuse an image we already hold: same Pouet id (however the URL was spelled), or same file
+        idre = re.compile(r"(which=|pouet id )%d(\D|$)" % pouetid, re.I)
+        for cand in Screenshot.objects.filter(description__contains=str(pouetid)):
+            if idre.search(cand.description):
+                s = cand
+                break
+        if not s:
+            upload_to = Screenshot._meta.get_field("image").upload_to
+            for cand in Screenshot.objects.filter(image="%s/%s" % (upload_to, img_name))[:1]:
+                s = cand
+
+        if not s:
+            failkey = "pouetimgfail%d" % pouetid
+            if cache.get(failkey):
                 return
 
-            image = SimpleUploadedFile(os.path.basename(img_url), img.read())
+            def fetch(url):
+                try:
+                    data = urllib.urlopen(url).read()
+                    # urlopen() hands back a 404 page as if it were the file, so check it is an image
+                    Image.open(cStringIO.StringIO(data)).verify()
+                    return data
+                except:
+                    return None
 
-            title = self.grab_pouet_info("name", False)
+            data = fetch(img_url)
+            if not data:
+                # The URL cached on the song can be stale, Pouet has moved its images
+                fresh = self.grab_pouet_info("screenshot")
+                if fresh and fresh != img_url:
+                    img_url = fresh
+                    img_name = os.path.basename(img_url)
+                    data = fetch(img_url)
+                    if data:
+                        self.pouetss = fresh
+                        Song.objects.filter(id=self.id).update(pouetss=fresh)
+            if not data:
+                cache.set(failkey, 1, 86400)
+                return
+
+            title = self.grab_pouet_info("name", False) or ("Pouet %d" % pouetid)
             aa = self.grab_pouet_info("authors")
             if not aa:
                 aa = "a mystical unknown entity"
             desc1 = "%s by %s" % (title, aa)
-            desc = "%s\nFetched from Pouet id [url=http://www.pouet.net/prod.php?which=%s]%s[/url]" % (desc1, self.get_pouetid(), self.get_pouetid())
+            desc = "%s\nFetched from Pouet id [url=http://www.pouet.net/prod.php?which=%s]%s[/url]" % (desc1, pouetid, pouetid)
 
-            Q = Screenshot.objects.filter(name=title, description__contains=self.get_pouetid())
-            if Q:
-                s = Q[0]
-            else:
-                s = Screenshot(name=title, description=desc)
-                s.image.save(os.path.basename(img_url), image, save=True)
-                s.save()
+            # Screenshot.name is unique and limited in length: cut it to fit, and
+            # tell it apart from another production with the same name
+            maxlen = Screenshot._meta.get_field("name").max_length
+            name = title[:maxlen]
+            if Screenshot.objects.filter(name=name).exists():
+                suffix = " (%d)" % pouetid
+                name = title[:maxlen - len(suffix)] + suffix
+
+            # Row first, so a clash fails here and not after a file has been written
+            s = Screenshot(name=name, description=desc)
+            s.save()
+            try:
+                s.image.save(img_name, SimpleUploadedFile(img_name, data), save=True)
+            except:
+                s.delete()
+                raise
+            try:
                 s.create_thumbnail()
-                s.save()
+            except:
+                log.error("Unable to create thumbnail for Pouet screenshot %s: %s" % (s.id, sys.exc_info()))
 
-            ScreenshotObjectLink.objects.create(obj=self, image=s)
+        ScreenshotObjectLink.objects.create(obj=self, image=s)
 
     def get_pouet_screenshot_img(self):
         """
