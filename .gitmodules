@@ -1,0 +1,3 @@
+[submodule "demosauce"]
+	path = demosauce
+	url = https://github.com/FishGuy876/demosauce.git
