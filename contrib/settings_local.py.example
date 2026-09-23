@@ -107,6 +107,8 @@ PLAY_JINGLES = True
 # How many objects per page:
 PAGINATE = 100
 FORUM_PAGINATE = 30
+# Songs per page on the tag detail pages (default 50 in settings.py)
+#TAG_SONGS_PER_PAGE = 50
 
 # When displaying approved songs, specify the maximum number to display on the page here.
 # You should take into account that you will want to display about an average of 2 days worth

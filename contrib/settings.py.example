@@ -27,7 +27,7 @@ DATABASE_HOST = ''             # Set to empty string for localhost. Not used wit
 DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
 
 # path to demosauce scan tool
-DEMOSAUCE_SCAN = '../demosauce/scan'
+DEMOSAUCE_SCAN = '../demosauce/dscan'
 
 # maximum time a song is looped in seconds
 MAX_LOOP_LENGTH = 150

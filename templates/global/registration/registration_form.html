@@ -2,12 +2,15 @@
 
 {% block main %}
 <h2><img class="icon_header" src="{{ MEDIA_URL }}user_edit.png" alt="" />New User Registration</h2>
-Fill in the following form to create an account on this site.
+{% include "webview/registration_preface.html" %}
 <form action="." method="post">
-<table>
-{{ form.as_table }}
-</table>
-<input type="submit" value="Register" />
+    <fieldset>
+        <legend>Register A New Account</legend>
+        <table>
+        {{ form.as_table }}
+        </table>
+        <input type="submit" value="Register" />
+    </fieldset>
 </form>
 {% endblock %}
 

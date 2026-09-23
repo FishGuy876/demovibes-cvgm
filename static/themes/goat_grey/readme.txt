@@ -44,3 +44,6 @@ Changes:
  * Version 1.10
  * Adapted the theme to work with the SSL changes to the site. FishGuy876
  
+ * Version 1.13
+ * 01172026 - Added Discord Icon options for Sidebar. FishGuy876
+ 

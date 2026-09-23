@@ -1,0 +1,60 @@
+<!--
+  uWSGI 2.0 config for the main Demovibes app inside the CouchPotato
+  container. Derived from production's contrib/uwsgi-local.xml (uWSGI
+  0.9.5.4 under Cherokee), with the differences noted inline.
+
+  The app has NO uWSGI version constraint - demovibes/uwsgi-launcher.py is a
+  plain django.core.handlers.wsgi.WSGIHandler(). Production's 0.9.5.4 pin
+  comes solely from uwsgi_events/uwsgi_eventhandler.py. See CLAUDE.md.
+
+  XML (rather than ini) is deliberate, to stay close to the files already in
+  production. It requires uWSGI to be built with libxml2, which
+  Dockerfile.py27 installs.
+-->
+<uwsgi>
+  <!-- 0.0.0.0 inside the container only; compose publishes this on
+       127.0.0.1 on the host, so nginx remains the sole public listener. -->
+  <socket>0.0.0.0:3031</socket>
+
+  <home>/opt/cvgm_virt</home>
+
+  <!-- BOTH paths. webview/models.py does `from demovibes.ip2cc import ip2cc`,
+       so the PARENT of demovibes/ must be importable, not just demovibes/. -->
+  <pythonpath>/app</pythonpath>
+  <pythonpath>/app/demovibes</pythonpath>
+  <chdir>/app/demovibes</chdir>
+
+  <module>uwsgi-launcher</module>
+
+  <master/>
+  <processes>4</processes>
+
+  <!-- Fail loudly instead of serving 500s from a half-loaded app. Not
+       available in 0.9.5.4, which is why production has no equivalent. -->
+  <need-app/>
+
+  <!-- Reload workers when a .py changes. Development convenience that
+       replaces what runserver's autoreloader gave us; drop it for anything
+       resembling production. -->
+  <py-autoreload>1</py-autoreload>
+
+  <!-- Production sets <disable-logging/>. Left ON here deliberately: the
+       point of this box is to see what breaks. NOTE the events config in
+       this repo says <enable-logging/>, which is NOT a real uWSGI option -
+       see the logging gotchas in CLAUDE.md. -->
+
+  <harakiri>600</harakiri>
+  <reload-mercy>8</reload-mercy>
+  <max-requests>2000</max-requests>
+  <reload-on-as>256</reload-on-as>
+  <reload-on-rss>192</reload-on-rss>
+  <socket-timeout>300</socket-timeout>
+  <no-orphans/>
+  <vacuum/>
+
+  <!-- Container-specific: run in the foreground so Docker supervises the
+       process, and exit promptly on SIGTERM from `docker stop`.
+       Production's <daemonize> and <pidfile> are deliberately absent. -->
+  <die-on-term/>
+  <log-master/>
+</uwsgi>

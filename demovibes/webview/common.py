@@ -258,7 +258,7 @@ def get_latest_event_lookup():
 
 def add_oneliner (user, message):
     message = message.strip()
-    can_post = user.is_superuser or not user.has_perm ('webview.mute_oneliner')
+    can_post = user.is_superuser or user.is_staff or not user.has_perm ('webview.mute_oneliner')
     
     r = user.get_profile().is_muted()
     if can_post and r:

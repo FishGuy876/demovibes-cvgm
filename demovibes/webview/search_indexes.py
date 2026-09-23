@@ -2,6 +2,12 @@ from haystack.indexes import *
 from haystack import site
 from django.conf import settings
 import webview.models as M
+# The song/post index templates {% load dv_extend %}, and dv_extend does
+# "from demovibes.webview import common", a circular import that only works
+# once webview.common is already loaded. A full rebuild gets there by
+# accident (artists render first); update_index --age with no changed
+# artists does not, and dies with "'dv_extend' is not a valid tag library".
+import webview.common
 
 class ArtistIndex(SearchIndex):
     text = CharField(document=True, use_template=True)

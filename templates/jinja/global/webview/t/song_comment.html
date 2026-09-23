@@ -9,6 +9,9 @@
 	</td>
 	<td class="post">
 		{{ comment.comment|mksafe|linebreaks|bbcode|smileys }}
+		{% if user.is_staff %}
+		<a href="/admin/webview/songcomment/{{ comment.id }}/" target="_blank">[Admin This Comment]</a>
+		{% endif %}
 	</td>
 </tr>
 <tr class='postfooter'>

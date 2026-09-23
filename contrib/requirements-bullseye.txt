@@ -1,0 +1,57 @@
+# Working manifest for Python 2.7 on Debian 11 "bullseye", captured via
+# `pip freeze` from a venv built by contrib/Dockerfile.py27 on CouchPotato,
+# 2026-09-17. Verified: OVERALL PASS, Django 1.3 ORM wired to the MySQL
+# backend, all required modules importing.
+#
+# This is contrib/requirements.txt (production, Debian 9) with exactly TWO
+# changes. Everything else installs unmodified two Debian releases forward:
+#
+#   MySQL-python==1.2.3  ->  mysqlclient==1.3.14
+#       MySQL-python does not compile against MariaDB Connector/C:
+#       "_mysql.c:1804: error: 'MYSQL' has no member named 'reconnect'".
+#       It assigns to a struct member that no longer exists. mysqlclient is
+#       the maintained fork of the same C extension, imports as MySQLdb, and
+#       satisfies Django 1.3's gate (version_info >= (1,2,1,'final')).
+#       Confirmed: django.db.backends.mysql loads against it.
+#
+#   pyenchant==2.0.0     ->  REMOVED
+#       Nothing in this codebase imports `enchant`; the only spellcheck path
+#       is haystack's spelling_suggestion(), which uses Whoosh's own speller.
+#       It cannot be installed here anyway: it hardcodes libenchant.so.1
+#       (enchant 1.x) and bullseye ships enchant-2. Worse, its setup.py
+#       imports itself during egg_info, so leaving it in makes pip abort the
+#       ENTIRE batch and no other package installs.
+#
+# INSTALL METHOD MATTERS AS MUCH AS THE PINS. Build the venv with
+# `virtualenv --no-wheel`. With `wheel` present, pip builds a wheel first,
+# which bypasses Django 1.3's `scheme['data'] = scheme['purelib']` override
+# and dumps its 88 templates outside site-packages - so /admin/ 500s with
+# TemplateDoesNotExist: admin/login.html. This is the long-standing reason a
+# venv had to be copied rather than rebuilt. Removing wheel does NOT stop
+# pip using pre-built wheels it downloads, so Pillow still installs binary.
+# Check with: find <venv>/lib/python2.7/site-packages/django -name '*.html' | wc -l
+#   88 = healthy, 0 = the wheel path was used.
+#
+# Do NOT use this on production (Debian 9 / MySQL 5.7). It is the bullseye
+# container's manifest. contrib/requirements.txt remains the record of what
+# production actually runs.
+
+confusable-homoglyphs==3.1.1
+Django==1.3
+django-authopenid==1.0.1
+django-extensions==0.5
+django-haystack==1.2.7
+django-registration==2.4.1
+-e git+https://github.com/FishGuy876/django-tagging-fork.git@f794e2618241b976ebc8893521ad6eb0eea06304#egg=django_tagging_fork
+django-wsgiserver==0.6.9
+flup==1.0.3.dev20110405
+Jinja2==2.5.5
+mysqlclient==1.3.14
+pika==0.5.2
+Pillow==6.2.2
+pycountry==0.14.1
+python-memcached==1.59
+python-openid==2.2.5
+six==1.11.0
+South==1.0.2
+Whoosh==2.3.2

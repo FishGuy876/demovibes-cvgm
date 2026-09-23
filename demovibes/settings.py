@@ -22,6 +22,7 @@ DEBUG = True
 TEMPLATE_DEBUG = False
 
 #For looking up flag country on users with no flag set
+# IPCountry Lookup data can be obtained from https://db-ip.com/db/download/ip-to-country-lite
 LOOKUP_COUNTRY = True
 DEFAULT_FLAG = "nectaflag"
 
@@ -222,6 +223,15 @@ RECENT_COMP_VIEW_LIMIT    = 20
 # Members will appear at the beginning of the list.
 SHOW_NEW_MEMBER_COUNT = 1
 
+# Spam Administration
+#
+# Demovibves has some limited functions for assisting staff members with detecting, and deleting, spam user
+# Accounts. These variables are limited to that process
+
+# Determine the number of user accounts to display on the Admin screen at one time. More is better, but as 
+# You purge your site of spammy users, this will eventually become all good users
+SPAM_ADMIN_USER_COUNT = 25
+
 # Auto-Approve Admin Uploads
 #
 # Anyone with a Super User status who uploads tracks will be auto approved if set to 1. No
@@ -362,6 +372,11 @@ RADIO_STATUS_VOTED_MIN_VOTES = 9
 # How many objects per page:
 PAGINATE = 30
 FORUM_PAGINATE = 15
+
+# How many songs per page on the tag detail pages (/tags/<tag>/). Each song row
+# costs several SQL queries to render, so keep this modest. Can be overridden
+# in settings_local.py.
+TAG_SONGS_PER_PAGE = 50
 
 # When displaying approved songs, specify the maximum number to display on the page here.
 # You should take into account that you will want to display about an average of 2 days worth
