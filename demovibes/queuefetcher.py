@@ -38,6 +38,8 @@ class song_finder (object):
 
     min_votes = getattr (settings, 'DJ_RANDOM_MIN_VOTES', 5)
 
+    least_voted_pool_size = getattr (settings, 'POOL_LEAST_VOTED_SONG_COUNT_SIZE', 100)
+
     def __init__(self, djuser = None):
         self.sysenc = sys.getdefaultencoding()
         self.fsenc = sys.getfilesystemencoding()
@@ -196,14 +198,20 @@ class song_finder (object):
 
     def get_least_voted (self, djrandom_options):
         # Get songs, least voted songs first. Songs with the same amount of votes
-        # are given in a pseudo random order
-        order_by = ['rating_votes', 'times_played', 'rnd']
+        # are given in a pseudo random order. Pick randomly from the pool of
+        # least-voted songs, rather than always the single least-voted one.
+        # times_played is deliberately not a sort key: it would strictly
+        # prefer 0-play songs over 0-vote/1-play (or higher-vote) songs
+        # whenever the 0-play group alone fills the pool, starving everything
+        # else of a chance.
+        order_by = ['rating_votes', 'rnd']
         if djrandom_options.avoid_explicit:
             order_by.insert (0, "explicit")
 
         qs = Song.active.filter (Song.unlocked_condition()).order_by (*order_by)
+        pool = list (qs [:self.least_voted_pool_size])
 
-        return qs [0]
+        return pool [random.randint (0, len (pool) - 1)]
 
     def init_jt(self):
         self.jt = {

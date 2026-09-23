@@ -92,6 +92,10 @@ SECRET_KEY = 'Hehe' # Make this something unique, an MD5 or any long string!
 # The person making a bad request will receive a popup saying their request was rejected
 SONGS_IN_QUEUE_LOWRATING = {'limit': 2, 'lowvote':2.5}
 
+# "Songs That Need Love" mood picks randomly from this many of the
+# least-voted eligible songs, instead of always the single least-voted one.
+POOL_LEAST_VOTED_SONG_COUNT_SIZE = 100
+
 # Time to lock a song until it can be requested again.
 #SONG_LOCK_TIME = { 'days' : 18, 'hours' : 6, 'minutes' : 0 }
 #SONG_LOCK_TIME_RANDOM = { 'days' : 6, 'hours' : 4, 'minutes' : 5 }

@@ -367,6 +367,11 @@ PLAY_JINGLES = False
 # 5 : 1}
 
 #DJ_RANDOM_MIN_VOTES = 1
+
+# "Songs That Need Love" mood picks randomly from this many of the
+# least-voted eligible songs, instead of always the single least-voted one.
+#POOL_LEAST_VOTED_SONG_COUNT_SIZE = 100
+
 RADIO_STATUS_VOTED_MIN_VOTES = 9
 
 # How many objects per page:
