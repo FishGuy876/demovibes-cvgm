@@ -31,7 +31,7 @@ flup==1.0.3.dev20110405
 Jinja2==2.5.5
 MySQL-python==1.2.3
 pika==0.5.2
-Pillow==6.2.2
+Pillow==12.3.0
 pycountry==0.14.1
 pyenchant==2.0.0
 python-memcached==1.59
