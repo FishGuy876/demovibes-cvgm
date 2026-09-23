@@ -64,7 +64,11 @@ class SearchView(MyBaseView):
         self.form = MMs(self.request.GET)
 
     def set_context(self):
+        # q needs a default: it is returned below even when the form is
+        # invalid (e.g. an unknown ?models= value), which used to raise
+        # UnboundLocalError and, via the broken 500 page, a 504.
         sqs = sugg = None
+        q = ""
         if self.form.is_valid():
             q = self.form.cleaned_data['q']
             if q:

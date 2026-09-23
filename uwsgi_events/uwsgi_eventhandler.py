@@ -1,12 +1,63 @@
+# --- gevent MUST be patched before bottle is imported ---------------------------------------
+# bottle 0.9's Request and Response are `threading.local` SUBCLASSES, bound when bottle is
+# imported. uWSGI's <gevent-monkey-patch/> runs only AFTER this module is loaded, so without this
+# they stay real thread-locals and EVERY concurrent long-poll greenlet shares ONE response object.
+# The ingest POST answers "OK", which sets `Content-Length: 2` on that shared object, and the next
+# long-poll to wake is then cut to 2 bytes ("\ne") - live updates arrive as garbage, and nginx logs
+# "upstream sent more data than specified in Content-Length header". Found 2026-09-19 on the
+# production rehearsal. Patching first makes them greenlet-local. Harmless where gevent is absent
+# (uWSGI 0.9.x / ugreen, whose venv has no gevent): the ImportError is swallowed. patch_all() is
+# idempotent, so uWSGI's own later patch does no harm.
+try:
+    from gevent import monkey
+    monkey.patch_all()
+except ImportError:
+    pass
+
 import uwsgi
 import bottle
 import threading
 import hashlib
 import pickle
 import random
+import time
 
 
 LOCK = threading.Lock()
+
+
+# --- uWSGI async compatibility ------------------------------------------
+#
+# This file is the ONLY reason production is pinned to uWSGI 0.9.5.4. It used
+# three APIs that were removed after 0.9.x:
+#
+#   uwsgi.green_pause(n)            suspend this coroutine for n seconds
+#   uwsgi.green_unpause_all()       wake every suspended coroutine at once
+#   uwsgi.message_manager_marshal   receive uwsgi-protocol modifier-33 messages
+#
+# uWSGI 2.x offers async_sleep()/suspend() but has NO broadcast-wake
+# primitive, so the wake-on-event behaviour is replaced by short-interval
+# polling. Worst-case delivery latency becomes POLL_INTERVAL instead of
+# instant, which is invisible next to a long-poll that otherwise waits ~60s.
+#
+# Both paths are kept so the same file runs under either version, and
+# production is not forced to move in lockstep with the clone.
+HAS_GREEN = hasattr (uwsgi, 'green_pause')
+
+# gevent gives back the EXACT semantics that were lost: Event.wait(timeout)
+# is green_pause(), and Event.set() wakes every waiter at once like
+# green_unpause_all() did. No polling, no added latency.
+try:
+    from gevent.event import Event as _GeventEvent
+    WAKE = _GeventEvent()
+    HAS_GEVENT = True
+except ImportError:
+    WAKE = None
+    HAS_GEVENT = False
+
+# Last-resort fallback only, used when neither uGreen's python API nor gevent
+# is available. Costs up to POLL_INTERVAL of delivery latency.
+POLL_INTERVAL = 1
 
 
 try:
@@ -53,11 +104,61 @@ def event_receiver (obj, id):
 
     global event
     event = obj
-    uwsgi.green_unpause_all()
+    if HAS_GREEN:
+        # uWSGI 0.9.x: wake every waiting long-poll immediately.
+        uwsgi.green_unpause_all()
+    elif HAS_GEVENT:
+        # set() releases every waiter; clear() re-arms for the next event.
+        WAKE.set()
+        WAKE.clear()
+    # Otherwise waiters notice within POLL_INTERVAL.
 
     LOCK.release()
 
-uwsgi.message_manager_marshal = event_receiver
+
+def wait_for_event (current_id, seconds):
+    """Suspend this request until a newer event arrives, or `seconds` pass.
+
+    0.9.x suspends once and is woken by green_unpause_all(). 2.x has no such
+    wake, so sleep in slices and re-check - same observable behaviour, just
+    with up to POLL_INTERVAL of latency.
+    """
+
+    if HAS_GREEN:
+        uwsgi.green_pause (seconds)
+        return
+
+    if HAS_GEVENT:
+        # Blocks this greenlet until event_receiver calls WAKE.set(), or the
+        # timeout expires. Same shape as green_pause + green_unpause_all.
+        WAKE.wait (timeout = seconds)
+        return
+
+    # Fallback: poll. NOTE async_sleep()+suspend() was tried here first and
+    # did NOT terminate - requests ran past <harakiri> and uWSGI SIGKILLed
+    # the whole worker, taking all 800 in-flight requests with it. Keep this
+    # branch conservative and bounded by iteration count, not just wall time.
+    deadline = time.time() + seconds
+    iterations = 0
+    while time.time() < deadline and iterations < seconds * 2:
+        iterations += 1
+        time.sleep (POLL_INTERVAL)
+
+        LOCK.acquire()
+        current = event
+        LOCK.release()
+
+        if current and current[1] > current_id:
+            return
+
+
+# The uwsgi-protocol transport (modifier1=33, "marshalled messages") exists
+# only on 0.9.x. On 2.x this receiver is unreachable, and webview/models.py
+# falls back to POSTing /demovibes/ajax/monitor/new/ instead - the same path
+# sockulf has always used. send_uwsgi_message is the paired API, so its
+# presence is a reliable test for which uWSGI we are running under.
+if hasattr (uwsgi, 'send_uwsgi_message'):
+    uwsgi.message_manager_marshal = event_receiver
 
 
 @bottle.get ('/demovibes/ajax/monitor/:id#[0-9]+#/')
@@ -82,7 +183,8 @@ def handler (id):
 
     # Lets sleep for awhile in case there is no interesting events
     if not myevent or myevent[1] <= id:
-        uwsgi.green_pause(50 + random.randint(0,20) ) #Try to stop all from being "done" and re-request at the same time
+        #Try to stop all from being "done" and re-request at the same time
+        wait_for_event (id, 50 + random.randint(0,20) )
 
     LOCK.acquire()
     myevent = event

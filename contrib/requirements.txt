@@ -1,17 +1,41 @@
-django-authopenid==1.0.1
+# Captured from the live production virtualenv (~/cvgm_virt on the cvgm.net
+# server) via `pip freeze` on 2026-09-15. This is the authoritative record of
+# what production actually runs. The previous contents of this file had
+# drifted badly and did not match the deployed environment.
+#
+# Target environment: Python 2.7.13 on Debian 9 "stretch".
+#
+# All versions below still resolve on PyPI. That does NOT mean this file will
+# install cleanly on a modern system: MySQL-python, Pillow and pyenchant are
+# C extensions needing old system headers, and current pip/setuptools can no
+# longer build Python 2.7-era sdists. Treat this as a manifest of record, not
+# a guaranteed one-shot install.
+#
+# To refresh: /home/cvgm/cvgm_virt/bin/pip freeze
+# Ordering follows pip freeze's own output so future diffs stay readable.
+#
+# Deliberately omitted: pkg-resources==0.0.0
+#   pip freeze emits this on Debian/Ubuntu as an artifact of how the distro
+#   packages setuptools. No such project exists on PyPI (404), so including it
+#   makes `pip install -r requirements.txt` fail outright. Not a real dependency.
+
+confusable-homoglyphs==3.1.1
 Django==1.3
-Jinja2==2.5.5
-South==0.7.3
-Whoosh==2.3
+django-authopenid==1.0.1
 django-extensions==0.5
-django-haystack==1.2.6
-django-tagging==0.3.1
-#-e git+https://github.com/fsouza/django-tagging.git#egg=django_tagging_fork
-python-memcached==1.47
-python-openid==2.2.5
-wsgiref==0.1.2
-flup==1.0.3.dev-20110405
-MySQL-python==1.2.3
+django-haystack==1.2.7
+django-registration==2.4.1
+-e git+https://github.com/FishGuy876/django-tagging-fork.git@f794e2618241b976ebc8893521ad6eb0eea06304#egg=django_tagging_fork
 django-wsgiserver==0.6.9
+flup==1.0.3.dev20110405
+Jinja2==2.5.5
+MySQL-python==1.2.3
 pika==0.5.2
+Pillow==6.2.2
 pycountry==0.14.1
+pyenchant==2.0.0
+python-memcached==1.59
+python-openid==2.2.5
+six==1.11.0
+South==1.0.2
+Whoosh==2.3.2

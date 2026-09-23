@@ -373,6 +373,11 @@ RADIO_STATUS_VOTED_MIN_VOTES = 9
 PAGINATE = 30
 FORUM_PAGINATE = 15
 
+# How many songs per page on the tag detail pages (/tags/<tag>/). Each song row
+# costs several SQL queries to render, so keep this modest. Can be overridden
+# in settings_local.py.
+TAG_SONGS_PER_PAGE = 50
+
 # When displaying approved songs, specify the maximum number to display on the page here.
 # You should take into account that you will want to display about an average of 2 days worth
 # Of uploads; Otherwise the list will never be useful except at the time a new batch of

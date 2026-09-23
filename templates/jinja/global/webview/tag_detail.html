@@ -9,7 +9,7 @@
 <p>{{ gettext("Related tags") }}:</p>
 {% for tagd in related %}
     <span class="tagview_{{ tagd.font_size }}">
-        <a href="{{ url("dv-tagdetail", mkstr(tag|e,",",tagd|e)) }}" title='Add tag "{{ tagd|e }}" to filter' class="tag_add">[+]</a>
+        {% if can_add %}<a href="{{ url("dv-tagdetail", mkstr(tag|e,",",tagd|e)) }}" title='Add tag "{{ tagd|e }}" to filter' class="tag_add">[+]</a>{% endif %}
         <span title="{{ tagd.count }} song(s) tagged">
             {{ display.tag(tagd) }}
         </span>
@@ -18,7 +18,7 @@
 {% endfor %}
 <h2>{{ gettext("Songs connected to tags") }}</h2>
 
-{% set objs, paging = dv.paginate(songs, 300) %}
+{% set objs, paging = dv.paginate(songs, songs_per_page) %}
 
 {% include "webview/t/songheader.html" %}
 {% for song in objs  %}
