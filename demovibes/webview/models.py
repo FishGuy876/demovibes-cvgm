@@ -29,6 +29,7 @@ from django.template import Context, loader
 from django.db.models import Q as DQ
 from django.db.models import Count
 from django.db.models.signals import post_save, pre_save
+from django.contrib.auth.signals import user_logged_in
 from django.db import DatabaseError
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
@@ -67,16 +68,16 @@ country_by_code2 = dict ([(country.alpha2.lower(), country) for country in pycou
 country_codes2 = country_by_code2.keys ()
 
 # IPCountry Lookup data can be obtained from https://db-ip.com/db/download/ip-to-country-lite
+# ipcountry.db is a MaxMind-format (.mmdb) file, read by demovibes.ip2cc.mmdb.
+# The old ip2cc tree reader cannot read it, and its FTP updater no longer works.
+ipccdb = False
 if getattr(settings, "LOOKUP_COUNTRY", True):
-    from demovibes.ip2cc import ip2cc
+    from demovibes.ip2cc import mmdb
     ipdb = os.path.join(settings.SITE_ROOT, "ipcountry.db")
-    if not os.path.exists(ipdb):
-        log.info("IP2Country DB not found, creating new")
-        from ip2cc import update as ip2ccupdate
-        ip2ccupdate.create_file(ipdb)
-    ipccdb = ip2cc.CountryByIP(ipdb)
-else:
-    ipccdb = False
+    try:
+        ipccdb = mmdb.CountryByIP(ipdb)
+    except Exception, e:
+        log.warn("IP2Country DB %s unusable, country lookup disabled: %s", ipdb, e)
 
 
 uwsgi_event_server = getattr (settings, 'UWSGI_EVENT_SERVER', False)
@@ -2511,6 +2512,29 @@ def create_profile(sender, **kwargs):
             pass
 
 post_save.connect(create_profile, sender=User)
+
+
+def record_login_ip(sender, request, user, **kwargs):
+    """
+    Record the address a user signs in from, and set their flag if they have none.
+
+    Runs on every successful login, whichever view did it (django_authopenid, the
+    webview Login view), since all of them call django.contrib.auth.login().
+    ajax_views.ping keeps last_ip current afterwards for long-lived sessions.
+    Uses update() so the rest of the profile row, and last_changed, are untouched.
+    Never lets a failure here break the login itself.
+    """
+    try:
+        ip = request.META.get("REMOTE_ADDR")
+        if not ip:
+            return
+        profile, created = Userprofile.objects.get_or_create(user=user)
+        profile.set_flag_from_ip(ip)
+        Userprofile.objects.filter(pk=profile.pk).update(last_ip=ip, country=profile.country)
+    except:
+        log.error("Unable to record login IP for %s: %s" % (user, sys.exc_info()))
+
+user_logged_in.connect(record_login_ip)
 
 
 def set_song_values(sender, **kwargs):

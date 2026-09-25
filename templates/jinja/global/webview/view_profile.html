@@ -25,14 +25,16 @@
 {{ display.onelinerlink("user", profile.user.username, user) }}
 
 
-<br />{% cache 86400 mkstr(profile.user.id, profile.user.last_changed, "userprofilestats") %}
+<br />{% cache 86400 mkstr(profile.user.id, profile.user.last_changed, "userprofilestats2") %}
 Member Since: {{ profile.user.date_joined|date("F j, Y") }}<br />
 {{ profile.get_uploadcount() }} Uploads, {{ profile.get_votecount() }} Votes, Spoken {{ profile.get_onelinercount() }} Times.<br />
 Queued {{ profile.get_queuecount() }} Songs For Playing.<br />
 Last Login: {{ profile.user.last_login|date("F j, Y") }}<br />
+{% endcache %}
+{#- Outside the cache: the cache key does not include the viewer, so anything staff-only in there would be shown to everyone -#}
 {% if user.is_staff %}
-Last IP Address: {{ user.last_ip }}<br />
-{% endif %}{% endcache %}
+Last IP Address: {{ profile.last_ip or "" }}<br />
+{% endif %}
 
 <a href="{{ url("dv-send_pm") }}?to={{ profile.user|e }}"><img src="{{ STATIC_URL }}email.png" alt="mail" /> {{ gettext("Send A Message") }}</a> | View {{ profile.user|e }}'s <a href="{{ url ("dv-user-favs", profile.user) }}">{{ gettext("Favourites List") }}</a>.<br/>
 
