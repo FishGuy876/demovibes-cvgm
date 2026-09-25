@@ -1598,6 +1598,7 @@ class HelpusWithScreenshots (ListScreenshots):
 
 
 class TagCloud(WebView):
+    login_required = True
     template = "tag_cloud.html"
     cache_key = "tag_cloud"
     cache_duration = 24*60*60
@@ -1651,6 +1652,7 @@ class MuteOneliner(WebView):
         return {"active": active, "history": history}
 
 class TagDetail(WebView):
+    login_required = True
     template = "tag_detail.html"
     cache_duration = 24 * 60 * 60
 

@@ -22,7 +22,7 @@
     
     {{ display.onelinerlink("song", object.id, user) }}
 
-    {% if not user.is_authenticated() or user.get_profile().use_tags %}
+    {% if user.is_authenticated() and user.get_profile().use_tags %}
         <div class="taglist">
             {% cache 86400 mkstr(object.id, object.last_changed, "tgcache") %}
                 <p>{{ gettext("Tags for song") }}:</p>

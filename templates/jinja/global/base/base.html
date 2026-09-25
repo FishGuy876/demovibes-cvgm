@@ -17,7 +17,7 @@
                 <li id="compilations"><a href="{{ url ("dv-compilations") }}">{{ gettext("Compilations") }}</a></li>
                 <li id="screenshots"><a href="{{ url ("dv-screenshots") }}">{{ gettext("Screenshots") }}</a></li>
                 <li id="licenses"><a href="{{ url ("dv-licenses") }}">{{ gettext("Licenses") }}</a></li>
-                {% if not user.is_authenticated() or user.get_profile().use_tags %}<li id="tagcloud"><a href="{{ url('dv-tagcloud') }}">{{ gettext("Tags") }}</a></li>{% endif %}
+                {% if user.is_authenticated() and user.get_profile().use_tags %}<li id="tagcloud"><a href="{{ url('dv-tagcloud') }}">{{ gettext("Tags") }}</a></li>{% endif %}
                 <li id="statistics"><a href="{{ url ("dv-stats-index") }}">{{ gettext("Statistics") }}</a></li>
                 <li id="menuqueue"><a href="{{ url ("dv-queue") }}">{{ gettext("Queue") }}</a></li>
                 <li>&nbsp;</li>
@@ -41,7 +41,7 @@
         </div>
 
         <div id="menuonline">
-            <h3>{{ gettext("Who's Currently Online?") }}</h3>
+            <h3>{{ gettext("Who's Currently Slacking?") }}</h3>
             <div id="whosonlinenicks">{{ dv.get_online_users() }}</div>
         </div>
     </div>
