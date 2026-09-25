@@ -639,6 +639,7 @@ class songHistory(SongView):
     """
     List queue history of song
     """
+    login_required = True
     template = "song_history.html"
     def set_context(self):
         return {'requests': self.song.queue_set.all()}
@@ -647,6 +648,7 @@ class songVotes(SongView):
     """
     List vote history of song
     """
+    login_required = True
     template = "song_votes.html"
     def set_context(self):
         return {'votelist': self.song.songvote_set.all()}
@@ -655,6 +657,7 @@ class songComments(SongView):
     """
     List the comments belonging to a song
     """
+    login_required = True
     template = "song_comments.html"
     def set_context(self):
         return {'commentlist': self.song.songcomment_set.all()}

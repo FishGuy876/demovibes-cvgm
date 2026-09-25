@@ -116,10 +116,10 @@
         </div>
     {% endif %}
 
-    {% cache 86400 mkstr(object.id, object.last_changed, "songinfo2") %}
+    {% cache 86400 mkstr(object.id, object.last_changed, "songinfo2", user.is_authenticated()) %}
         <p>
             {{ gettext("This song has been played %(num)d times.", num=object.times_played) }}
-            [<a href="{{object.get_absolute_url()}}queue_history">{{ gettext("See Request History") }}</a>]
+            {% if user.is_authenticated() %}[<a href="{{object.get_absolute_url()}}queue_history">{{ gettext("See Request History") }}</a>]{% endif %}
             <br />
             {{ gettext("It was added %(timesince)s ago.", timesince=object.added|timesince) }}
         </p>
@@ -153,7 +153,7 @@
     <h2><img class="icon_header" src="{{ STATIC_URL }}star.png" alt="" />{{ gettext("Song Rating") }}</h2>
     {% if object.rating_votes %}
         {{ gettext("Song Rating") }}: {{ object.rating|floatformat }} - {{ gettext("Votes Placed") }}: {{ object.rating_votes }}
-        <a href="{{ object.get_absolute_url() }}votes/">{{ gettext("View Voting History") }}</a>
+        {% if user.is_authenticated() %}<a href="{{ object.get_absolute_url() }}votes/">{{ gettext("View Voting History") }}</a>{% endif %}
         <br />
     {% else %}
         {{ gettext("No Votes Yet :(") }} <br />
