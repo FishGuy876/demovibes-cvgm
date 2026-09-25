@@ -32,6 +32,7 @@
       <th>{{ gettext("User") }}</th>
       <th>{{ gettext("Song Comment") }}</th>
   </tr>
+  {% set show_comment_song = True %}
   {% if songcomments %}
   {% for comment in songcomments %}
       {% include "webview/t/song_comment.html" %}

@@ -11,6 +11,9 @@
 		{{ comment.comment|mksafe|linebreaks|bbcode|smileys }}
 		{% if user.is_staff %}
 		<a href="/admin/webview/songcomment/{{ comment.id }}/" target="_blank">[Admin This Comment]</a>
+		{% if show_comment_song %}
+		<br />{{ gettext("On") }} {{ display.song(comment.song) }} {{ gettext("by") }} {{ display.artists(comment.song) }}
+		{% endif %}
 		{% endif %}
 	</td>
 </tr>
