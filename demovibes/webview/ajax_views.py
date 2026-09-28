@@ -151,6 +151,14 @@ def nowplaying (request):
                        request)
 
 
+@cache_control (must_revalidate = True, max_age = 10)
+def player (request):
+    """
+    Now Playing panel for the popup player; the play page reloads it on 'nowplaying' events.
+    """
+    return HttpResponse (get_player_nowplaying (request.user))
+
+
 @cache_control (must_revalidate = True, max_age = 30)
 def history(request):
     return HttpResponse (get_history ())

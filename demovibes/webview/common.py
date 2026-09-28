@@ -16,6 +16,7 @@ from django.utils.html import escape
 import logging
 import socket
 import datetime
+import random
 import j2shim
 
 MIN_QUEUE_SONGS_LIMIT = getattr(settings, "MIN_QUEUE_SONGS_LIMIT", 0)
@@ -178,6 +179,55 @@ def get_now_playing(create_new=False):
         logging.debug("Now playing generated")
     R = R.replace("((%timeleft%))", str(songtype.timeleft()))
     return R
+
+def get_player_nowplaying(user=None):
+    """
+    Now Playing panel for the popup player (/demovibes/play/). Cached per song for a
+    minute, so listeners share one screenshot pick; time left and the listener's own
+    vote are filled in fresh.
+    """
+    songtype = get_now_playing_song()
+    if not songtype:
+        return ""
+
+    key = "playernp%d" % songtype.id
+    R = cache.get(key)
+    if not R:
+        song = songtype.song
+        R = j2shim.r2s('webview/js/player_nowplaying.html', {
+            'now_playing' : songtype,
+            'song' : song,
+            'meta' : song.get_metadata(),
+            'image' : get_player_image(song),
+        })
+        cache.set(key, R, 60)
+    R = R.replace("((%timeleft%))", str(max(songtype.timeleft(), 0)))
+    return R.replace("((%myvote%))", str(get_player_vote(songtype.song, user)))
+
+def get_player_vote(song, user):
+    """
+    The listener's vote for the popup player: -1 if not logged in, -2 if it's their
+    own song and self-votes are off, 0 if they haven't voted yet, else 1-5.
+    """
+    if not user or not user.is_authenticated():
+        return -1
+    if models.SELFVOTE_DISABLED and song.is_connected_to(user):
+        return -2
+    return song.get_vote(user)
+
+def get_player_image(song):
+    """
+    Image URL for the popup player: a random screenshot or compilation cover, else the
+    Pouet screenshot if one was saved earlier. Never asks Pouet, which can stall for 20 s.
+    """
+    shots = list(song.get_screenshots_or_covers())
+    if shots:
+        img = random.choice(shots).image
+        if img.image:
+            return img.image.url
+        if img.thumbnail:
+            return img.thumbnail.url
+    return song.get_pouet_screenshot_url()
 
 def get_history(create_new=False):
     key = "nhistory"

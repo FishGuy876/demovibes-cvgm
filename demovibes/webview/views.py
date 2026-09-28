@@ -2328,17 +2328,42 @@ class Login(MyBaseView):
             self.add_to_limit((key1, key2))
             self.context['error'] = _(u"I'm sorry, the username or password seem to be wrong.")
 
+# Stream formats a browser <audio> tag can play directly (SHOUTcast URLs aren't direct audio)
+PLAYER_MIMETYPES = {'M': 'audio/mpeg', 'O': 'audio/ogg', 'A': 'audio/aac'}
+
 def play_stream(request):
+    """
+    Popup player. Offers the default stream first, then the same stream in each other
+    format as a fallback, so a browser that can't play one format moves on to the next.
+    Only https streams are used as fallbacks; browsers block http audio on an https page.
+    """
+    streams = list(m.RadioStream.objects.filter(active=True,
+        streamtype__in=PLAYER_MIMETYPES.keys()).order_by('-bitrate'))
     streamurl = getattr(settings, "FLASH_STREAM_URL", False)
     if not streamurl:
-        surl = m.RadioStream.objects.filter(streamtype="M").order_by('?')
-        if surl:
-            streamurl = surl[0].url
-        else:
-            streamurl = "No MP3 Streams!"
+        mp3 = [s for s in streams if s.streamtype == "M"]
+        streamurl = mp3 and mp3[0].url or ""
+
+    # The default stream's format, if it's in the stream list; untyped otherwise
+    default = [s for s in streams if s.url == streamurl]
+    default = default and default[0] or None
+    sources = [(streamurl, default and PLAYER_MIMETYPES[default.streamtype] or "")]
+    bitrate = default and default.bitrate or 0
+
+    for stype in ('M', 'O', 'A'):
+        if default and stype == default.streamtype:
+            continue
+        cands = [s for s in streams if s.streamtype == stype and s.url.startswith("https://")]
+        # Prefer the default's bitrate, then the highest
+        cands.sort(key=lambda s: s.bitrate != bitrate)
+        if cands:
+            sources.append((cands[0].url, PLAYER_MIMETYPES[stype]))
+
     return j2shim.r2r(
         'webview/radioplay.html', dict(
             streamurl=streamurl,
+            sources=[s for s in sources if s[0]],
+            nowplaying=common.get_player_nowplaying(request.user),
         ), request=request)
 
 def upload_progress(request):

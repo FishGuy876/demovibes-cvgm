@@ -1,0 +1,48 @@
+{#- Now Playing panel for the popup player (/demovibes/play/). Built by common.get_player_nowplaying(). -#}
+{%- set rating = song.rating or 0 -%}
+<div class="np-art">
+  {%- if image %}
+  <a href="{{ song.get_absolute_url() }}"><img class="np-shot" src="{{ image|e }}" alt="{{ song.title|e }}" /></a>
+  {%- else %}
+  <div class="np-noshot">{% if meta.platform %}{{ meta.platform.title|e }}{% else %}CVGM{% endif %}</div>
+  {%- endif %}
+</div>
+<div class="np-titles">
+  <a class="np-title" href="{{ song.get_absolute_url() }}">{{ song.title|e }}</a>
+  <p class="np-by">
+  {%- for a in meta.artists.all() -%}
+    {%- if a.home_country %}{{ dv.flag(a.home_country, extra_title=a.home_location) }}{% endif -%}
+    <a href="{{ a.get_absolute_url() }}">{{ a.handle|e }}</a>
+    {%- if not loop.last %} &amp; {% endif -%}
+  {%- endfor -%}
+  </p>
+</div>
+<div class="np-meta">
+  {%- for g in meta.groups.all()[:2] %}<span><a href="{{ g.get_absolute_url() }}">{{ g.name|e }}</a></span>{% endfor -%}
+  {%- for l in meta.labels.all()[:2] %}<span><a href="{{ l.get_absolute_url() }}">{{ l.name|e }}</a></span>{% endfor -%}
+  {%- if meta.platform %}<span><a href="{{ meta.platform.get_absolute_url() }}">{{ meta.platform.title|e }}</a></span>{% endif -%}
+</div>
+{%- if meta.platform and meta.platform.symbol %}
+<div class="np-platform"><a href="{{ meta.platform.get_absolute_url() }}"><img src="{{ meta.platform.symbol.url }}" alt="{{ meta.platform.title|e }}" title="{{ meta.platform.title|e }}" /></a></div>
+{%- endif %}
+{#- Same resources as the song page's "Extra Resources" line -#}
+<div class="np-links">
+  {%- if meta.pouetid %}<a href="https://www.pouet.net/prod.php?which={{ meta.pouetid }}" title="Pouet"><img src="{{ STATIC_URL }}pouet-icon.gif" alt="Pouet" /></a>{% endif -%}
+  {%- for L in song.get_active_links() -%}
+    <a href="{{ L.get_link()|e }}" title="{{ L.link.name|e }}{% if L.comment %} - {{ L.comment|e }}{% endif %}">
+    {%- if L.link.icon %}<img src="{{ L.link.icon.url }}" alt="{{ L.link.name|e }}" />{% else %}{{ L.link.name|e }}{% endif -%}
+    </a>
+  {%- endfor -%}
+</div>
+<div class="np-stats">
+  {#- data-myvote: -1 not logged in, -2 own song, 0 not voted, 1-5 (filled in per listener) #}
+  <div class="np-vote">
+    <span class="np-stars" data-song="{{ song.id }}" data-rating="{{ '%.2f'|format(rating) }}" data-myvote="((%myvote%))" style="--pct: {{ '%.1f'|format(rating * 20) }}%" title="Rating {{ rating|floatformat(2) }} of 5">★★★★★</span>
+    <small class="np-myvote"></small>
+  </div>
+  <div class="np-time" data-length="{{ song.get_songlength() or 0 }}">
+    <span class="np-left" data-name="counter" data-sec="((%timeleft%))" data-inc="-1">{{ song.length() }}</span>
+    <small>left</small>
+  </div>
+  <span class="np-rating"><span id="songrating">{{ song.rating|floatformat(2)|default("No votes", true) }}</span><br /><span id="songrating_votes">{{ song.rating_votes }}</span> votes</span>
+</div>

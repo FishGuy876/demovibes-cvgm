@@ -1618,14 +1618,13 @@ class Song(models.Model):
         pouetid = self.get_pouetid()
         if pouetid:
             try:
-                if not self.pouetss:
-                    imglink = self.grab_pouet_info("screenshot")
-                    self.pouetss = imglink
-                    self.save()
+                imglink = self.get_pouet_screenshot_img()
+                if not imglink:
+                    return ""
 
                 t = loader.get_template('webview/t/pouet_screenshot.html')
                 c = Context ( { 'object' : self.get_metadata(),
-                               'imglink' : self.pouetss } )
+                               'imglink' : imglink } )
                 return t.render(c)
 
             except:
@@ -1733,14 +1732,29 @@ class Song(models.Model):
         if pouetid:
             try:
                 if not self.pouetss:
-                    imglink = self.grab_pouet_info("screenshot")
-                    self.pouetss = imglink
-                    self.save()
+                    # grab_pouet_info() returns False on any failure; saving that stored the
+                    # text "False". Save real links only, and wait a day before asking again.
+                    failkey = "pouetssfail%d" % pouetid
+                    imglink = not cache.get(failkey) and self.grab_pouet_info("screenshot")
+                    if imglink and imglink.startswith(("http://", "https://")):
+                        self.pouetss = imglink
+                        self.save()
+                    else:
+                        cache.set(failkey, 1, 86400)
 
-                return self.pouetss
+                return self.get_pouet_screenshot_url()
 
             except:
                 return None
+
+    def get_pouet_screenshot_url(self):
+        """
+        The saved Pouet screenshot link over https, or None if what is saved isn't a link
+        (some old rows hold the text "False"). Never asks Pouet.
+        """
+        if self.pouetss and self.pouetss.startswith(("http://", "https://")):
+            return "https://" + self.pouetss.split("://", 1)[1]
+        return None
 
     def reset_pouetinfo(self):
         self.pouetss = ""
