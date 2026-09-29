@@ -1,0 +1,15 @@
+/*
+ * CVGM Dark 2026, Gruvbox palette (dark, hard contrast: darker background). FishGuy876/BRS
+ * Colours from morhetz/gruvbox. Layout and everything else comes from cvgm-dark.css.
+ */
+
+/* Bump ?v= whenever cvgm-dark-gruvbox.css changes to get past Cloudflare cache */
+@import url("cvgm-dark-gruvbox.css?v=6");
+
+:root
+{
+	--c-bg: #1d2021;
+	--c-panel: #282828;
+	--c-raise: #32302f;
+	--c-rule: #282828;
+}

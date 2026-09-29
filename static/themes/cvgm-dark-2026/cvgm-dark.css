@@ -1,0 +1,1326 @@
+/*
+ * CVGM Dark 2026 for cvgm.net/demovibes.
+ * Gruvbox palette (dark, hard contrast: darker background).
+ * Colours from morhetz/gruvbox.
+ * Random other shit by FishGuy876 / Brainstorm
+ *
+ * Colours are roles (custom properties). This file is the Signal palette; the
+ * cvgm-dark-gruvbox*.css files import it and override only the roles.
+ *
+ * V1.00 - 09/24/2026 - Initial Release.
+ * V1.01 - 09/26/2026 - Minor colour adjustments.
+ * V1.02 - 09/27/2026 - Image buttons (queue) no longer get text-box padding/border, so they line up with the locked-song icon.
+ * V1.03 - 09/29/2026 - Oneliner send button shrunk to its icon; song list length/status/vote/queue/last played columns centred.
+ * V1.04 - 09/29/2026 - Queue page: song length, request time and play time columns centred.
+ * V1.05 - 09/29/2026 - Now Playing: stars, favourite and voting history centred.
+ */
+
+:root
+{
+	/* Type */
+	--fs: 12px;
+	--fs-small: 10.5px;
+	--row: 4px;
+	--sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	--mono: ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
+
+	/* Surfaces */
+	--c-bg: #000;
+	--c-panel: #070707;
+	--c-raise: #0e0e0f;
+	--c-input: #0d0d0d;
+	--c-row: rgba(255, 255, 255, .022);
+	--c-rowhover: #131313;
+	--c-rule: #141414;
+	--c-line: #1f1f1f;
+	--c-line2: #2a2a2a;
+	--c-dim: #262626;
+
+	/* Text */
+	--c-ink: #f4f4f4;
+	--c-soft: #b8b8b8;
+	--c-mute: #7a7a7a;
+
+	/* Accents: red for live things and hover, gold for ratings */
+	--c-red: #ff2d3d;
+	--c-hover: #ff6b76;
+	--c-gold: #f0b44a;
+	--c-error: #ff5a5a;
+
+	/* BBCode colours that are too dark for this background */
+	--bb-black: #f4f4f4;
+	--bb-darkblue: #7a93ff;
+	--bb-blue: #5b8cff;
+	--bb-purple: #b58cff;
+	--bb-brown: #c8875a;
+	--bb-green: #4cc46a;
+}
+
+/* ------------------------------------------------------------------ base */
+
+*
+{
+	font-family: var(--sans);
+	font-size: var(--fs);
+}
+
+html
+{
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	border: none;
+	position: absolute;
+	left: 0;
+	top: 0;
+	background-color: var(--c-bg);
+	color: var(--c-soft);
+	color-scheme: dark;
+}
+
+html#transparent
+{
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	border: none;
+	position: absolute;
+	left: 0;
+	top: 0;
+	background: transparent;
+}
+
+body#site
+{
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	border: none;
+	position: absolute;
+	left: 0;
+	top: 0;
+	overflow: visible;
+	background: var(--c-bg) !important;
+	color: var(--c-soft);
+	line-height: 1.45;
+}
+
+p
+{
+	margin: 0;
+	margin-top: 1em;
+}
+
+a
+{
+	text-decoration: none;
+	font-weight: 600;
+}
+
+a:link, a:visited
+{
+	color: var(--c-ink);
+}
+
+a:hover
+{
+	color: var(--c-hover);
+	text-decoration: underline;
+}
+
+img
+{
+	border: 0;
+	vertical-align: bottom;
+}
+
+/* The inline black <hr> in the Now Playing box would vanish on black */
+hr
+{
+	background-color: var(--c-line2) !important;
+	border: 0;
+	height: 1px;
+}
+
+pre, code, .bbcode
+{
+	font-family: var(--mono);
+}
+
+.bbquote
+{
+	font-style: italic;
+	color: var(--c-soft);
+}
+
+.bbcode
+{
+	display: block;
+	border: 1px solid var(--c-line2);
+	border-radius: 4px;
+	padding: 10px;
+	margin-left: 25px;
+	margin-right: 25px;
+	line-height: 1.5;
+	background: var(--c-raise);
+	color: var(--c-soft);
+}
+
+/* Times read like the player's clock */
+.tzinfo, .onelinertime, [data-name="counter"]
+{
+	font-family: var(--mono);
+	font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ headings */
+
+h1, h2, h3
+{
+	color: var(--c-ink);
+	background: none;
+	border: 0;
+	text-shadow: none;
+}
+
+h1
+{
+	font-size: calc(var(--fs) + 10px);
+}
+
+h2
+{
+	font-size: calc(var(--fs) + 3px);
+	position: relative;
+	vertical-align: middle;
+}
+
+/* Side panel titles: quiet uppercase labels instead of shiny bars */
+h3
+{
+	margin: 0;
+	margin-bottom: 1ex;
+	padding: 10px 12px;
+	font-size: var(--fs-small);
+	font-weight: 600;
+	letter-spacing: .12em;
+	text-transform: uppercase;
+	text-align: center;
+	color: var(--c-soft);
+	background: var(--c-raise);
+	border-bottom: 1px solid var(--c-line);
+}
+
+/* The Now Playing title gets the player's live dot */
+#nowplaying > h3:before
+{
+	content: "";
+	display: inline-block;
+	width: 7px;
+	height: 7px;
+	margin-right: 8px;
+	border-radius: 50%;
+	background: var(--c-red);
+	box-shadow: 0 0 6px var(--c-red);
+	vertical-align: 1px;
+}
+
+.headline
+{
+	vertical-align: middle;
+	font-size: calc(var(--fs) + 3px);
+}
+
+.date
+{
+	position: absolute;
+	right: 8px;
+	bottom: .4ex;
+	font-family: var(--mono);
+	font-size: var(--fs-small);
+	font-weight: normal;
+	color: var(--c-mute);
+}
+
+.header a:link, .header a:visited
+{
+	color: var(--c-ink);
+}
+
+.header a:hover
+{
+	color: var(--c-hover);
+}
+
+/* ------------------------------------------------------------------ panels (layout as Goats Grey) */
+
+#rightside
+{
+	float: right;
+	display: inline;
+	position: relative;
+	width: 230px;
+	margin: 8px;
+	border: 1px solid var(--c-line);
+	background: var(--c-panel);
+	text-align: center;
+}
+
+#sidebar
+{
+	float: left;
+	display: inline;
+	position: relative;
+	width: 200px;
+	margin: 8px;
+	padding-bottom: 10px;
+	border: 1px solid var(--c-line);
+	background: var(--c-panel);
+	text-align: center;
+}
+
+#main
+{
+	position: relative;
+	margin: 7px;
+	margin-left: 215px;
+	margin-right: 245px;
+	padding: 0;
+	padding-bottom: 1ex;
+	border: 1px solid var(--c-line);
+	background: var(--c-bg);
+}
+
+#rightside ul, #sidebar ul
+{
+	padding: 0;
+	margin-top: 1ex;
+	margin-bottom: 2ex;
+	display: inline-block;
+	list-style-type: none;
+	text-align: left;
+}
+
+#rightside ul li, #sidebar ul li
+{
+	background-position: 0px 50%;
+	background-repeat: no-repeat;
+	min-height: 16px;
+	padding-left: 16px;
+	margin: 2px 0;
+	display: block;
+}
+
+#sidebar li a, #rightside li a
+{
+	margin-left: 1.2ex;
+	color: var(--c-soft);
+}
+
+#sidebar li a:hover, #rightside li a:hover
+{
+	color: var(--c-ink);
+}
+
+#forum, #favorites, #logout
+{
+	margin-bottom: 1em !important;
+}
+
+/* Menu icons (same files as Goats Grey) */
+#home 		{background-image: url("/static/house.png");}
+#songs		{background-image: url("/static/music.png");}
+#song-source	{background-image: url("/static/sound.png");}
+#song-platform	{background-image: url("/static/sound.png");}
+#artists	{background-image: url("/static/user_green.png");}
+#compilations	{background-image: url("/static/recplay_ico.png");}
+#recent		{background-image: url("/static/new.png");}
+#recentchanges	{background-image: url("/static/page_white_edit.png");}
+#menuqueue	{background-image: url("/static/script.png");}
+#search		{background-image: url("/static/find.png");}
+#forum		{background-image: url("/static/user_comment.png");}
+#faq		{background-image: url("/static/comment.png");}
+#profile	{background-image: url("/static/user.png");}
+#favorites	{background-image: url("/static/heart.png");}
+#register	{background-image: url("/static/page_white_edit.png");}
+#logout		{background-image: url("/static/door_out.png");}
+#login		{background-image: url("/static/door_in.png");}
+#admin		{background-image: url("/static/door.png");}
+#inbox		{background-image: url("/static/email.png");}
+#unap-artists	{background-image: url("/static/user_green.png");}
+#unap-groups	{background-image: url("/static/group.png");}
+#unap-compilations {background-image: url("/static/recplay_ico.png");}
+#unap-labels	{background-image: url("/static/transmit_blue.png");}
+#unap-links	{background-image: url("/static/link.png");}
+#unap-nju	{background-image: url("/static/tick.png");}
+#groups		{background-image: url("/static/group.png");}
+#labels		{background-image: url("/static/transmit_blue.png");}
+#links		{background-image: url("/static/link.png");}
+#screenshots	{background-image: url("/static/icon_screenshot.png");}
+#unap-screenshots {background-image: url("/static/icon_screenshot.png");}
+#licenses	{background-image: url("/static/page_white_edit.png");}
+#chat		{background-image: url("/static/lips.png");}
+#spamadmin	{background-image: url("/static/spam.png");}
+#discord	{background-image: url("/static/DiscordIcon16.png");}
+
+/* ------------------------------------------------------------------ main column */
+
+#main h1, #main h2
+{
+	margin-left: 8px;
+	margin-right: 8px;
+	margin-bottom: 1ex;
+	padding-left: 0;
+	padding-right: 0;
+}
+
+/* "CVGM Radio" masthead */
+#main h1
+{
+	margin: 0;
+	padding: 18px 1ex 6px;
+	font-size: calc(var(--fs) + 10px);
+	font-weight: 700;
+	letter-spacing: .02em;
+	text-align: center;
+}
+
+#logo
+{
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+	border: 1px solid var(--c-line2);
+	border-radius: 4px;
+}
+
+#mainlogo
+{
+	padding-bottom: 16px;
+	border-bottom: 1px solid var(--c-line);
+}
+
+/* Section headings: text and icon over a hairline */
+#main h2
+{
+	clear: both;
+	margin-top: 22px;
+	padding: 0 0 8px;
+	font-weight: 600;
+	border-bottom: 1px solid var(--c-line2);
+}
+
+#main p
+{
+	margin-left: 8px;
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+#main #maincontent .theme
+{
+	height: 280px;
+}
+
+#main #maincontent .editdiv textarea.input
+{
+	width: 50em;
+	height: 20em;
+}
+
+#main ul
+{
+	margin: 0;
+	padding: 0;
+	margin-left: 3em;
+	list-style-type: disc;
+	list-style-position: outside;
+	display: block;
+}
+
+#main ul.imgbull li
+{
+	list-style-type: none;
+	background-position: 0px 50%;
+	background-repeat: no-repeat;
+	min-height: 16px;
+	margin-left: -3.5ex;
+	padding-left: 3.5ex;
+}
+
+.newstext
+{
+	padding-left: 8px;
+	padding-right: 8px;
+	line-height: 1.55;
+}
+
+div.newstext img
+{
+	margin-right: 8px;
+	margin-bottom: 8px;
+}
+
+/* ------------------------------------------------------------------ icons */
+
+.countryflag
+{
+	margin: -2px 3px 1px 1px;
+	vertical-align: middle;
+	border-radius: 1px;
+}
+
+.platform_icon, .label_icon, .group_icon, .comp_icon
+{
+	vertical-align: middle;
+	margin-right: 3px;
+}
+
+.icon_header, .recent_icon_header
+{
+	padding: 0 8px 0 0;
+	vertical-align: middle;
+	margin: 0;
+	border: 0;
+	background: none;
+}
+
+.text-link, .song-resource, .user-resource
+{
+	vertical-align: middle;
+	margin-left: 1px;
+	margin-right: 1px;
+}
+
+.lastreqdate
+{
+	white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ oneliner */
+
+#sidebar form
+{
+	display: block;
+	padding: 0;
+	padding-top: 1ex;
+	margin: 0 8px;
+	border: none;
+	white-space: nowrap;
+}
+
+#blah
+{
+	display: inline-block;
+	box-sizing: border-box;
+	width: 100%;
+	height: 28px;
+	padding: 0 28px 0 8px;
+	margin: 0;
+	border: 1px solid var(--c-line2);
+	border-radius: 6px;
+	background: var(--c-input);
+	color: var(--c-ink);
+}
+
+#blah:focus
+{
+	outline: none;
+	border-color: var(--c-red);
+}
+
+/* Only as big as the 16px icon, centred in the 28px box, so clicks near
+   the box's edge don't send the line by mistake */
+#makeitso
+{
+	box-sizing: border-box;
+	border: none;
+	width: 16px;
+	height: 16px;
+	padding: 0;
+	margin: 6px 0 0 -24px;
+	vertical-align: top;
+	background: transparent url("/static/comment.png") no-repeat center center;
+}
+
+#oneliner
+{
+	margin: 8px;
+	margin-top: 0;
+	margin-bottom: 2ex;
+	text-align: left;
+	overflow: hidden;
+}
+
+#oneliner .onelinermsg
+{
+	float: none;
+	margin: 0;
+	padding: 8px 0 6px;
+	border-bottom: 1px solid var(--c-rule);
+	vertical-align: middle;
+}
+
+span.onelinerpre
+{
+	display: block;
+	width: auto;
+	padding: 0;
+	background: none;
+}
+
+.onelinerpre .username
+{
+	font-weight: 600;
+	vertical-align: middle;
+	background: none;
+	padding: 0;
+}
+
+.onelinerpre .username a
+{
+	color: var(--c-ink);
+}
+
+.onelinerpre .onelinertime
+{
+	float: right;
+	padding-right: 2px;
+	font-size: var(--fs-small);
+	color: var(--c-mute);
+}
+
+.onelinerpre .username .countryflag
+{
+	overflow: hidden;
+	margin: 2px 4px 2px 0;
+	padding: 0;
+}
+
+.onelinertext
+{
+	display: block;
+	vertical-align: middle;
+	padding-top: 3px;
+	padding-bottom: 2px;
+	line-height: 1.4;
+	color: var(--c-soft);
+}
+
+p.onelinermsg br
+{
+	display: none;
+}
+
+.onelinertext img
+{
+	vertical-align: middle;
+}
+
+.olh_wrapper	{ width: 604px; min-height: 800px; margin: 15px; }
+.olh_item	{ overflow: auto; }
+.olh_user	{ width: 150px; float: left; margin: 0; padding: 0; min-height: 50px; }
+.olh_message	{ width: 450px; float: right; margin: 0; padding: 0; min-height: 50px; }
+.olh_pages	{ text-align: justify; }
+
+/* ------------------------------------------------------------------ song tables */
+
+table.songlist
+{
+	width: 100%;
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+table.songlist th
+{
+	padding: 10px 8px 6px;
+	text-align: left;
+	font-size: var(--fs-small);
+	font-weight: 600;
+	letter-spacing: .1em;
+	text-transform: uppercase;
+	color: var(--c-mute);
+	border-bottom: 1px solid var(--c-line);
+	white-space: nowrap;
+}
+
+table.songlist td
+{
+	padding: var(--row) 8px;
+	border-bottom: 1px solid var(--c-rule);
+	color: var(--c-soft);
+}
+
+table.songlist tr.row1 td
+{
+	background: none;
+}
+
+table.songlist tr.row2 td
+{
+	background: var(--c-row);
+}
+
+table.songlist tr:hover td
+{
+	background: var(--c-rowhover);
+}
+
+table.songlist .songname a
+{
+	color: var(--c-ink);
+}
+
+table.songlist .artistname a, table.songlist .username a
+{
+	color: var(--c-soft);
+}
+
+table.songlist .tzinfo
+{
+	color: var(--c-mute);
+}
+
+/* Song Length, Status, Avg. Vote, Queue and Last Played (columns 3-7 of
+   the shared t/songheader.html table, the only songlist with this class) */
+table.songlist.sortable-onload-show-0 th:nth-child(n+3):nth-child(-n+7),
+table.songlist.sortable-onload-show-0 td:nth-child(n+3):nth-child(-n+7)
+{
+	text-align: center;
+}
+
+/* Queue page: Song Length, Request Time and Play Time (columns 3-5 of the
+   pending queue and request history tables) */
+[data-name="queue"] table.songlist th:nth-child(n+3):nth-child(-n+5),
+[data-name="queue"] table.songlist td:nth-child(n+3):nth-child(-n+5),
+[data-name="history"] table.songlist th:nth-child(n+3):nth-child(-n+5),
+[data-name="history"] table.songlist td:nth-child(n+3):nth-child(-n+5)
+{
+	text-align: center;
+}
+
+#sortsonglist
+{
+	background: var(--c-panel);
+}
+
+table.recentchanges
+{
+	vertical-align: text-top;
+	border-spacing: 2px;
+	width: 90%;
+}
+
+table.recentchanges td
+{
+	vertical-align: text-top;
+	padding: 2px 18px;
+}
+
+table.songstatlist.statistics
+{
+	padding: 2px;
+	margin: 10px;
+	color: var(--c-soft);
+	border: 1px solid var(--c-line);
+}
+
+table.songstatlist tr th
+{
+	font-size: var(--fs-small);
+	font-weight: 600;
+	letter-spacing: .1em;
+	text-transform: uppercase;
+	color: var(--c-mute);
+	text-align: center;
+	background: var(--c-raise);
+	padding: 6px 8px;
+}
+
+table.songstatlist tr td
+{
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+table.songstatlist tr.row1 td
+{
+	background: var(--c-row);
+}
+
+table.songstatlist tr td:nth-child(n+2)
+{
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ now playing box */
+
+#nowplaying #screenshotview img
+{
+	border: 1px solid var(--c-line2);
+	border-radius: 2px;
+}
+
+div#nowplaying span.songname
+{
+	display: block;
+}
+
+div#nowplaying span.songname a
+{
+	color: var(--c-ink);
+}
+
+div#nowplaying span.artistname:before
+{
+	white-space: pre-line;
+	content: "\A";
+}
+
+/* Stars, favourite and voting history are a <table class="vote">
+   (t/now_playing_vote.html); text-align doesn't centre a table, margins do */
+#nowplaying table.vote
+{
+	margin-left: auto;
+	margin-right: auto;
+}
+
+div#nowplaying [data-name="counter"]
+{
+	color: var(--c-ink);
+}
+
+#songrating
+{
+	color: var(--c-gold);
+	font-weight: 600;
+}
+
+#formvote input, .queuesongimage
+{
+	border: none;
+	background-color: transparent;
+}
+
+.starbutton
+{
+	min-height: 24px;
+	height: 24px;
+	display: table-cell;
+	vertical-align: top;
+	color: transparent;
+}
+
+.queuesongbutton
+{
+	cursor: pointer;
+	width: 25ex;
+}
+
+/* ------------------------------------------------------------------ forms */
+
+select, input, textarea
+{
+	background-color: var(--c-input);
+	border: 1px solid var(--c-line2);
+	border-radius: 4px;
+	color: var(--c-ink);
+	padding: 3px 6px;
+}
+
+select:focus, input:focus, textarea:focus
+{
+	outline: none;
+	border-color: var(--c-red);
+}
+
+/* Image buttons (the queue "+" icon, favourites) are icons, not text boxes: draw them
+   exactly like the <img> lock icon shown for locked songs, so both line up */
+input[type=image]
+{
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: none;
+	vertical-align: bottom;
+}
+
+input[type=image]:focus-visible
+{
+	outline: 1px solid var(--c-red);
+	outline-offset: 2px;
+}
+
+/* Not the vote stars: those are <button class="starbutton"> drawn with images by base.css */
+input[type=submit], input[type=button], button:not(.starbutton)
+{
+	color: var(--c-ink);
+	background-color: var(--c-raise);
+	border: 1px solid var(--c-line2) !important;
+	border-radius: 999px;
+	padding: 4px 14px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+input[type=submit]:hover, input[type=button]:hover, button:not(.starbutton):hover
+{
+	border-color: var(--c-red) !important;
+	color: var(--c-ink);
+}
+
+input[type=checkbox], input[type=radio]
+{
+	accent-color: var(--c-red);
+}
+
+#main #id_file	{ width: 70em; }
+#main #id_title	{ width: 50em; }
+#main #id_info	{ width: 50em; height: 15em; }
+
+#linksform #id_LL_2_comment, #linksform #id_LL_3_comment, #linksform #id_LL_4_comment, #linksform #id_LL_5_comment,
+#linksform #id_LL_6_comment, #linksform #id_LL_7_comment, #linksform #id_LL_8_comment, #linksform #id_LL_9_comment, #linksform #id_LL_10_comment,
+#linksform #id_LL_11_comment, #linksform #id_LL_12_comment, #linksform #id_LL_13_comment, #linksform #id_LL_17_comment, #linksform #id_LL_18_comment,
+#linksform #id_LL_19_comment, #linksform #id_LL_21_comment
+{
+	width: 30em;
+}
+
+#linksform tr:hover
+{
+	background-color: var(--c-rowhover);
+}
+
+#id_groups, #id_labels, #id_artists
+{
+	height: 240px;
+	width: 240px;
+}
+
+p.errorinfo, ul.errorlist li
+{
+	color: var(--c-error);
+}
+
+/* ------------------------------------------------------------------ boxes from base.css with light backgrounds */
+
+div.pmview
+{
+	vertical-align: top;
+	border: 1px solid var(--c-line2);
+	background: var(--c-panel);
+	width: 85%;
+}
+
+p.pmtitle
+{
+	font-weight: 600;
+}
+
+div.taglist
+{
+	background: var(--c-panel);
+	border: 1px solid var(--c-line2);
+	margin-right: 20px;
+	border-radius: 6px;
+	box-shadow: none;
+}
+
+.searchpostpreview
+{
+	background: var(--c-panel);
+	border: 1px solid var(--c-line2);
+}
+
+div.screenshot:hover
+{
+	background-color: var(--c-rowhover);
+	border: 1px solid var(--c-line2);
+}
+
+#screenshot-data
+{
+	float: left;
+}
+
+td.compilation_summary
+{
+	vertical-align: top;
+}
+
+td.artist_details img.artist_logo
+{
+	width: 80%;
+	height: auto;
+}
+
+td.artist_information
+{
+	width: 240px;
+}
+
+#whosonline, #newestuser
+{
+	line-height: 135%;
+}
+
+#whosonline span, #newestuser span
+{
+	white-space: nowrap;
+}
+
+.bubbleInfo
+{
+	position: relative;
+}
+
+/* ------------------------------------------------------------------ forum */
+
+#djangoForumBreadcrumbs, .pages
+{
+	margin-bottom: 1em;
+}
+
+.pagesBottom
+{
+	margin-top: 1em;
+	text-align: right;
+}
+
+#djangoForumList,
+#djangoForumThreadList,
+#djangoForumThreadPosts
+{
+	width: 99%;
+	margin: auto;
+	border: 1px solid var(--c-line);
+	border-collapse: collapse;
+	background: var(--c-bg);
+}
+
+#djangoForumList th,
+#djangoForumThreadList th,
+#djangoForumThreadPosts th
+{
+	padding: 8px;
+	border: 1px solid var(--c-line);
+	background: var(--c-raise);
+	text-align: left;
+	font-size: var(--fs-small);
+	font-weight: 600;
+	letter-spacing: .1em;
+	text-transform: uppercase;
+	color: var(--c-mute);
+}
+
+#djangoForumList td,
+#djangoForumThreadList td
+{
+	padding: 6px 8px;
+	border: 1px solid var(--c-line);
+}
+
+.djangoForumListDetails, .post
+{
+	background: var(--c-panel);
+}
+
+.djangoForumListDetails p
+{
+	margin: 0;
+}
+
+#djangoForumList .djangoForumListDetails .djangoForumStats
+{
+	position: relative !important;
+	z-index: 5;
+	float: right;
+	margin-top: -12pt;
+	padding-right: 8px;
+	font-size: var(--fs-small);
+	color: var(--c-mute);
+}
+
+.forumName
+{
+	display: block;
+	position: relative !important;
+	z-index: 10;
+	padding-left: 8px;
+	padding-right: 8px;
+	padding-bottom: 12pt;
+	font-size: calc(var(--fs) + 3px);
+}
+
+.djangoForumListDetails .forumDescription
+{
+	display: block;
+	position: relative !important;
+	z-index: 5;
+	margin-top: -12pt;
+	padding: 0 8px;
+	margin-right: 100px;
+	color: var(--c-soft);
+}
+
+#djangoForumList .djangoForumListDetails
+{
+	width: 70%;
+	padding: 0;
+}
+
+#djangoForumThreadList td
+{
+	width: 5%;
+	text-align: center;
+}
+
+#djangoForumThreadList .djangoForumThreadListName
+{
+	width: 60%;
+	text-align: left;
+	padding: 0;
+	background: var(--c-panel);
+}
+
+#djangoForumList .djangoForumListLastPost,
+#djangoForumThreadList .djangoForumThreadLastPost
+{
+	width: 30%;
+	text-align: left;
+}
+
+.threadName
+{
+	display: block;
+	line-height: 2em;
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+#djangoForumThreadPosts
+{
+	border: 0;
+}
+
+#djangoForumThreadPosts td
+{
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+#djangoForumThreadPosts .djangoForumThreadPostDetail
+{
+	vertical-align: top;
+	border-left: 1px solid var(--c-line);
+	padding-top: 1em;
+}
+
+#djangoForumThreadPosts .postfooter
+{
+	border-left: 1px solid var(--c-line);
+	border-right: 1px solid var(--c-line);
+	border-bottom: 1px solid var(--c-line);
+	text-align: right;
+}
+
+#djangoForumThreadPosts .postfooter td:first-child
+{
+	text-align: left;
+	font-size: var(--fs-small);
+	color: var(--c-mute);
+}
+
+#djangoForumThreadPosts .post
+{
+	vertical-align: top;
+	padding-top: 1em;
+	border: 0;
+	border-left: 1px solid var(--c-line);
+	border-right: 1px solid var(--c-line);
+	border-bottom: 1px solid var(--c-line);
+	width: 85%;
+	line-height: 1.55;
+	color: var(--c-soft);
+}
+
+.post p
+{
+	margin: 0;
+	margin-bottom: 1em;
+}
+
+#newThread
+{
+	width: 99%;
+	margin: auto;
+}
+
+#newThread .label
+{
+	text-align: right;
+	vertical-align: top;
+}
+
+#newThread #postThread
+{
+	text-align: center;
+}
+
+/* ------------------------------------------------------------------ notifications ("Guru Meditation" box) */
+
+.messagebox
+{
+	border: 5px solid var(--c-red);
+	border-top-width: 0;
+	border-bottom-width: 0;
+	right: 0;
+	left: 0;
+	width: auto;
+}
+
+.messagetitle
+{
+	background-color: #000;
+	color: var(--c-red);
+	padding-left: 8em;
+	border-top: 5px solid var(--c-red);
+	font-family: var(--mono);
+	font-size: 12px;
+	font-weight: bold;
+	text-align: center;
+}
+
+.messageholder
+{
+	background-color: #000;
+	padding-left: 8em;
+	padding-right: 8em;
+}
+
+.messagefade
+{
+	background-color: #000;
+}
+
+.messagefadeborder
+{
+	display: none;
+}
+
+.messagelist .messageholder:last-child
+{
+	border-bottom: 5px solid var(--c-red);
+}
+
+.messagetitle-flash
+{
+	font-size: 12px;
+	background-color: #400;
+}
+
+.messagetime, .messagecat, .messagetext
+{
+	padding-right: 4em;
+	font-family: var(--mono);
+	font-size: 12px;
+	font-weight: bold;
+	color: var(--c-red);
+}
+
+.messagetext a
+{
+	color: var(--c-red) !important;
+	text-decoration: underline;
+}
+
+.message-remove
+{
+	font-family: var(--mono);
+	font-size: 12px;
+	font-weight: bold;
+}
+
+.message-display-settings
+{
+	font-weight: 600;
+	font-size: var(--fs-small);
+	color: var(--c-mute);
+	cursor: pointer;
+}
+
+.messagesettingsbox
+{
+	color: var(--c-ink);
+	background-color: var(--c-raise);
+	font-weight: 600;
+	padding: 8px;
+	border: 1px solid var(--c-line2);
+	border-radius: 6px;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, .6);
+}
+
+.messagesettingsbox h2
+{
+	text-align: center;
+}
+
+.messagesetting-save, .messagesetting-cancel
+{
+	border-color: var(--c-line2);
+}
+
+.messagesetting-save:hover, .messagesetting-cancel:hover
+{
+	background-color: var(--c-rowhover);
+}
+
+/* ------------------------------------------------------------------ tooltips (qTip) */
+
+.qtip, .ui-tooltip
+{
+	background: var(--c-raise) !important;
+	color: var(--c-ink) !important;
+	border: 1px solid var(--c-line2) !important;
+	border-radius: 6px;
+}
+
+/* ------------------------------------------------------------------ footer */
+
+#copyleft, #copyright
+{
+	display: block;
+	font-size: var(--fs-small);
+	position: relative;
+	bottom: -3ex;
+	margin: 0;
+	color: var(--c-mute);
+}
+
+#copyleft	{ float: left; }
+#copyright	{ float: right; } 
+
+#copyleft a, #copyright a
+{
+	color: var(--c-soft);
+}
+
+#validator
+{
+	position: absolute;
+	right: 1px;
+	top: 1px;
+}
+
+/* ------------------------------------------------------------------ BBCode colours from posts and the oneliner */
+
+span[style="color: black"]	{ color: var(--bb-black) !important; }
+span[style="color: darkblue"]	{ color: var(--bb-darkblue) !important; }
+span[style="color: blue"]	{ color: var(--bb-blue) !important; }
+span[style="color: purple"]	{ color: var(--bb-purple) !important; }
+span[style="color: brown"]	{ color: var(--bb-brown) !important; }
+span[style="color: green"]	{ color: var(--bb-green) !important; }
